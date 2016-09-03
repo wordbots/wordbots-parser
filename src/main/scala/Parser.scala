@@ -12,8 +12,9 @@ object Lexicon {
       (Num, Form(1)),
       (NP/N, λ {o: ObjectType => Choose(o, NoCondition)}),
       ((NP/Rel)/N, λ {o: ObjectType => λ {c: Condition => Choose(o, c)}}),
-      (X|X, identity)
+      (X/X, identity)
     )) +
+    ("attack" -> (N, Form(Attack): SemanticState)) +
     (Seq("card", "cards") -> (N\Num, λ {num: Int => Cards(num)})) +
     ("damage" -> (N\Num, λ {amount: Int => Damage(amount)})) +
     ("deal" -> ((S/PP)/N, λ {d: Damage => λ {t: Target => DealDamage(t, d.amount)}})) +
@@ -27,8 +28,9 @@ object Lexicon {
     ("gain" -> (S/N, λ {e: Energy => EnergyDelta(Self, Plus(e.amount))})) +
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {d: Delta => λ {a: Attribute => AttributeDelta(t, a, d)}}})) +
     ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
+    ("health" -> (N, Form(Health): SemanticState)) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
-    ("must" -> (X|X, identity)) +
+    ("must" -> (X/X, identity)) +
     ("or less" -> (Adj\Num, λ {num: Int => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Int => GreaterThanOrEqualTo(num)})) +
     ("robot" -> (N, Form(Robot): SemanticState)) +
