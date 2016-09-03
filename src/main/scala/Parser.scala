@@ -29,5 +29,6 @@ object Lexicon {
     ("speed" -> (N, Form(Speed): SemanticState)) +
     ("to" -> (PP/NP, identity)) +
     ("that" -> (Rel/S, identity)) +
+    (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     (IntegerMatcher -> (Num, {i: Int => Form(i)}))
 }
