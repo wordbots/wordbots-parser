@@ -1,6 +1,7 @@
 package wordbots
 
 sealed trait Action
+case class AttributeDelta(target: Target, attribute: Attribute, delta: Delta) extends Action
 case class DealDamage(target: Target, num: Int) extends Action
 case class Destroy(target: Target) extends Action
 case class Discard(target: Target, num: Int) extends Action

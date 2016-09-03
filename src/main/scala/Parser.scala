@@ -25,6 +25,7 @@ object Lexicon {
     )) +
     ("energy" -> (N\Num, λ {amount: Int => Energy(amount)})) +
     ("gain" -> (S/N, λ {e: Energy => EnergyDelta(Self, Plus(e.amount))})) +
+    ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {d: Delta => λ {a: Attribute => AttributeDelta(t, a, d)}}})) +
     ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
     ("must" -> (X|X, identity)) +
@@ -36,5 +37,21 @@ object Lexicon {
     ("that" -> (Rel/S, identity)) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
-    (IntegerMatcher -> (Num, {i: Int => Form(i)}))
+    (IntegerMatcher -> (Num, {i: Int => Form(i)})) +
+    (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(i))})) +
+    (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(i))}))
+}
+
+case class PrefixedIntegerMatcher(prefix: String) extends TokenMatcher[Int] {
+  def apply(str: String) = {
+    try {
+      if (str.startsWith(prefix)) {
+        Seq(Integer.parseInt(str.stripPrefix(prefix)))
+      } else {
+        Nil
+      }
+    } catch {
+      case nfe: NumberFormatException => Nil
+    }
+  }
 }
