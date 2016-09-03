@@ -3,6 +3,7 @@ package wordbots
 sealed trait Action
 case class DealDamage(target: Target, num: Int) extends Action
 case class Destroy(target: Target) extends Action
+case class Discard(target: Target, num: Int) extends Action
 case class Draw(target: Target, num: Int) extends Action
 case class EnergyDelta(target: Target, delta: Delta) extends Action
 

@@ -19,10 +19,15 @@ object Lexicon {
     ("deal" -> ((S/PP)/N, λ {d: Damage => λ {t: Target => DealDamage(t, d.amount)}})) +
     ("destroy" -> (S/NP, λ {t: Target => Destroy(t)})) +
     ("draw" -> (S/N, λ {c: Cards => Draw(Self, c.num)})) +
+    ("discard" -> Seq(
+      (S/N, λ {c: Cards => Discard(Self, c.num)}),
+      ((S/N)\NP, λ {t: Target => λ {c: Cards => Discard(t, c.num)}})
+    )) +
     ("energy" -> (N\Num, λ {amount: Int => Energy(amount)})) +
     ("gain" -> (S/N, λ {e: Energy => EnergyDelta(Self, Plus(e.amount))})) +
     ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
+    ("must" -> (X|X, identity)) +
     ("or less" -> (Adj\Num, λ {num: Int => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Int => GreaterThanOrEqualTo(num)})) +
     ("robot" -> (N, Form(Robot): SemanticState)) +
@@ -30,5 +35,6 @@ object Lexicon {
     ("to" -> (PP/NP, identity)) +
     ("that" -> (Rel/S, identity)) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
+    ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
     (IntegerMatcher -> (Num, {i: Int => Form(i)}))
 }

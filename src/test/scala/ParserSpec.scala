@@ -16,6 +16,8 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Gain 2 energy") should be (EnergyDelta(Self, Plus(2)))
     parse("Deal 2 damage to a robot") should be (DealDamage(Choose(Robot, NoCondition), 2))
     parse("Deal 2 damage to yourself") should be (DealDamage(Self, 2))
+    parse("Discard a card") should be (Discard(Self, 1))
+    parse("Your opponent must discard a card") should be (Discard(Opponent, 1))
   }
 
   it should "parse more complex actions with relative clauses" in {
