@@ -11,14 +11,14 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   it should "parse simple actions" in {
-    parse("draw a card") should be (Draw(Self, 1))
-    parse("destroy a robot") should be (Destroy(Choose(Robot, NoCondition)))
-    parse("gain 2 energy") should be (EnergyDelta(Self, Plus(2)))
-    parse("deal 2 damage to a robot") should be (DealDamage(Choose(Robot, NoCondition), 2))
+    parse("Draw a card") should be (Draw(Self, 1))
+    parse("Destroy a robot") should be (Destroy(Choose(Robot, NoCondition)))
+    parse("Gain 2 energy") should be (EnergyDelta(Self, Plus(2)))
+    parse("Deal 2 damage to a robot") should be (DealDamage(Choose(Robot, NoCondition), 2))
   }
 
   it should "parse more complex actions with relative clauses" in {
-    parse("deal 2 damage to a robot that has 3 or less speed") should be (
+    parse("Deal 2 damage to a robot that has 3 or less speed") should be (
       DealDamage(Choose(Robot, AttributeComparison(Speed, LessThanOrEqualTo(3))), 2)
     )
   }
