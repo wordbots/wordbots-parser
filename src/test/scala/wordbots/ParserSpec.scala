@@ -23,13 +23,28 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Discard a card") should be (Discard(Self, 1))
     parse("Your opponent must discard a card") should be (Discard(Opponent, 1))
     parse("Give a robot +1 speed") should be (AttributeDelta(Choose(Robot, NoCondition), Speed, Plus(1)))
-    parse("Set all stats of all creatures in play to 3") should be (SetAttribute(All(Robot, NoCondition), AllAttributes, 3))
   }
 
-  it should "parse more complex actions with relative clauses" in {
-    parse("Deal 2 damage to a robot that has 3 or less speed") should be (
+  it should "parse more complex actions" in {
+    parse("Deal 2 damage to a robot that has 3 or less speed") should be
       DealDamage(Choose(Robot, AttributeComparison(Speed, LessThanOrEqualTo(3))), 2)
-    )
+
+    //* The following action texts were provided by James:
+    parse("Set all stats of all creatures in play to 3") should be
+      SetAttribute(All(Robot, NoCondition), AllAttributes, 3)
+    // "Draw cards equal to the number of creatures you control"
+    // "Deal damage to a creature equal to the total power of all creatures you control"
+    // "Double the attack and halve the life (rounded up) of all creatures in play"
+  }
+
+  it should "parse triggers for creatures" in {
+    //* The following trigger texts were provided by James:
+    // "This creature gains a second move action after attacking"
+    // "At the beginning of each of your turns, this creature gains 1 attack"
+    // "At the end of each turn, each creature takes 1 damage"
+    // "When this creature attacks, it deals damage to all adjacent creatures"
+    // "When this creature is summoned, reduce the cost of a card in your hand by 3"
+    // "Whenever this creature takes damage, draw a card"
   }
 
   it should "generate JS code for actions" in {
