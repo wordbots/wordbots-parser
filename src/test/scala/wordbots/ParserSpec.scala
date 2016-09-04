@@ -6,8 +6,12 @@ import org.scalatest._
 class ParserSpec extends FlatSpec with Matchers {
   def parse(input: String) = {
     Parser.parse(input).bestParse.get.semantic match {
-      case Form(value) => value
+      case Form(v) => v
     }
+  }
+
+  def generateJS(input: String): String = {
+    CodeGenerator.generateJS(parse(input).asInstanceOf[AstNode])
   }
 
   it should "parse simple actions" in {
@@ -25,5 +29,12 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Deal 2 damage to a robot that has 3 or less speed") should be (
       DealDamage(Choose(Robot, AttributeComparison(Speed, LessThanOrEqualTo(3))), 2)
     )
+  }
+
+  it should "generate JS code for actions" in {
+    generateJS("Draw a card") should be ("(function () { actions['draw'](targets['self'](), 1); })")
+    generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose']('robot', null)); })")
+    generateJS("Gain 2 energy") should be ("(function () { actions['energyDelta'](targets['self'](), 2); })")
+    generateJS("Give a robot +1 speed") should be ("(function () { actions['attributeDelta'](targets['choose']('robot', null), 'speed', 1); })")
   }
 }
