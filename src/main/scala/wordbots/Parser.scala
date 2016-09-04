@@ -42,14 +42,15 @@ object Lexicon {
     (Seq("robot", "robots", "creature", "creatures") -> (N, Form(Robot): SemanticState)) +
     ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: Target => λ {num: Int => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
-    (Seq("to", "of") -> (PP/NP, identity)) +
+    (Seq("to", "of") -> Seq((PP/NP, identity))) +
     ("that" -> (Rel/S, identity)) +
     ("the" -> (X/X, identity)) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
     (IntegerMatcher -> (Num, {i: Int => Form(i)})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(i))})) +
-    (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(i))}))
+    (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(i))})) +
+    (PrefixedIntegerMatcher("to ") -> (PP, {i: Int => Form(i)}))
 }
 
 case class PrefixedIntegerMatcher(prefix: String) extends TokenMatcher[Int] {
