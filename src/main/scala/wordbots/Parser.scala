@@ -14,6 +14,11 @@ object Lexicon {
       ((NP/Rel)/N, λ {o: ObjectType => λ {c: Condition => Choose(o, c)}}),
       (X/X, identity)
     )) +
+    (Seq("all") -> Seq(
+      (NP/N, λ {o: ObjectType => All(o, NoCondition)}),
+      ((NP/Rel)/N, λ {o: ObjectType => λ {c: Condition => All(o, c)}})
+    )) +
+    (Seq("all attributes", "all stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("attack" -> (N, Form(Attack): SemanticState)) +
     (Seq("card", "cards") -> (N\Num, λ {num: Int => Cards(num)})) +
     ("damage" -> (N\Num, λ {amount: Int => Damage(amount)})) +
@@ -29,14 +34,17 @@ object Lexicon {
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {d: Delta => λ {a: Attribute => AttributeDelta(t, a, d)}}})) +
     ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
     ("health" -> (N, Form(Health): SemanticState)) +
+    ("in play" -> (Rel, Form(NoCondition): SemanticState)) + // "in play" is the default condition - hence, NoCondition
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
     ("must" -> (X/X, identity)) +
     ("or less" -> (Adj\Num, λ {num: Int => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Int => GreaterThanOrEqualTo(num)})) +
-    ("robot" -> (N, Form(Robot): SemanticState)) +
+    (Seq("robot", "robots", "creature", "creatures") -> (N, Form(Robot): SemanticState)) +
+    ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: Target => λ {num: Int => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
-    ("to" -> (PP/NP, identity)) +
+    (Seq("to", "of") -> (PP/NP, identity)) +
     ("that" -> (Rel/S, identity)) +
+    ("the" -> (X/X, identity)) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
     (IntegerMatcher -> (Num, {i: Int => Form(i)})) +

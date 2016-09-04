@@ -23,6 +23,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Discard a card") should be (Discard(Self, 1))
     parse("Your opponent must discard a card") should be (Discard(Opponent, 1))
     parse("Give a robot +1 speed") should be (AttributeDelta(Choose(Robot, NoCondition), Speed, Plus(1)))
+    parse("Set all stats of all creatures in play to 3") should be (SetAttribute(All(Robot, NoCondition), AllAttributes, 3))
   }
 
   it should "parse more complex actions with relative clauses" in {

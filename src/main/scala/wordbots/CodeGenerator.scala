@@ -12,9 +12,11 @@ object CodeGenerator {
       case Discard(target, num) => s"(function () { actions['discard'](${g(target)}, $num); })"
       case Draw(target, num) => s"(function () { actions['draw'](${g(target)}, $num); })"
       case EnergyDelta(target, delta) => s"(function () { actions['energyDelta'](${g(target)}, ${g(delta)}); })"
+      case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, $num); })"
 
       // Targets
       case Choose(objType, condition) => s"targets['choose'](${g(objType)}, ${g(condition)})"
+      case All(objType, condition) => s"targets['all'](${g(objType)}, ${g(condition)})"
       case Self => "targets['self']()"
       case Opponent => "targets['opponent']()"
 

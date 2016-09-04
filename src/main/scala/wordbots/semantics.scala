@@ -10,9 +10,11 @@ case class Destroy(target: Target) extends Action
 case class Discard(target: Target, num: Int) extends Action
 case class Draw(target: Target, num: Int) extends Action
 case class EnergyDelta(target: Target, delta: Delta) extends Action
+case class SetAttribute(target: Target, attribute: Attribute, num: Int) extends Action
 
 sealed trait Target extends AstNode
 case class Choose(objectType: ObjectType, condition: Condition) extends Target
+case class All(objectType: ObjectType, condition: Condition) extends Target
 case object Self extends Target
 case object Opponent extends Target
 
@@ -36,6 +38,7 @@ sealed trait Attribute extends Label
 case object Attack extends Attribute
 case object Health extends Attribute
 case object Speed extends Attribute
+case object AllAttributes extends Attribute
 
 case class Cards(num: Int)
 case class Damage(amount: Int)
