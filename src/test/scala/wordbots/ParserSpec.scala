@@ -5,8 +5,12 @@ import org.scalatest._
 
 class ParserSpec extends FlatSpec with Matchers {
   def parse(input: String) = {
+    println(s"Parsing $input...")
     Parser.parse(input).bestParse.get.semantic match {
-      case Form(v) => v
+      case Form(v) => {
+        println(s"    $v")
+        v
+      }
     }
   }
 
@@ -15,23 +19,23 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   it should "parse simple actions" in {
-    parse("Draw a card") should be (Draw(Self, 1))
+    parse("Draw a card") should be (Draw(Self, Scalar(1)))
     parse("Destroy a robot") should be (Destroy(Choose(Robot, NoCondition)))
-    parse("Gain 2 energy") should be (EnergyDelta(Self, Plus(2)))
-    parse("Deal 2 damage to a robot") should be (DealDamage(Choose(Robot, NoCondition), 2))
-    parse("Deal 2 damage to yourself") should be (DealDamage(Self, 2))
-    parse("Discard a card") should be (Discard(Self, 1))
-    parse("Your opponent must discard a card") should be (Discard(Opponent, 1))
-    parse("Give a robot +1 speed") should be (AttributeDelta(Choose(Robot, NoCondition), Speed, Plus(1)))
+    parse("Gain 2 energy") should be (EnergyDelta(Self, Plus(Scalar(2))))
+    parse("Deal 2 damage to a robot") should be (DealDamage(Choose(Robot, NoCondition), Scalar(2)))
+    parse("Deal 2 damage to yourself") should be (DealDamage(Self, Scalar(2)))
+    parse("Discard a card") should be (Discard(Self, Scalar(1)))
+    parse("Your opponent must discard a card") should be (Discard(Opponent, Scalar(1)))
+    parse("Give a robot +1 speed") should be (AttributeDelta(Choose(Robot, NoCondition), Speed, Plus(Scalar(1))))
   }
 
   it should "parse more complex actions" in {
     parse("Deal 2 damage to a robot that has 3 or less speed") should be
-      DealDamage(Choose(Robot, AttributeComparison(Speed, LessThanOrEqualTo(3))), 2)
+      DealDamage(Choose(Robot, AttributeComparison(Speed, LessThanOrEqualTo(Scalar(3)))), Scalar(2))
 
     //* The following action texts were provided by James:
     parse("Set all stats of all creatures in play to 3") should be
-      SetAttribute(All(Robot, NoCondition), AllAttributes, 3)
+      SetAttribute(All(Robot, NoCondition), AllAttributes, Scalar(3))
     // "Draw cards equal to the number of creatures you control"
     // "Deal damage to a creature equal to the total power of all creatures you control"
     // "Double the attack and halve the life (rounded up) of all creatures in play"
