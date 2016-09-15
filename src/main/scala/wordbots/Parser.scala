@@ -4,7 +4,19 @@ import com.workday.montague.ccg._
 import com.workday.montague.parser._
 import com.workday.montague.semantics._
 
-object Parser extends SemanticParser[CcgCat](Lexicon.lexicon)
+object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
+  override def main(args: Array[String]): Unit = {
+    val input = args.mkString(" ")
+    val result = parse(input)
+    val output = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
+
+    println(s"Input: $input")
+    println(s"Output: $output")
+    // println(result.bestParse)  // Print out the full syntactic parse tree of the best parse.
+    // println(result.bestParse.get.toDotString)  // Print out the best parse in Graphviz Dot format.
+    // println(result.bestParse.get.toString)  // Print out the best parse in ASCII format.
+  }
+}
 
 object Lexicon {
   val lexicon =  ParserDict[CcgCat]() +
@@ -21,12 +33,15 @@ object Lexicon {
     ("attack" -> (N, Form(Attack): SemanticState)) +
     ("a card" -> (N, Form(Cards(Scalar(1))): SemanticState)) +
     (Seq("cards") -> Seq(
-      (N|Num, λ {num: Number => Cards(num)}),
-      (N|Adj, λ {num: Number => Cards(num)})
+      (N\Num, λ {num: Number => Cards(num)}),
+      (N/Adj, λ {num: Number => Cards(num)})
     )) +
     ("control" -> (Rel\NP, λ {p: Player => ControlledBy(p)})) +
-    ("damage" -> (N|Num, λ {amount: Number => Damage(amount)})) +
-    ("deal" -> ((S/PP)/N, λ {d: Damage => λ {t: Target => DealDamage(t, d.amount)}})) +
+    ("damage" -> Seq(
+      ((S/PP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
+      ((S/Adj)/PP, λ {t: Target => λ {amount: Number => DealDamage(t, amount)}})
+    )) +
+    ("deal" -> (S/S, identity)) +
     ("destroy" -> (S/NP, λ {t: Target => Destroy(t)})) +
     ("draw" -> (S/N, λ {c: Cards => Draw(Self, c.num)})) +
     ("discard" -> Seq(
