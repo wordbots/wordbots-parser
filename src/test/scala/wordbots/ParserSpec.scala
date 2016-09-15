@@ -36,7 +36,8 @@ class ParserSpec extends FlatSpec with Matchers {
     //* The following action texts were provided by James:
     parse("Set all stats of all creatures in play to 3") should be
       SetAttribute(All(Robot, NoCondition), AllAttributes, Scalar(3))
-    // "Draw cards equal to the number of creatures you control"
+    parse("Draw cards equal to the number of creatures you control") should be
+      Draw(Self, Count(Robot, ControlledBy(Self)))
     // "Deal damage to a creature equal to the total power of all creatures you control"
     // "Double the attack and halve the life (rounded up) of all creatures in play"
   }

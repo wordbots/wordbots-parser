@@ -15,12 +15,14 @@ case class SetAttribute(target: Target, attribute: Attribute, num: Number) exten
 sealed trait Target extends AstNode
 case class Choose(objectType: ObjectType, condition: Condition) extends Target
 case class All(objectType: ObjectType, condition: Condition) extends Target
-case object Self extends Target
-case object Opponent extends Target
+sealed trait Player extends Target
+case object Self extends Player
+case object Opponent extends Player
 
 sealed trait Condition extends AstNode
 case object NoCondition extends Condition
 case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends Condition
+case class ControlledBy(player: Player) extends Condition
 
 sealed trait Delta extends AstNode
 case class Plus(num: Number) extends Delta
@@ -32,6 +34,7 @@ case class LessThanOrEqualTo(num: Number) extends Comparison
 
 sealed trait Number extends AstNode
 case class Scalar(num: Int) extends Number
+case class Count(objectType: ObjectType, condition: Condition) extends Number
 
 sealed trait ObjectType extends Label
 case object Robot extends ObjectType

@@ -23,6 +23,7 @@ object CodeGenerator {
       // Conditions
       case NoCondition => "null"
       case AttributeComparison(attr, comp) => s"conditions['attributeComparison'](${g(attr)}, ${g(comp)})"
+      case ControlledBy(player) => s"conditions['controlledBy'](${g(player)})"
 
       // Deltas
       case Plus(num) => s"${g(num)}"
@@ -34,6 +35,7 @@ object CodeGenerator {
 
       // Numbers
       case Scalar(int) => s"$int"
+      case Count(objType, condition) => s"count(${g(objType)}, ${g(condition)}})"
         
       // Labels
       case l: Label => s"'${getLabelName(l)}'"
