@@ -15,8 +15,8 @@ object CodeGenerator {
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
 
       // Targets
-      case Choose(objType, condition) => s"targets['choose'](${g(objType)}, ${g(condition)})"
-      case All(objType, condition) => s"targets['all'](${g(objType)}, ${g(condition)})"
+      case Choose(collection) => s"targets['choose'](${g(collection)})"
+      case All(collection) => s"targets['all'](${g(collection)})"
       case Self => "targets['self']()"
       case Opponent => "targets['opponent']()"
 
@@ -35,7 +35,12 @@ object CodeGenerator {
 
       // Numbers
       case Scalar(int) => s"$int"
-      case Count(objType, condition) => s"count(${g(objType)}, ${g(condition)}})"
+      case Count(collection) => s"count(${g(collection)}})"
+      case AttributeSum(collection, attr) => s"attributeSum(${g(collection)}, ${g(attr)})"
+
+      // Misc
+      case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
+      case ObjectsMatchingCondition(objType, condition) => s"objectsMatchingCondition(${g(objType)}, ${g(condition)})"
         
       // Labels
       case l: Label => s"'${getLabelName(l)}'"

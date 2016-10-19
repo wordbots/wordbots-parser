@@ -13,8 +13,8 @@ case class EnergyDelta(target: Target, delta: Delta) extends Action
 case class SetAttribute(target: Target, attribute: Attribute, num: Number) extends Action
 
 sealed trait Target extends AstNode
-case class Choose(objectType: ObjectType, condition: Condition) extends Target
-case class All(objectType: ObjectType, condition: Condition) extends Target
+case class Choose(collection: Collection) extends Target
+case class All(collection: Collection) extends Target
 sealed trait Player extends Target
 case object Self extends Player
 case object Opponent extends Player
@@ -34,7 +34,12 @@ case class LessThanOrEqualTo(num: Number) extends Comparison
 
 sealed trait Number extends AstNode
 case class Scalar(num: Int) extends Number
-case class Count(objectType: ObjectType, condition: Condition) extends Number
+case class Count(collection: Collection) extends Number
+case class AttributeSum(collection: Collection, attribute: Attribute) extends Number
+
+sealed trait Collection extends AstNode
+case class ObjectsInPlay(objectType: ObjectType) extends Collection
+case class ObjectsMatchingCondition(objectType: ObjectType, condition: Condition) extends Collection
 
 sealed trait ObjectType extends Label
 case object Robot extends ObjectType

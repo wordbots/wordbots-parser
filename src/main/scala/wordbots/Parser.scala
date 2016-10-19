@@ -1,33 +1,42 @@
 package wordbots
 
+import java.io.PrintWriter
+
 import com.workday.montague.ccg._
 import com.workday.montague.parser._
 import com.workday.montague.semantics._
+import com.workday.montague.semantics.FunctionReaderMacro.λ
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   override def main(args: Array[String]): Unit = {
     val input = args.mkString(" ")
-    val result = parse(input)
+    val result: SemanticParseResult[CcgCat] = parse(input)
+
     val output = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
+    val code = result.bestParse.map(_.semantic) match {
+      case Some(Form(v)) => CodeGenerator.generateJS(v.asInstanceOf[AstNode])
+      case _ => "(n/a)"
+    }
 
     println(s"Input: $input")
-    println(s"Output: $output")
-    // println(result.bestParse)  // Print out the full syntactic parse tree of the best parse.
-    // println(result.bestParse.get.toDotString)  // Print out the best parse in Graphviz Dot format.
-    // println(result.bestParse.get.toString)  // Print out the best parse in ASCII format.
+    println(s"Parse result: $output")
+    println(s"Generated JS code: $code")
+
+    // For debug purposes, output the best parse tree (if one exists) to SVG.
+    result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
   }
 }
 
 object Lexicon {
+
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
-      (NP/N, λ {o: ObjectType => Choose(o, NoCondition)}),
-      ((NP/Rel)/N, λ {o: ObjectType => λ {c: Condition => Choose(o, c)}}),
-      (X/X, identity)
+      (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),
+      (NP/NP, λ {c: Collection => Choose(c)})
     )) +
     (Seq("all") -> Seq(
-      (NP/N, λ {o: ObjectType => All(o, NoCondition)}),
-      ((NP/Rel)/N, λ {o: ObjectType => λ {c: Condition => All(o, c)}})
+      (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
+      (NP/NP, λ {c: Collection => All(c)})
     )) +
     (Seq("all attributes", "all stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("attack" -> (N, Form(Attack): SemanticState)) +
@@ -36,7 +45,7 @@ object Lexicon {
       (N\Num, λ {num: Number => Cards(num)}),
       (N/Adj, λ {num: Number => Cards(num)})
     )) +
-    ("control" -> (Rel\NP, λ {p: Player => ControlledBy(p)})) +
+    (Seq("control", "controls") -> ((NP\N)\NP, λ {p: Player => λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(p))}})) +
     ("damage" -> Seq(
       ((S/PP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
       ((S/Adj)/PP, λ {t: Target => λ {amount: Number => DealDamage(t, amount)}})
@@ -54,12 +63,13 @@ object Lexicon {
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {d: Delta => λ {a: Attribute => AttributeDelta(t, a, d)}}})) +
     ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
     ("health" -> (N, Form(Health): SemanticState)) +
-    ("in play" -> (Rel, Form(NoCondition): SemanticState)) + // "in play" is the default condition - hence, NoCondition
+    ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
     ("must" -> (X/X, identity)) +
-    ("number of" -> ((Num/Rel)/N, λ {o: ObjectType => λ {c: Condition => Count(o, c)}})) +
+    ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
     ("or less" -> (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)})) +
+    ("power" -> (N, Form(Attack): SemanticState)) +
     (Seq("robot", "robots", "creature", "creatures") -> (N, Form(Robot): SemanticState)) +
     ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: Target => λ {num: Number => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
@@ -67,8 +77,9 @@ object Lexicon {
       (PP/NP, identity),
       (PP/Num, identity)
     )) +
-    ("that" -> (Rel/S, identity)) +
+    ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingCondition(o, c)}})) +
     ("the" -> (X/X, identity)) +
+    ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
     (IntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
