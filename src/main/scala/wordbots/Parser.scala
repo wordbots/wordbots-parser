@@ -5,6 +5,7 @@ import java.io.PrintWriter
 import com.workday.montague.ccg._
 import com.workday.montague.parser._
 import com.workday.montague.semantics._
+import com.workday.montague.semantics.{λ => λP} // Use λP instead of λ with partial function literals, due to weird FunctionReaderMacro behavior.
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
@@ -14,7 +15,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
     val output = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
     val code = result.bestParse.map(_.semantic) match {
-      case Some(Form(v)) => CodeGenerator.generateJS(v.asInstanceOf[AstNode])
+      case Some(Form(v: AstNode)) => CodeGenerator.generateJS(v.asInstanceOf[AstNode])
       case _ => "(n/a)"
     }
 
@@ -28,6 +29,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 }
 
 object Lexicon {
+  type PF = PartialFunction[AstNode, AstNode] // Partial function literals have to be explicitly typed because scala compiler is dumb.
 
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
@@ -40,10 +42,10 @@ object Lexicon {
     )) +
     (Seq("all attributes", "all stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("attack" -> (N, Form(Attack): SemanticState)) +
-    ("a card" -> (N, Form(Cards(Scalar(1))): SemanticState)) +
+    ("a card" -> (NP, Form(Cards(Scalar(1))): SemanticState)) +
     (Seq("cards") -> Seq(
-      (N\Num, λ {num: Number => Cards(num)}),
-      (N/Adj, λ {num: Number => Cards(num)})
+      (NP\Num, λ {num: Number => Cards(num)}),
+      (NP/Adj, λ {num: Number => Cards(num)})
     )) +
     (Seq("control", "controls") -> ((NP\N)\NP, λ {p: Player => λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(p))}})) +
     ("damage" -> Seq(
@@ -52,10 +54,10 @@ object Lexicon {
     )) +
     ("deal" -> (S/S, identity)) +
     ("destroy" -> (S/NP, λ {t: Target => Destroy(t)})) +
-    ("draw" -> (S/N, λ {c: Cards => Draw(Self, c.num)})) +
+    ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
     ("discard" -> Seq(
-      (S/N, λ {c: Cards => Discard(Self, c.num)}),
-      ((S/N)\NP, λ {t: Target => λ {c: Cards => Discard(t, c.num)}})
+      (S/NP, λ {c: Cards => Discard(Self, c.num)}),
+      ((S/NP)\NP, λ {t: Target => λ {c: Cards => Discard(t, c.num)}})
     )) +
     ("energy" -> (N|Num, λ {amount: Number => Energy(amount)})) +
     ("equal" -> (Adj/PP, identity)) +
@@ -66,7 +68,8 @@ object Lexicon {
     ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
     ("must" -> (X/X, identity)) +
-    ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
+    ("number" -> (Num/PP, λP ({case c: Collection => Count(c)
+                               case All(c)        => Count(c)}: PF))) +
     ("or less" -> (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)})) +
     ("power" -> (N, Form(Attack): SemanticState)) +
@@ -79,7 +82,8 @@ object Lexicon {
     )) +
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingCondition(o, c)}})) +
     ("the" -> (X/X, identity)) +
-    ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +
+    ("total" -> ((Num/PP)/N, λP {a: Attribute => λP ({case c: Collection => AttributeSum(c, a)
+                                                      case All(c)        => AttributeSum(c, a)}: PF)})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
     (IntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +

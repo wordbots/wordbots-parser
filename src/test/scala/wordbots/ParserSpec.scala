@@ -43,10 +43,13 @@ class ParserSpec extends FlatSpec with Matchers {
     // "Double the attack and halve the life (rounded up) of all creatures in play"
   }
 
-  /*it should "deal with ambiguous uses of 'all'" in {
+  it should "deal with ambiguous uses of 'all'" in {
     parse("Draw cards equal to the total power of all creatures you control") shouldEqual
       parse("Draw cards equal to the total power of creatures you control")
-  }*/
+
+    parse("Deal damage to a creature equal to the total power of creatures you control") shouldEqual
+      parse("Deal damage to a creature equal to the total power of all creatures you control")
+  }
 
   /*it should "parse triggers for creatures" in {
     // The following trigger texts were provided by James:
