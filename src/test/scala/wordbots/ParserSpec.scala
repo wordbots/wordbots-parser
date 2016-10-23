@@ -21,12 +21,12 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "parse simple actions" in {
     parse("Draw a card") should equal (Draw(Self, Scalar(1)))
     parse("Destroy a robot") should equal (Destroy(Choose(ObjectsInPlay(Robot))))
-    parse("Gain 2 energy") should equal (EnergyDelta(Self, Plus(Scalar(2))))
+    parse("Gain 2 energy") should equal (ModifyEnergy(Self, Plus(Scalar(2))))
     parse("Deal 2 damage to a robot") should equal (DealDamage(Choose(ObjectsInPlay(Robot)), Scalar(2)))
     parse("Deal 2 damage to yourself") should equal (DealDamage(Self, Scalar(2)))
     parse("Discard a card") should equal (Discard(Self, Scalar(1)))
     parse("Your opponent must discard a card") should equal (Discard(Opponent, Scalar(1)))
-    parse("Give a robot +1 speed") should equal (AttributeDelta(Choose(ObjectsInPlay(Robot)), Speed, Plus(Scalar(1))))
+    parse("Give a robot +1 speed") should equal (ModifyAttribute(Choose(ObjectsInPlay(Robot)), Speed, Plus(Scalar(1))))
   }
 
   it should "parse more complex actions" in {
@@ -40,6 +40,8 @@ class ParserSpec extends FlatSpec with Matchers {
       Draw(Self, Count(ObjectsMatchingCondition(Robot, ControlledBy(Self))))
     parse("Deal damage to a creature equal to the total power of creatures you control") shouldEqual
       DealDamage(Choose(ObjectsInPlay(Robot)), AttributeSum(ObjectsMatchingCondition(Robot, ControlledBy(Self)), Attack))
+    parse("Double the attack of all creatures in play") shouldEqual
+      ModifyAttribute(All(ObjectsInPlay(Robot)),Attack,Multiply(Scalar(2)))
     // "Double the attack and halve the life (rounded up) of all creatures in play"
   }
 
@@ -64,7 +66,7 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "generate JS code for actions" in {
     generateJS("Draw a card") should be ("(function () { actions['draw'](targets['self'](), 1); })")
     generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsInPlay('robot'))); })")
-    generateJS("Gain 2 energy") should be ("(function () { actions['energyDelta'](targets['self'](), 2); })")
-    generateJS("Give a robot +1 speed") should be ("(function () { actions['attributeDelta'](targets['choose'](objectsInPlay('robot')), 'speed', 1); })")
+    generateJS("Gain 2 energy") should be ("(function () { actions['modifyEnergy'](targets['self'](), function (x) { return x + 2; }); })")
+    generateJS("Give a robot +1 speed") should be ("(function () { actions['modifyAttribute'](targets['choose'](objectsInPlay('robot')), 'speed', function (x) { return x + 1; }); })")
   }
 }

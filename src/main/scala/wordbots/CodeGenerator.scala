@@ -6,12 +6,12 @@ object CodeGenerator {
   private def g(node: AstNode): String = {
     node match {
        // Actions
-      case AttributeDelta(target, attr, delta) => s"(function () { actions['attributeDelta'](${g(target)}, ${g(attr)}, ${g(delta)}); })"
       case DealDamage(target, num) => s"(function () { actions['dealDamage'](${g(target)}, ${g(num)}); })"
       case Destroy(target) => s"(function () { actions['destroy'](${g(target)}); })"
       case Discard(target, num) => s"(function () { actions['discard'](${g(target)}, ${g(num)}); })"
       case Draw(target, num) => s"(function () { actions['draw'](${g(target)}, ${g(num)}); })"
-      case EnergyDelta(target, delta) => s"(function () { actions['energyDelta'](${g(target)}, ${g(delta)}); })"
+      case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
+      case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
 
       // Targets
@@ -25,9 +25,10 @@ object CodeGenerator {
       case AttributeComparison(attr, comp) => s"conditions['attributeComparison'](${g(attr)}, ${g(comp)})"
       case ControlledBy(player) => s"conditions['controlledBy'](${g(player)})"
 
-      // Deltas
-      case Plus(num) => s"${g(num)}"
-      case Minus(num) => s"-${g(num)}"
+      // Arithmetic operations
+      case Plus(num) => s"function (x) { return x + ${g(num)}; }"
+      case Minus(num) => s"function (x) { return x - ${g(num)}; }"
+      case Multiply(num) => s"function (x) { return x * ${g(num)}; }"
 
       // Comparisons
       case GreaterThanOrEqualTo(num) => s"(function (x) { return x >= ${g(num)}; })"

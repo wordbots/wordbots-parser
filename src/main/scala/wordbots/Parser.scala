@@ -15,7 +15,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
     val output = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
     val code = result.bestParse.map(_.semantic) match {
-      case Some(Form(v: AstNode)) => CodeGenerator.generateJS(v.asInstanceOf[AstNode])
+      case Some(Form(v: AstNode)) => CodeGenerator.generateJS(v)
       case _ => "(n/a)"
     }
 
@@ -41,7 +41,6 @@ object Lexicon {
       (NP/NP, λ {c: Collection => All(c)})
     )) +
     (Seq("all attributes", "all stats") -> (N, Form(AllAttributes): SemanticState)) +
-    ("attack" -> (N, Form(Attack): SemanticState)) +
     ("a card" -> (NP, Form(Cards(Scalar(1))): SemanticState)) +
     (Seq("cards") -> Seq(
       (NP\Num, λ {num: Number => Cards(num)}),
@@ -59,10 +58,11 @@ object Lexicon {
       (S/NP, λ {c: Cards => Discard(Self, c.num)}),
       ((S/NP)\NP, λ {t: Target => λ {c: Cards => Discard(t, c.num)}})
     )) +
+    ("double" -> ((S/PP)/N, λ {a: Attribute => λ {t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))}})) +
     ("energy" -> (N|Num, λ {amount: Number => Energy(amount)})) +
     ("equal" -> (Adj/PP, identity)) +
-    ("gain" -> (S/N, λ {e: Energy => EnergyDelta(Self, Plus(e.amount))})) +
-    ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {d: Delta => λ {a: Attribute => AttributeDelta(t, a, d)}}})) +
+    ("gain" -> (S/N, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
+    ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +
     ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
     ("health" -> (N, Form(Health): SemanticState)) +
     ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
@@ -72,7 +72,7 @@ object Lexicon {
                                case All(c)        => Count(c)}: PF))) +
     ("or less" -> (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)})) +
-    ("power" -> (N, Form(Attack): SemanticState)) +
+    (Seq("power", "attack") -> (N, Form(Attack): SemanticState)) +
     (Seq("robot", "robots", "creature", "creatures") -> (N, Form(Robot): SemanticState)) +
     ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: Target => λ {num: Number => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
