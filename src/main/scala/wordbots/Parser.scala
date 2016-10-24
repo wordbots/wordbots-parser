@@ -16,7 +16,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     val result: SemanticParseResult[CcgCat] = parse(input)
 
     val output = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
-    val code = result.bestParse.map(_.semantic) match {B
+    val code = result.bestParse.map(_.semantic) match {
       case Some(Form(v: AstNode)) => CodeGenerator.generateJS(v)
       case _ => "(n/a)"
     }
@@ -43,6 +43,7 @@ object Lexicon {
       (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => Choose(c)})
     )) +
+    ("after attacking" -> (S\S, λ {a: Action => At(AfterAttack(ThisRobot), a)})) +
     (Seq("all", "each") -> Seq(
       (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => All(c)})
@@ -57,7 +58,7 @@ object Lexicon {
       (NP\Num, λ {num: Number => Cards(num)}),
       (NP/Adj, λ {num: Number => Cards(num)})
     )) +
-    (Seq("control", "controls") -> ((NP\N)\NP, λ {p: Player => λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(p))}})) +
+    (Seq("control", "controls") -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(p))}})) +
     ("damage" -> Seq(
       ((S/PP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
       ((S\NP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
@@ -69,7 +70,7 @@ object Lexicon {
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
     ("discard" -> Seq(
       (S/NP, λ {c: Cards => Discard(Self, c.num)}),
-      ((S/NP)\NP, λ {t: Target => λ {c: Cards => Discard(t, c.num)}})
+      ((S/NP)\NP, λ {t: TargetPlayer => λ {c: Cards => Discard(t, c.num)}})
     )) +
     ("double" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
@@ -79,6 +80,7 @@ object Lexicon {
     ("energy" -> (N|Num, λ {amount: Number => Energy(amount)})) +
     ("equal" -> (Adj/PP, identity)) +
     ("gain" -> (S/N, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
+    ("gains a second move action" -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +
     ("halve" -> Seq(
       (((S/PP)/Adv)/N, λ {a: Attribute => λ {r: Rounding => λ {t: Target => ModifyAttribute(t, a, Divide(Scalar(2), r))}}}),
@@ -105,6 +107,7 @@ object Lexicon {
     )) +
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingCondition(o, c)}})) +
     ("the" -> (X/X, identity)) +
+    (Seq("this robot", "this creature") -> (NP, Form(ThisRobot): SemanticState)) +
     ("total" -> ((Num/PP)/N, λP {a: Attribute => λP ({case c: Collection => AttributeSum(c, a)
                                                       case All(c)        => AttributeSum(c, a)}: PF)})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +

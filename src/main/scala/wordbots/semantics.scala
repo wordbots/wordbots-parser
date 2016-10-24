@@ -7,28 +7,32 @@ case class At(trigger: Trigger, action: Action) extends AstNode
 
 sealed trait Action extends AstNode
 case class And(action1: Action, action2: Action) extends Action
+case class CanMoveAgain(target: TargetObject) extends Action
 case class DealDamage(target: Target, num: Number) extends Action
 case class Destroy(target: Target) extends Action
-case class Discard(target: Target, num: Number) extends Action
-case class Draw(target: Target, num: Number) extends Action
+case class Discard(target: TargetPlayer, num: Number) extends Action
+case class Draw(target: TargetPlayer, num: Number) extends Action
 case class ModifyAttribute(target: Target, attribute: Attribute, operation: Operation) extends Action
 case class ModifyEnergy(target: Target, operation: Operation) extends Action
 case class SetAttribute(target: Target, attribute: Attribute, num: Number) extends Action
 
 sealed trait Trigger extends AstNode
-case class EndOfTurn(player: Player) extends Trigger
+case class AfterAttack(target: TargetObject) extends Trigger
+case class EndOfTurn(player: TargetPlayer) extends Trigger
 
 sealed trait Target extends AstNode
-case class Choose(collection: Collection) extends Target
-case class All(collection: Collection) extends Target
-sealed trait Player extends Target
-case object Self extends Player
-case object Opponent extends Player
-case object AllPlayers extends Player
+sealed trait TargetObject extends Target
+case class Choose(collection: Collection) extends TargetObject
+case class All(collection: Collection) extends TargetObject
+case object ThisRobot extends TargetObject
+sealed trait TargetPlayer extends Target
+case object Self extends TargetPlayer
+case object Opponent extends TargetPlayer
+case object AllPlayers extends TargetPlayer
 
 sealed trait Condition extends AstNode
 case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends Condition
-case class ControlledBy(player: Player) extends Condition
+case class ControlledBy(player: TargetPlayer) extends Condition
 
 sealed trait Operation extends AstNode
 case class Plus(num: Number) extends Operation

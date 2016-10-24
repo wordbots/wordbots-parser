@@ -65,7 +65,8 @@ class ParserSpec extends FlatSpec with Matchers {
     // The following trigger texts were provided by James:
     parse("At the end of each turn, each creature takes 1 damage") shouldEqual
       At(EndOfTurn(AllPlayers), DealDamage(All(ObjectsInPlay(Robot)), Scalar(1)))
-    // "This creature gains a second move action after attacking"
+    parse("This creature gains a second move action after attacking") shouldEqual
+      At(AfterAttack(ThisRobot), CanMoveAgain(ThisRobot))
     // "At the beginning of each of your turns, this creature gains 1 attack"
     // "When this creature attacks, it deals damage to all adjacent creatures"
     // "When this creature is played, reduce the cost of a card in your hand by 3"
