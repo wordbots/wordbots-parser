@@ -9,22 +9,29 @@ import com.workday.montague.semantics.{λ => λP} // Use λP instead of λ with 
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
+  def parse(input: String): SemanticParseResult[CcgCat] = parse(input, tokenizer)
+
   override def main(args: Array[String]): Unit = {
     val input = args.mkString(" ")
     val result: SemanticParseResult[CcgCat] = parse(input)
 
     val output = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
-    val code = result.bestParse.map(_.semantic) match {
+    val code = result.bestParse.map(_.semantic) match {B
       case Some(Form(v: AstNode)) => CodeGenerator.generateJS(v)
       case _ => "(n/a)"
     }
 
     println(s"Input: $input")
+    // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
     println(s"Generated JS code: $code")
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.
     result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
+  }
+
+  private def tokenizer(str: String): IndexedSeq[String] = {
+    str.trim.toLowerCase.split("\\s+|[.?!,]").filter("" !=)
   }
 }
 
@@ -36,14 +43,15 @@ object Lexicon {
       (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => Choose(c)})
     )) +
-    (Seq("all") -> Seq(
+    (Seq("all", "each") -> Seq(
       (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => All(c)})
     )) +
     (Seq("all attributes", "all stats") -> (N, Form(AllAttributes): SemanticState)) +
-    (Seq("and") -> Seq(
+    ("and" -> Seq(
       (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})
     )) +
+    ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     ("a card" -> (NP, Form(Cards(Scalar(1))): SemanticState)) +
     (Seq("cards") -> Seq(
       (NP\Num, λ {num: Number => Cards(num)}),
@@ -52,9 +60,11 @@ object Lexicon {
     (Seq("control", "controls") -> ((NP\N)\NP, λ {p: Player => λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(p))}})) +
     ("damage" -> Seq(
       ((S/PP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
-      ((S/Adj)/PP, λ {t: Target => λ {amount: Number => DealDamage(t, amount)}})
+      ((S\NP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
+      ((S/Adj)/PP, λ {t: Target => λ {amount: Number => DealDamage(t, amount)}}),
+      ((S\NP)/Adj, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}})
     )) +
-    ("deal" -> (S/S, identity)) +
+    (Seq("deal", "takes") -> (X|X, identity)) +
     ("destroy" -> (S/NP, λ {t: Target => Destroy(t)})) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
     ("discard" -> Seq(
@@ -65,6 +75,7 @@ object Lexicon {
       ((S/PP)/N, λ {a: Attribute => λ {t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
       (V/N, λ {a: Attribute => CurriedAction({t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))})})
     )) +
+    ("end of each turn" -> (NP, Form(EndOfTurn(AllPlayers)): SemanticState)) +
     ("energy" -> (N|Num, λ {amount: Number => Energy(amount)})) +
     ("equal" -> (Adj/PP, identity)) +
     ("gain" -> (S/N, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +

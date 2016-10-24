@@ -5,7 +5,9 @@ object CodeGenerator {
 
   private def g(node: AstNode): String = {
     node match {
-       // Actions
+      case At(trigger, action) => s"setTrigger(${g(trigger)}, ${g(action)});"
+
+      // Actions
       case And(action1, action2) => s"(function () { ${g(action1)}(); ${g(action2)}(); })"
       case DealDamage(target, num) => s"(function () { actions['dealDamage'](${g(target)}, ${g(num)}); })"
       case Destroy(target) => s"(function () { actions['destroy'](${g(target)}); })"
@@ -15,11 +17,15 @@ object CodeGenerator {
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
 
+      // Triggers
+      case EndOfTurn(player) => s"triggers['endOfTurn'](${g(player)})"
+
       // Targets
       case Choose(collection) => s"targets['choose'](${g(collection)})"
       case All(collection) => s"targets['all'](${g(collection)})"
       case Self => "targets['self']()"
       case Opponent => "targets['opponent']()"
+      case AllPlayers => "targets['allPlayers']()"
 
       // Conditions
       case AttributeComparison(attr, comp) => s"conditions['attributeComparison'](${g(attr)}, ${g(comp)})"

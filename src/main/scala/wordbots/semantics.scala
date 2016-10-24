@@ -3,6 +3,8 @@ package wordbots
 sealed trait AstNode
 sealed trait Label extends AstNode
 
+case class At(trigger: Trigger, action: Action) extends AstNode
+
 sealed trait Action extends AstNode
 case class And(action1: Action, action2: Action) extends Action
 case class DealDamage(target: Target, num: Number) extends Action
@@ -13,12 +15,16 @@ case class ModifyAttribute(target: Target, attribute: Attribute, operation: Oper
 case class ModifyEnergy(target: Target, operation: Operation) extends Action
 case class SetAttribute(target: Target, attribute: Attribute, num: Number) extends Action
 
+sealed trait Trigger extends AstNode
+case class EndOfTurn(player: Player) extends Trigger
+
 sealed trait Target extends AstNode
 case class Choose(collection: Collection) extends Target
 case class All(collection: Collection) extends Target
 sealed trait Player extends Target
 case object Self extends Player
 case object Opponent extends Player
+case object AllPlayers extends Player
 
 sealed trait Condition extends AstNode
 case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends Condition

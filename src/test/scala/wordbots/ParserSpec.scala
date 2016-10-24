@@ -1,16 +1,20 @@
 package wordbots
 
-import com.workday.montague.semantics.Form
+import com.workday.montague.semantics.{Form, Nonsense}
 import org.scalatest._
 
 class ParserSpec extends FlatSpec with Matchers {
   def parse(input: String) = {
     println(s"Parsing $input...")
-    Parser.parse(input).bestParse.get.semantic match {
-      case Form(v) => {
-        println(s"    $v")
-        v
+    Parser.parse(input).bestParse match {
+      case Some(parse) => parse.semantic match {
+        case Form(v) => {
+          println(s"    $v")
+          v
+        }
+        case _ => Nonsense
       }
+      case _ => Nonsense
     }
   }
 
@@ -50,22 +54,23 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   it should "deal with ambiguous uses of 'all'" in {
-    parse("Draw cards equal to the total power of all creatures you control") shouldEqual
-      parse("Draw cards equal to the total power of creatures you control")
+    parse("Draw cards equal to the total power of creatures you control") shouldEqual
+      parse("Draw cards equal to the total power of all creatures you control")
 
     parse("Deal damage to a creature equal to the total power of creatures you control") shouldEqual
       parse("Deal damage to a creature equal to the total power of all creatures you control")
   }
 
-  /*it should "parse triggers for creatures" in {
+  it should "parse triggers for creatures" in {
     // The following trigger texts were provided by James:
+    parse("At the end of each turn, each creature takes 1 damage") shouldEqual
+      At(EndOfTurn(AllPlayers), DealDamage(All(ObjectsInPlay(Robot)), Scalar(1)))
     // "This creature gains a second move action after attacking"
     // "At the beginning of each of your turns, this creature gains 1 attack"
-    // "At the end of each turn, each creature takes 1 damage"
     // "When this creature attacks, it deals damage to all adjacent creatures"
-    // "When this creature is summoned, reduce the cost of a card in your hand by 3"
+    // "When this creature is played, reduce the cost of a card in your hand by 3"
     // "Whenever this creature takes damage, draw a card"
-  }*/
+  }
 
   it should "generate JS code for actions" in {
     generateJS("Draw a card") should be ("(function () { actions['draw'](targets['self'](), 1); })")
