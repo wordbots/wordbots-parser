@@ -6,7 +6,7 @@ object CodeGenerator {
   private def g(node: AstNode): String = {
     node match {
        // Actions
-      case And(action1, action2) => s"function () { ${g(action1)}(); ${g(action2)}(); }"
+      case And(action1, action2) => s"(function () { ${g(action1)}(); ${g(action2)}(); })"
       case DealDamage(target, num) => s"(function () { actions['dealDamage'](${g(target)}, ${g(num)}); })"
       case Destroy(target) => s"(function () { actions['destroy'](${g(target)}); })"
       case Discard(target, num) => s"(function () { actions['discard'](${g(target)}, ${g(num)}); })"
