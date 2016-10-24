@@ -41,8 +41,12 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Deal damage to a creature equal to the total power of creatures you control") shouldEqual
       DealDamage(Choose(ObjectsInPlay(Robot)), AttributeSum(ObjectsMatchingCondition(Robot, ControlledBy(Self)), Attack))
     parse("Double the attack of all creatures in play") shouldEqual
-      ModifyAttribute(All(ObjectsInPlay(Robot)),Attack,Multiply(Scalar(2)))
-    // "Double the attack and halve the life (rounded up) of all creatures in play"
+      ModifyAttribute(All(ObjectsInPlay(Robot)), Attack, Multiply(Scalar(2)))
+    parse("Double the attack and halve the life (rounded up) of all creatures in play") shouldEqual
+      And(
+        ModifyAttribute(All(ObjectsInPlay(Robot)), Attack, Multiply(Scalar(2))),
+        ModifyAttribute(All(ObjectsInPlay(Robot)), Health, Divide(Scalar(2), RoundedUp))
+      )
   }
 
   it should "deal with ambiguous uses of 'all'" in {

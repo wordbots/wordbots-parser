@@ -6,6 +6,7 @@ object CodeGenerator {
   private def g(node: AstNode): String = {
     node match {
        // Actions
+      case And(action1, action2) => s"function () { ${g(action1)}(); ${g(action2)}(); }"
       case DealDamage(target, num) => s"(function () { actions['dealDamage'](${g(target)}, ${g(num)}); })"
       case Destroy(target) => s"(function () { actions['destroy'](${g(target)}); })"
       case Discard(target, num) => s"(function () { actions['discard'](${g(target)}, ${g(num)}); })"
@@ -21,7 +22,6 @@ object CodeGenerator {
       case Opponent => "targets['opponent']()"
 
       // Conditions
-      case NoCondition => "null"
       case AttributeComparison(attr, comp) => s"conditions['attributeComparison'](${g(attr)}, ${g(comp)})"
       case ControlledBy(player) => s"conditions['controlledBy'](${g(player)})"
 
@@ -29,6 +29,8 @@ object CodeGenerator {
       case Plus(num) => s"function (x) { return x + ${g(num)}; }"
       case Minus(num) => s"function (x) { return x - ${g(num)}; }"
       case Multiply(num) => s"function (x) { return x * ${g(num)}; }"
+      case Divide(num, RoundedDown) => s"function (x) { return Math.floor(x / ${g(num)}); }"
+      case Divide(num, RoundedUp) => s"function (x) { return Math.ceil(x / ${g(num)}); }"
 
       // Comparisons
       case GreaterThanOrEqualTo(num) => s"(function (x) { return x >= ${g(num)}; })"
@@ -39,7 +41,7 @@ object CodeGenerator {
       case Count(collection) => s"count(${g(collection)}})"
       case AttributeSum(collection, attr) => s"attributeSum(${g(collection)}, ${g(attr)})"
 
-      // Misc
+      // Collections
       case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
       case ObjectsMatchingCondition(objType, condition) => s"objectsMatchingCondition(${g(objType)}, ${g(condition)})"
         

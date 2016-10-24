@@ -41,6 +41,9 @@ object Lexicon {
       (NP/NP, λ {c: Collection => All(c)})
     )) +
     (Seq("all attributes", "all stats") -> (N, Form(AllAttributes): SemanticState)) +
+    (Seq("and") -> Seq(
+      (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})
+    )) +
     ("a card" -> (NP, Form(Cards(Scalar(1))): SemanticState)) +
     (Seq("cards") -> Seq(
       (NP\Num, λ {num: Number => Cards(num)}),
@@ -58,13 +61,20 @@ object Lexicon {
       (S/NP, λ {c: Cards => Discard(Self, c.num)}),
       ((S/NP)\NP, λ {t: Target => λ {c: Cards => Discard(t, c.num)}})
     )) +
-    ("double" -> ((S/PP)/N, λ {a: Attribute => λ {t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))}})) +
+    ("double" -> Seq(
+      ((S/PP)/N, λ {a: Attribute => λ {t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
+      (V/N, λ {a: Attribute => CurriedAction({t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))})})
+    )) +
     ("energy" -> (N|Num, λ {amount: Number => Energy(amount)})) +
     ("equal" -> (Adj/PP, identity)) +
     ("gain" -> (S/N, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +
+    ("halve" -> Seq(
+      (((S/PP)/Adv)/N, λ {a: Attribute => λ {r: Rounding => λ {t: Target => ModifyAttribute(t, a, Divide(Scalar(2), r))}}}),
+      ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => CurriedAction({t: Target => ModifyAttribute(t, a, Divide(Scalar(2), r))})}})
+    )) +
     ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
-    ("health" -> (N, Form(Health): SemanticState)) +
+    (Seq("health", "life") -> (N, Form(Health): SemanticState)) +
     ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
     ("must" -> (X/X, identity)) +
@@ -74,6 +84,8 @@ object Lexicon {
     ("or more" -> (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)})) +
     (Seq("power", "attack") -> (N, Form(Attack): SemanticState)) +
     (Seq("robot", "robots", "creature", "creatures") -> (N, Form(Robot): SemanticState)) +
+    ("(rounded down)" -> (Adv, Form(RoundedDown): SemanticState)) +
+    ("(rounded up)" -> (Adv, Form(RoundedUp): SemanticState)) +
     ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: Target => λ {num: Number => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
     (Seq("to", "of") -> Seq(

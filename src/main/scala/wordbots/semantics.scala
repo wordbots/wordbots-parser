@@ -4,6 +4,7 @@ sealed trait AstNode
 sealed trait Label extends AstNode
 
 sealed trait Action extends AstNode
+case class And(action1: Action, action2: Action) extends Action
 case class DealDamage(target: Target, num: Number) extends Action
 case class Destroy(target: Target) extends Action
 case class Discard(target: Target, num: Number) extends Action
@@ -20,7 +21,6 @@ case object Self extends Player
 case object Opponent extends Player
 
 sealed trait Condition extends AstNode
-case object NoCondition extends Condition
 case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends Condition
 case class ControlledBy(player: Player) extends Condition
 
@@ -56,6 +56,8 @@ case object AllAttributes extends Attribute
 sealed trait Rounding extends Label
 case object RoundedUp extends Rounding
 case object RoundedDown extends Rounding
+
+case class CurriedAction(action: Target => Action)
 
 case class Cards(num: Number)
 case class Damage(amount: Number)
