@@ -18,11 +18,16 @@ object CodeGenerator {
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
 
       // Triggers
+      case AfterAttack(obj) => s"triggers['afterAttack'](${g(obj)})"
+      case BeginningOfTurn(player) => s"triggers['beginningOfTurn'](${g(player)})"
       case EndOfTurn(player) => s"triggers['endOfTurn'](${g(player)})"
 
-      // Targets
+      // Target objects
       case Choose(collection) => s"targets['choose'](${g(collection)})"
       case All(collection) => s"targets['all'](${g(collection)})"
+      case ThisRobot => "targets['thisRobot']()"
+
+      // Target players
       case Self => "targets['self']()"
       case Opponent => "targets['opponent']()"
       case AllPlayers => "targets['allPlayers']()"

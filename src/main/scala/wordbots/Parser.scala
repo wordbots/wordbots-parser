@@ -5,7 +5,7 @@ import java.io.PrintWriter
 import com.workday.montague.ccg._
 import com.workday.montague.parser._
 import com.workday.montague.semantics._
-import com.workday.montague.semantics.{λ => λP} // Use λP instead of λ with partial function literals, due to weird FunctionReaderMacro behavior.
+import com.workday.montague.semantics.{λ => λP}
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
@@ -54,6 +54,7 @@ object Lexicon {
     )) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     ("a card" -> (NP, Form(Cards(Scalar(1))): SemanticState)) +
+    ("beginning of each of your turns" -> (NP, Form(BeginningOfTurn(Self)): SemanticState)) +
     (Seq("cards") -> Seq(
       (NP\Num, λ {num: Number => Cards(num)}),
       (NP/Adj, λ {num: Number => Cards(num)})
@@ -80,6 +81,7 @@ object Lexicon {
     ("energy" -> (N|Num, λ {amount: Number => Energy(amount)})) +
     ("equal" -> (Adj/PP, identity)) +
     ("gain" -> (S/N, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
+    ("gains" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(num))}}})) +
     ("gains a second move action" -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +
     ("halve" -> Seq(

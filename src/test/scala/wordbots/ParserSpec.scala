@@ -67,7 +67,8 @@ class ParserSpec extends FlatSpec with Matchers {
       At(EndOfTurn(AllPlayers), DealDamage(All(ObjectsInPlay(Robot)), Scalar(1)))
     parse("This creature gains a second move action after attacking") shouldEqual
       At(AfterAttack(ThisRobot), CanMoveAgain(ThisRobot))
-    // "At the beginning of each of your turns, this creature gains 1 attack"
+    parse("At the beginning of each of your turns, this creature gains 1 attack") shouldEqual
+      At(BeginningOfTurn(Self), ModifyAttribute(ThisRobot, Attack, Plus(Scalar(1))))
     // "When this creature attacks, it deals damage to all adjacent creatures"
     // "When this creature is played, reduce the cost of a card in your hand by 3"
     // "Whenever this creature takes damage, draw a card"

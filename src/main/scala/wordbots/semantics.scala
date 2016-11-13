@@ -18,6 +18,7 @@ case class SetAttribute(target: Target, attribute: Attribute, num: Number) exten
 
 sealed trait Trigger extends AstNode
 case class AfterAttack(target: TargetObject) extends Trigger
+case class BeginningOfTurn(player: TargetPlayer) extends Trigger
 case class EndOfTurn(player: TargetPlayer) extends Trigger
 
 sealed trait Target extends AstNode
