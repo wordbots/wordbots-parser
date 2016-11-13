@@ -33,6 +33,7 @@ object CodeGenerator {
       case AllPlayers => "targets['allPlayers']()"
 
       // Conditions
+      case AdjacentTo(obj) => s"conditions['adjacentTo'](${g(obj)})"
       case AttributeComparison(attr, comp) => s"conditions['attributeComparison'](${g(attr)}, ${g(comp)})"
       case ControlledBy(player) => s"conditions['controlledBy'](${g(player)})"
 
@@ -51,6 +52,7 @@ object CodeGenerator {
       case Scalar(int) => s"$int"
       case Count(collection) => s"count(${g(collection)}})"
       case AttributeSum(collection, attr) => s"attributeSum(${g(collection)}, ${g(attr)})"
+      case AttributeValue(obj, attr) => s"attributeValue(${g(obj)}, ${g(attr)})"
 
       // Collections
       case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"

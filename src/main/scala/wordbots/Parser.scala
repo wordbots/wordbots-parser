@@ -43,16 +43,16 @@ object Lexicon {
       (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => Choose(c)})
     )) +
+    ("adjacent" -> (NP/N, λ {o: ObjectType => ObjectsMatchingCondition(o, AdjacentTo(ThisRobot))})) +
     ("after attacking" -> (S\S, λ {a: Action => At(AfterAttack(ThisRobot), a)})) +
     (Seq("all", "each") -> Seq(
       (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => All(c)})
     )) +
     (Seq("all attributes", "all stats") -> (N, Form(AllAttributes): SemanticState)) +
-    ("and" -> Seq(
-      (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})
-    )) +
+    ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
+    ("attacks" -> (S\NP, λ {o: TargetObject => AfterAttack(o)})) +
     ("a card" -> (NP, Form(Cards(Scalar(1))): SemanticState)) +
     ("beginning of each of your turns" -> (NP, Form(BeginningOfTurn(Self)): SemanticState)) +
     (Seq("cards") -> Seq(
@@ -66,7 +66,7 @@ object Lexicon {
       ((S/Adj)/PP, λ {t: Target => λ {amount: Number => DealDamage(t, amount)}}),
       ((S\NP)/Adj, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}})
     )) +
-    (Seq("deal", "takes") -> (X|X, identity)) +
+    (Seq("deal", "it deals", "takes") -> (X|X, identity)) +
     ("destroy" -> (S/NP, λ {t: Target => Destroy(t)})) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
     ("discard" -> Seq(
@@ -91,6 +91,7 @@ object Lexicon {
     ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
     (Seq("health", "life") -> (N, Form(Health): SemanticState)) +
     ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
+    ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ThisRobot, a)})) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
     ("must" -> (X/X, identity)) +
     ("number" -> (Num/PP, λP ({case c: Collection => Count(c)
@@ -112,6 +113,7 @@ object Lexicon {
     (Seq("this robot", "this creature") -> (NP, Form(ThisRobot): SemanticState)) +
     ("total" -> ((Num/PP)/N, λP {a: Attribute => λP ({case c: Collection => AttributeSum(c, a)
                                                       case All(c)        => AttributeSum(c, a)}: PF)})) +
+    ("when" -> ((S/S)/S, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
     (IntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +

@@ -32,6 +32,7 @@ case object Opponent extends TargetPlayer
 case object AllPlayers extends TargetPlayer
 
 sealed trait Condition extends AstNode
+case class AdjacentTo(obj: TargetObject) extends Condition
 case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends Condition
 case class ControlledBy(player: TargetPlayer) extends Condition
 
@@ -49,6 +50,7 @@ sealed trait Number extends AstNode
 case class Scalar(num: Int) extends Number
 case class Count(collection: Collection) extends Number
 case class AttributeSum(collection: Collection, attribute: Attribute) extends Number
+case class AttributeValue(obj: TargetObject, attribute: Attribute) extends Number
 
 sealed trait Collection extends AstNode
 case class ObjectsInPlay(objectType: ObjectType) extends Collection
