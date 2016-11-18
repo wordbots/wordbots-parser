@@ -48,9 +48,9 @@ object Lexicon {
 
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
-      (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),
-      (NP/NP, λ {c: Collection => Choose(c)}),
-      (Num, Form(Scalar(1)): SemanticState)
+      (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),  // e.g. "a robot"
+      (NP/NP, λ {c: Collection => Choose(c)}),  // e.g. "a robot you control"
+      (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
     )) +
     ("adjacent" -> (NP/N, λ {o: ObjectType => ObjectsMatchingCondition(o, AdjacentTo(ThisRobot))})) +
     ("after attacking" -> (S\S, λ {a: Action => At(AfterAttack(ThisRobot), a)})) +
