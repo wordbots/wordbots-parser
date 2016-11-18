@@ -38,6 +38,14 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 object Lexicon {
   type PF = PartialFunction[AstNode, AstNode] // Partial function literals have to be explicitly typed because scala compiler is dumb.
 
+  implicit class StringImplicits(val str: String) extends AnyVal {
+    // "blah".s = ["blah", "blahs"]
+    def s: Seq[String] = Seq(str, str + "s")
+
+    // "my" / ["thing", "stuff"] = ["my thing", "my stuff"]
+    def /(nextWords: Seq[String]): Seq[String] = nextWords.map(s"$str " +)
+  }
+
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
       (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),
@@ -50,18 +58,18 @@ object Lexicon {
       (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => All(c)})
     )) +
-    (Seq("all attributes", "all stats") -> (N, Form(AllAttributes): SemanticState)) +
+    ("all" / Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     ("attacks" -> (S\NP, λ {o: TargetObject => AfterAttack(o)})) +
     ("beginning of each of your turns" -> (NP, Form(BeginningOfTurn(Self)): SemanticState)) +
     ("by" -> (PP/Num, identity)) +
-    (Seq("card", "cards") -> Seq(
+    ("card".s -> Seq(
       (NP\Num, λ {num: Number => Cards(num)}),
       (NP/Adj, λ {num: Number => Cards(num)}),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player)})
     )) +
-    (Seq("control", "controls") -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(p))}})) +
+    ("control".s -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(p))}})) +
     ("cost" -> (N, Form(Cost): SemanticState)) +
     ("damage" -> Seq(
       ((S/PP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
@@ -108,7 +116,7 @@ object Lexicon {
     ("played" -> (S\NP, λ {t: TargetObject => AfterPlayed(t)})) +
     (Seq("power", "attack") -> (N, Form(Attack): SemanticState)) +
     ("reduce" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}})) +
-    (Seq("robot", "robots", "creature", "creatures") -> (N, Form(Robot): SemanticState)) +
+    (("robot".s ++ "creature".s) -> (N, Form(Robot): SemanticState)) +
     ("(rounded down)" -> (Adv, Form(RoundedDown): SemanticState)) +
     ("(rounded up)" -> (Adv, Form(RoundedUp): SemanticState)) +
     ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: Target => λ {num: Number => SetAttribute(t, a, num)}}})) +
@@ -120,7 +128,7 @@ object Lexicon {
     )) +
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingCondition(o, c)}})) +
     ("the" -> (X/X, identity)) +
-    (Seq("this robot", "this creature") -> (NP, Form(ThisRobot): SemanticState)) +
+    ("this" / Seq("robot", "creature") -> (NP, Form(ThisRobot): SemanticState)) +
     ("total" -> ((Num/PP)/N, λP {a: Attribute => λP ({case c: Collection => AttributeSum(c, a)
                                                       case All(c)        => AttributeSum(c, a)}: PF)})) +
     (Seq("when", "whenever") -> ((S/S)/S, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
