@@ -21,6 +21,11 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
       case _ => "(n/a)"
     }
 
+    // If there's no parse, try to figure out what went wrong ... perhaps there's an unidentified token?
+    if (result.bestParse.isEmpty) {
+      findUnrecognizedTokens(tokenizer(input))
+    }
+
     println(s"Input: $input")
     // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
@@ -28,6 +33,15 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.
     result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
+  }
+
+  def findUnrecognizedTokens(tokens: Seq[String]): Unit = {
+    val lex = Lexicon.lexicon
+    val unrecognizedTokens = tokens.filter(token => !lex.map.keys.exists(_.contains(token)) && lex.funcs.forall(_(token).isEmpty))
+
+    if (unrecognizedTokens.nonEmpty) {
+      throw new RuntimeException(s"Unrecognized term(s): ${unrecognizedTokens.mkString(", ")}")
+    }
   }
 
   private def tokenizer(str: String): IndexedSeq[String] = {
