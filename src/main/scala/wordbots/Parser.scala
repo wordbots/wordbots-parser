@@ -64,7 +64,8 @@ object Lexicon {
       ((S/PP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
       ((S\NP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
       ((S/Adj)/PP, λ {t: Target => λ {amount: Number => DealDamage(t, amount)}}),
-      ((S\NP)/Adj, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}})
+      ((S\NP)/Adj, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
+      (S/PP, λ {t: Target => DealDamage(t, AttributeValue(ThisRobot, Attack))})  // (by default, a robot deals damage equal to its power)
     )) +
     (Seq("deal", "it deals", "takes") -> (X|X, identity)) +
     ("destroy" -> (S/NP, λ {t: Target => Destroy(t)})) +
