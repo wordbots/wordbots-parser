@@ -3,11 +3,8 @@ package wordbots
 import com.workday.montague.semantics.Form
 import org.http4s._
 import org.http4s.dsl._
-import org.http4s.server.{ServerApp, Server => Http4sServer}
 import org.http4s.server.blaze.BlazeBuilder
 import org.log4s.getLogger
-
-import scalaz.concurrent.Task
 
 class Server(host: String, port: Int) {
   val service = HttpService {
@@ -23,11 +20,12 @@ class Server(host: String, port: Int) {
         code
       })
   }
-  // Build the server instance and begin
+  // Build the server instance and begin.
   def run(): Unit = BlazeBuilder
     .bindHttp(port, host)
     .mountService(service)
     .run
+    .awaitShutdown
 }
 
 object Server {
