@@ -73,7 +73,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("When this creature attacks, it deals damage to all adjacent creatures") shouldEqual
       At(AfterAttack(ThisRobot), DealDamage(All(ObjectsMatchingCondition(Robot, AdjacentTo(ThisRobot))), AttributeValue(ThisRobot, Attack)))
     parse("When this creature is played, reduce the cost of a card in your hand by 3") shouldEqual
-      At(AfterPlayed(ThisRobot), ModifyAttribute(Choose(CardsInHand), Cost, Minus(Scalar(3))))
+      At(AfterPlayed(ThisRobot), ModifyAttribute(Choose(CardsInHand(Self)), Cost, Minus(Scalar(3))))
     parse("Whenever this creature takes damage, draw a card") shouldEqual
       At(AfterDamageReceived(ThisRobot), Draw(Self, Scalar(1)))
   }

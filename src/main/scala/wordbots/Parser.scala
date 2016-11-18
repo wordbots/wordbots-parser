@@ -41,7 +41,8 @@ object Lexicon {
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
       (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),
-      (NP/NP, λ {c: Collection => Choose(c)})
+      (NP/NP, λ {c: Collection => Choose(c)}),
+      (Num, Form(Scalar(1)): SemanticState)
     )) +
     ("adjacent" -> (NP/N, λ {o: ObjectType => ObjectsMatchingCondition(o, AdjacentTo(ThisRobot))})) +
     ("after attacking" -> (S\S, λ {a: Action => At(AfterAttack(ThisRobot), a)})) +
@@ -55,10 +56,10 @@ object Lexicon {
     ("attacks" -> (S\NP, λ {o: TargetObject => AfterAttack(o)})) +
     ("beginning of each of your turns" -> (NP, Form(BeginningOfTurn(Self)): SemanticState)) +
     ("by" -> (PP/Num, identity)) +
-    ("card in your hand" -> (NP, Form(CardsInHand): SemanticState)) +
-    ("cards" -> Seq(
+    (Seq("card", "cards") -> Seq(
       (NP\Num, λ {num: Number => Cards(num)}),
-      (NP/Adj, λ {num: Number => Cards(num)})
+      (NP/Adj, λ {num: Number => Cards(num)}),
+      (NP/PP, λ {hand: Hand => CardsInHand(hand.player)})
     )) +
     (Seq("control", "controls") -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(p))}})) +
     ("cost" -> (N, Form(Cost): SemanticState)) +
@@ -69,17 +70,12 @@ object Lexicon {
       ((S\NP)/Adj, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
       (S/PP, λ {t: Target => DealDamage(t, AttributeValue(ThisRobot, Attack))})  // (by default, a robot deals damage equal to its power)
     )) +
-    (Seq("deal", "it deals", "takes") -> (X|X, identity)) +
+    (Seq("deal", "it deals", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
     ("destroy" -> (S/NP, λ {t: Target => Destroy(t)})) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
-    ("draw a card" -> (S, Form(Draw(Self, Scalar(1))): SemanticState)) +  // Special-cased because "a card" is ambiguous.
     ("discard" -> Seq(
       (S/NP, λ {c: Cards => Discard(Self, c.num)}),
       ((S/NP)\NP, λ {t: TargetPlayer => λ {c: Cards => Discard(t, c.num)}})
-    )) +
-    ("discard a card" -> Seq(  // Special-cased because "a card" is ambiguous.
-      (S, Form(Discard(Self, Scalar(1))): SemanticState),
-      (S\NP, λ {t: TargetPlayer => Discard(t, Scalar(1))})
     )) +
     ("double" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
@@ -92,6 +88,7 @@ object Lexicon {
     ("gains" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(num))}}})) +
     ("gains a second move action" -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +
+    ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
     ("halve" -> Seq(
       (((S/PP)/Adv)/N, λ {a: Attribute => λ {r: Rounding => λ {t: Target => ModifyAttribute(t, a, Divide(Scalar(2), r))}}}),
       ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => CurriedAction({t: Target => ModifyAttribute(t, a, Divide(Scalar(2), r))})}})
@@ -99,6 +96,7 @@ object Lexicon {
     ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
     (Seq("health", "life") -> (N, Form(Health): SemanticState)) +
     ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
+    (Seq("in", "of") -> (PP/NP, identity)) +
     ("is" -> (X|X, identity)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ThisRobot, a)})) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
@@ -116,7 +114,7 @@ object Lexicon {
     ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: Target => λ {num: Number => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
     ("takes damage" -> (S\NP, λ {t: TargetObject => AfterDamageReceived(t)})) +
-    (Seq("to", "of") -> Seq(
+    ("to" -> Seq(
       (PP/NP, identity),
       (PP/Num, identity)
     )) +
@@ -127,6 +125,7 @@ object Lexicon {
                                                       case All(c)        => AttributeSum(c, a)}: PF)})) +
     (Seq("when", "whenever") -> ((S/S)/S, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
+    ("your" -> (Adj, Form(Self): SemanticState)) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
     (IntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +

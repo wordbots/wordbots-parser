@@ -55,7 +55,7 @@ case class AttributeSum(collection: Collection, attribute: Attribute) extends Nu
 case class AttributeValue(obj: TargetObject, attribute: Attribute) extends Number
 
 sealed trait Collection extends AstNode
-case object CardsInHand extends Collection
+case class CardsInHand(player: TargetPlayer) extends Collection
 case class ObjectsInPlay(objectType: ObjectType) extends Collection
 case class ObjectsMatchingCondition(objectType: ObjectType, condition: Condition) extends Collection
 
@@ -76,6 +76,8 @@ case object RoundedDown extends Rounding
 
 case class CurriedAction(action: Target => Action)
 
+// These container classes are used to store state mid-parse but not expressed in the final parsed AST.
 case class Cards(num: Number)
 case class Damage(amount: Number)
 case class Energy(amount: Number)
+case class Hand(player: TargetPlayer)
