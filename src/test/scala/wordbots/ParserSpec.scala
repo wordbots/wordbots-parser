@@ -10,6 +10,7 @@ class ParserSpec extends FlatSpec with Matchers {
       case Some(parse) => parse.semantic match {
         case Form(v) => {
           println(s"    $v")
+          CodeGenerator.generateJS(v.asInstanceOf[AstNode])  // Make sure that valid JS can be generated!
           v
         }
         case _ => Nonsense
@@ -71,8 +72,10 @@ class ParserSpec extends FlatSpec with Matchers {
       At(BeginningOfTurn(Self), ModifyAttribute(ThisRobot, Attack, Plus(Scalar(1))))
     parse("When this creature attacks, it deals damage to all adjacent creatures") shouldEqual
       At(AfterAttack(ThisRobot), DealDamage(All(ObjectsMatchingCondition(Robot, AdjacentTo(ThisRobot))), AttributeValue(ThisRobot, Attack)))
-    // "When this creature is played, reduce the cost of a card in your hand by 3"
-    // "Whenever this creature takes damage, draw a card"
+    parse("When this creature is played, reduce the cost of a card in your hand by 3") shouldEqual
+      At(AfterPlayed(ThisRobot), ModifyAttribute(Choose(CardsInHand), Cost, Minus(Scalar(3))))
+    parse("Whenever this creature takes damage, draw a card") shouldEqual
+      At(AfterDamageReceived(ThisRobot), Draw(Self, Scalar(1)))
   }
 
   it should "generate JS code for actions" in {

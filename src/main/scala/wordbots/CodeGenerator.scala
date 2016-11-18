@@ -9,6 +9,7 @@ object CodeGenerator {
 
       // Actions
       case And(action1, action2) => s"(function () { ${g(action1)}(); ${g(action2)}(); })"
+      case CanMoveAgain(target) => s"(function () { actions['canMoveAgain'](${g(target)}); })"
       case DealDamage(target, num) => s"(function () { actions['dealDamage'](${g(target)}, ${g(num)}); })"
       case Destroy(target) => s"(function () { actions['destroy'](${g(target)}); })"
       case Discard(target, num) => s"(function () { actions['discard'](${g(target)}, ${g(num)}); })"
@@ -19,6 +20,8 @@ object CodeGenerator {
 
       // Triggers
       case AfterAttack(obj) => s"triggers['afterAttack'](${g(obj)})"
+      case AfterDamageReceived(obj) => s"triggers['afterPlayed'](${g(obj)})"
+      case AfterPlayed(obj) => s"triggers['afterDamageReceived'](${g(obj)})"
       case BeginningOfTurn(player) => s"triggers['beginningOfTurn'](${g(player)})"
       case EndOfTurn(player) => s"triggers['endOfTurn'](${g(player)})"
 
@@ -55,6 +58,7 @@ object CodeGenerator {
       case AttributeValue(obj, attr) => s"attributeValue(${g(obj)}, ${g(attr)})"
 
       // Collections
+      case CardsInHand => "cardsInHand()"
       case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
       case ObjectsMatchingCondition(objType, condition) => s"objectsMatchingCondition(${g(objType)}, ${g(condition)})"
         

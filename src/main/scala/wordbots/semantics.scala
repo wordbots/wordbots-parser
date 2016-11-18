@@ -18,6 +18,8 @@ case class SetAttribute(target: Target, attribute: Attribute, num: Number) exten
 
 sealed trait Trigger extends AstNode
 case class AfterAttack(target: TargetObject) extends Trigger
+case class AfterDamageReceived(target: TargetObject) extends Trigger
+case class AfterPlayed(Target: TargetObject) extends Trigger
 case class BeginningOfTurn(player: TargetPlayer) extends Trigger
 case class EndOfTurn(player: TargetPlayer) extends Trigger
 
@@ -53,6 +55,7 @@ case class AttributeSum(collection: Collection, attribute: Attribute) extends Nu
 case class AttributeValue(obj: TargetObject, attribute: Attribute) extends Number
 
 sealed trait Collection extends AstNode
+case object CardsInHand extends Collection
 case class ObjectsInPlay(objectType: ObjectType) extends Collection
 case class ObjectsMatchingCondition(objectType: ObjectType, condition: Condition) extends Collection
 
@@ -62,6 +65,7 @@ case object Kernel extends ObjectType
 
 sealed trait Attribute extends Label
 case object Attack extends Attribute
+case object Cost extends Attribute
 case object Health extends Attribute
 case object Speed extends Attribute
 case object AllAttributes extends Attribute
