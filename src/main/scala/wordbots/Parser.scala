@@ -62,7 +62,7 @@ object Lexicon {
     ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     ("attacks" -> (S\NP, λ {o: TargetObject => AfterAttack(o)})) +
-    ("beginning of each of your turns" -> (NP, Form(BeginningOfTurn(Self)): SemanticState)) +
+    ("beginning" -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
     ("card".s -> Seq(
       (NP\Num, λ {num: Number => Cards(num)}),
@@ -89,7 +89,11 @@ object Lexicon {
       ((S/PP)/N, λ {a: Attribute => λ {t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
       (V/N, λ {a: Attribute => CurriedAction({t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))})})
     )) +
-    ("end of each turn" -> (NP, Form(EndOfTurn(AllPlayers)): SemanticState)) +
+    ("each" -> Seq(
+      (Adj, Form(AllPlayers): SemanticState),  // e.g. "each turn"
+      (NP/PP, identity)  // e.g. "each of (your turns)"
+    )) +
+    ("end" -> (NP/PP, λ {turn: Turn => EndOfTurn(turn.player)})) +
     ("energy" -> (N|Num, λ {amount: Number => Energy(amount)})) +
     ("equal" -> (Adj/PP, identity)) +
     ("gain" -> (S/N, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
@@ -131,6 +135,7 @@ object Lexicon {
     ("this" / Seq("robot", "creature") -> (NP, Form(ThisRobot): SemanticState)) +
     ("total" -> ((Num/PP)/N, λP {a: Attribute => λP ({case c: Collection => AttributeSum(c, a)
                                                       case All(c)        => AttributeSum(c, a)}: PF)})) +
+    ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
     (Seq("when", "whenever") -> ((S/S)/S, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your" -> (Adj, Form(Self): SemanticState)) +
