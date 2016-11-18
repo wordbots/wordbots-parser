@@ -4,11 +4,12 @@ import com.workday.montague.semantics.Form
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.{ServerApp, Server => Http4sServer}
-import org.http4s.server.blaze._
+import org.http4s.server.blaze.BlazeBuilder
+import org.log4s.getLogger
 
 import scalaz.concurrent.Task
 
-object Server extends ServerApp {
+class Server(host: String, port: Int) {
   val service = HttpService {
     case request @ POST -> Root / "parse" =>
       Ok(request.bodyAsText map { input =>
@@ -22,13 +23,24 @@ object Server extends ServerApp {
         code
       })
   }
+  // Build the server instance and begin
+  def run(): Unit = BlazeBuilder
+    .bindHttp(port, host)
+    .mountService(service)
+    .run
+}
 
-  override def server(args: List[String]): Task[Http4sServer] = {
-    println(s"Binding to port ${sys.env.getOrElse("PORT", "8080")} ...")
+object Server {
+  private val logger = getLogger
 
-    BlazeBuilder
-      .bindHttp(sys.env.getOrElse("PORT", "8080").toInt)
-      .mountService(service, "/")
-      .start
-  }
+  val ip = "0.0.0.0"
+  val port = (Option(System.getenv("PORT")) orElse
+    Option(System.getenv("HTTP_PORT")))
+    .map(_.toInt)
+    .getOrElse(8080)
+
+  logger.info(s"Starting Http4s-blaze example on '$ip:$port'")
+  println(s"Starting Http4s-blaze example on '$ip:$port'")
+
+  def main(args: Array[String]): Unit = new Server(ip, port).run()
 }
