@@ -6,18 +6,27 @@ import org.http4s.dsl._
 import org.http4s.server.blaze.BlazeBuilder
 
 object Server {
+  object InputParamMatcher extends QueryParamDecoderMatcher[String]("input")
+  object FormatParamMatcher extends QueryParamDecoderMatcher[String]("format")
+
   val service = HttpService {
-    case request @ POST -> Root / "parse" =>
-      Ok(request.bodyAsText map { input =>
-        val result = Parser.parse(input)
+    case request @ GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) =>
+      val result = Parser.parse(input)
 
-        val code = result.bestParse.map(_.semantic) match {
-          case Some(Form(v: AstNode)) => CodeGenerator.generateJS(v)
-          case _ => "(n/a)"
-        }
+      format match {
+        case "js" =>
+         result.bestParse.map(_.semantic) match {
+            case Some(Form(v: AstNode)) => Ok(CodeGenerator.generateJS(v))
+            case _ => InternalServerError("Parse failed")
+          }
 
-        code
-      })
+        case "svg" =>
+          result.bestParse
+            .map(parse => Ok(parse.toSvg))
+            .getOrElse(InternalServerError("Parse failed"))
+
+        case _ => BadRequest("Invalid format")
+      }
   }
 
   val host = "0.0.0.0"
@@ -27,7 +36,7 @@ object Server {
     .getOrElse(8080)
 
   def main(args: Array[String]): Unit = {
-    println(s"Starting server example on '$host:$port'")
+    println(s"Starting server on '$host:$port' ...")
 
     BlazeBuilder
       .bindHttp(port, host)
