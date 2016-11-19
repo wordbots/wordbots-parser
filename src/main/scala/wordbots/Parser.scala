@@ -23,7 +23,10 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
     // If there's no parse, try to figure out what went wrong ... perhaps there's an unidentified token?
     if (result.bestParse.isEmpty) {
-      findUnrecognizedTokens(tokenizer(input))
+      val unrecognizedTokens = findUnrecognizedTokens(input)
+      if (unrecognizedTokens.nonEmpty) {
+        throw new RuntimeException(s"Unrecognized term(s): ${unrecognizedTokens.mkString(", ")}")
+      }
     }
 
     println(s"Input: $input")
@@ -35,12 +38,12 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
   }
 
-  def findUnrecognizedTokens(tokens: Seq[String]): Unit = {
-    val lex = Lexicon.lexicon
-    val unrecognizedTokens = tokens.filter(token => !lex.map.keys.exists(_.contains(token)) && lex.funcs.forall(_(token).isEmpty))
+  def findUnrecognizedTokens(input: String): Seq[String] = {
+    val tokens = tokenizer(input)
+    val lexicon = Lexicon.lexicon
 
-    if (unrecognizedTokens.nonEmpty) {
-      throw new RuntimeException(s"Unrecognized term(s): ${unrecognizedTokens.mkString(", ")}")
+    tokens.filter { token =>
+      !lexicon.map.keys.exists(_.contains(token)) && lexicon.funcs.forall(_(token).isEmpty)
     }
   }
 

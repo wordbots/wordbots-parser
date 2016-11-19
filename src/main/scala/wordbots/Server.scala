@@ -17,15 +17,17 @@ object Server {
         case "js" =>
          result.bestParse.map(_.semantic) match {
             case Some(Form(v: AstNode)) => Ok(CodeGenerator.generateJS(v))
-            case _ => InternalServerError("Parse failed")
+            case _ =>
+              val unrecognizedTokens = Parser.findUnrecognizedTokens(input)
+              InternalServerError("{\"error\": \"Parse failed\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}")
           }
 
         case "svg" =>
           result.bestParse
             .map(parse => Ok(parse.toSvg))
-            .getOrElse(InternalServerError("Parse failed"))
+            .getOrElse(InternalServerError("{\"error\": \"Parse failed\"}"))
 
-        case _ => BadRequest("Invalid format")
+        case _ => BadRequest("{\"error\": \"Invalid format\"")
       }
   }
 
