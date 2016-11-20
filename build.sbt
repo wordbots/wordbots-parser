@@ -1,5 +1,4 @@
 name := "wordbots-parser"
-
 version := "0.0-SNAPSHOT"
 
 val http4sVersion = "0.15.0a-SNAPSHOT"
