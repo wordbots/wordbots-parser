@@ -7,14 +7,14 @@ import org.http4s.server.blaze.BlazeBuilder
 
 object Server {
   object InputParamMatcher extends QueryParamDecoderMatcher[String]("input")
-  object FormatParamMatcher extends QueryParamDecoderMatcher[String]("format")
+  object FormatParamMatcher extends OptionalQueryParamDecoderMatcher[String]("format")
 
   val service = HttpService {
     case request @ GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) =>
       val result = Parser.parse(input)
 
       format match {
-        case "js" =>
+        case Some("js") =>
          result.bestParse.map(_.semantic) match {
             case Some(Form(v: AstNode)) => Ok(CodeGenerator.generateJS(v))
             case _ =>
@@ -22,7 +22,7 @@ object Server {
               InternalServerError("{\"error\": \"Parse failed\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}")
           }
 
-        case "svg" =>
+        case Some("svg") =>
           result.bestParse
             .map(parse => Ok(parse.toSvg))
             .getOrElse(InternalServerError("{\"error\": \"Parse failed\"}"))
