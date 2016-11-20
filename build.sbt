@@ -16,4 +16,4 @@ libraryDependencies ++= Seq(
 
 enablePlugins(JavaAppPackaging)
 
-mainClass in Compile := Some("wordbots.Server")
+mainClass in Compile := Some("wordbots.WordbotsServer")
