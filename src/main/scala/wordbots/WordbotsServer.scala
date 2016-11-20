@@ -1,7 +1,7 @@
 package wordbots
 
 import com.workday.montague.semantics.Form
-import org.http4s.HttpService
+import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
@@ -27,7 +27,7 @@ object WordbotsServer extends ServerApp {
 
         case Some("svg") =>
           result.bestParse
-            .map(parse => Ok(parse.toSvg))
+            .map(parse => Ok(parse.toSvg, Headers(Header("Content-Type", "image/svg+xml"))))
             .getOrElse(InternalServerError("{\"error\": \"Parse failed\"}"))
 
         case _ => BadRequest("{\"error\": \"Invalid format\"}")
