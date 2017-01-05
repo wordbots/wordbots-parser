@@ -1,5 +1,6 @@
-[![CircleCI](https://circleci.com/gh/AlexNisnevich/wordbots-parser.svg?style=svg)](https://circleci.com/gh/AlexNisnevich/wordbots-parser)
 # wordbots-parser
+[![CircleCI](https://circleci.com/gh/wordbots/wordbots-parser.svg?style=svg)](https://circleci.com/gh/wordbots/wordbots-parser)
+
 A game-semantics CCG parser for a card game that doesn't exist yet.
 
 ## Running
