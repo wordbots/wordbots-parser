@@ -81,6 +81,7 @@ object Lexicon {
     ("attacks" -> (S\NP, λ {o: TargetObject => AfterAttack(o)})) +
     ("beginning" -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
+    (Seq("can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
     ("card".s -> Seq(
       (NP\Num, λ {num: Number => Cards(num)}),
       (NP/Adj, λ {num: Number => Cards(num)}),
@@ -115,7 +116,6 @@ object Lexicon {
     ("equal" -> (Adj/PP, identity)) +
     ("gain" -> (S/N, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
     ("gains" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(num))}}})) +
-    ("gains a second move action" -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +
     ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
     ("halve" -> Seq(
