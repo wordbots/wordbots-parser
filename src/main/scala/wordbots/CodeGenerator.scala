@@ -48,7 +48,9 @@ object CodeGenerator {
       case Divide(num, RoundedUp) => s"function (x) { return Math.ceil(x / ${g(num)}); }"
 
       // Comparisons
+      case GreaterThan(num) => s"(function (x) { return x > ${g(num)}; })"
       case GreaterThanOrEqualTo(num) => s"(function (x) { return x >= ${g(num)}; })"
+      case LessThan(num) => s"(function (x) { return x < ${g(num)}; })"
       case LessThanOrEqualTo(num) => s"(function (x) { return x <= ${g(num)}; })"
 
       // Numbers

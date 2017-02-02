@@ -45,7 +45,9 @@ case class Multiply(num: Number) extends Operation
 case class Divide(num: Number, rounding: Rounding) extends Operation
 
 sealed trait Comparison extends AstNode
+case class GreaterThan(num: Number) extends Comparison
 case class GreaterThanOrEqualTo(num: Number) extends Comparison
+case class LessThan(num: Number) extends Comparison
 case class LessThanOrEqualTo(num: Number) extends Comparison
 
 sealed trait Number extends AstNode

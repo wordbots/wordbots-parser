@@ -122,13 +122,15 @@ object Lexicon {
       (((S/PP)/Adv)/N, λ {a: Attribute => λ {r: Rounding => λ {t: Target => ModifyAttribute(t, a, Divide(Scalar(2), r))}}}),
       ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => CurriedAction({t: Target => ModifyAttribute(t, a, Divide(Scalar(2), r))})}})
     )) +
-    ("has" -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
+    (Seq("has", "have") -> ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}})) +
     (Seq("health", "life") -> (N, Form(Health): SemanticState)) +
     ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     (Seq("in", "of") -> (PP/NP, identity)) +
     ("is" -> (X|X, identity)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ThisRobot, a)})) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
+    ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
+    ("more than" -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("must" -> (X/X, identity)) +
     ("number" -> (Num/PP, λP ({case c: Collection => Count(c)
                                case All(c)        => Count(c)}: PF))) +
