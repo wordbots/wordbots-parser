@@ -112,9 +112,12 @@ object Lexicon {
       (NP/PP, identity)  // e.g. "each of (your turns)"
     )) +
     ("end" -> (NP/PP, λ {turn: Turn => EndOfTurn(turn.player)})) +
-    ("energy" -> (N|Num, λ {amount: Number => Energy(amount)})) +
+    ("energy" -> Seq(
+      (NP|Num, λ {amount: Number => Energy(amount)}),
+      (NP/Adj, λ {amount: Number => Energy(amount)})
+    )) +
     ("equal" -> (Adj/PP, identity)) +
-    ("gain" -> (S/N, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
+    ("gain" -> (S/NP, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
     ("gains" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(num))}}})) +
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +
     ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
