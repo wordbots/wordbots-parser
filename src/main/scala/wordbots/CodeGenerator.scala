@@ -55,7 +55,7 @@ object CodeGenerator {
 
       // Numbers
       case Scalar(int) => s"$int"
-      case Count(collection) => s"count(${g(collection)}})"
+      case Count(collection) => s"count(${g(collection)})"
       case AttributeSum(collection, attr) => s"attributeSum(${g(collection)}, ${g(attr)})"
       case AttributeValue(obj, attr) => s"attributeValue(${g(obj)}, ${g(attr)})"
 
