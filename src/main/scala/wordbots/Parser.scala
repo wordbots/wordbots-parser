@@ -119,6 +119,8 @@ object Lexicon {
       (NP/Adj, λ {amount: Number => Energy(amount)})
     )) +
     ("equal" -> (Adj/PP, identity)) +
+    ("everything" -> (N, Form(AllObjects): SemanticState)) +
+    ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => All(ObjectsMatchingCondition(AllObjects, AdjacentTo(t)))})) +
     ("gain" -> (S/NP, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
     ("gains" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(num))}}})) +
     ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +

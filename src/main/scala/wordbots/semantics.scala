@@ -65,6 +65,7 @@ case class ObjectsMatchingCondition(objectType: ObjectType, condition: Condition
 sealed trait ObjectType extends Label
 case object Robot extends ObjectType
 case object Kernel extends ObjectType
+case object AllObjects extends ObjectType
 
 sealed trait Attribute extends Label
 case object Attack extends Attribute
