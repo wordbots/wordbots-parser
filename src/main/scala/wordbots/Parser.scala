@@ -69,7 +69,9 @@ object Lexicon {
       (NP/NP, λ {c: Collection => Choose(c)}),  // e.g. "a robot you control"
       (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
     )) +
+    ("a tile" -> (NP, Form(Choose(AllTiles)): SemanticState)) +
     ("adjacent" -> (NP/N, λ {o: ObjectType => ObjectsMatchingCondition(o, AdjacentTo(ThisRobot))})) +
+    ("adjacent to" -> ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingCondition(o, AdjacentTo(t))}})) +
     ("after attacking" -> (S\S, λ {a: Action => At(AfterAttack(ThisRobot), a)})) +
     (Seq("all", "each") -> Seq(
       (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),

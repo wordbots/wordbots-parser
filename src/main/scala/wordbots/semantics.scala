@@ -57,6 +57,7 @@ case class AttributeSum(collection: Collection, attribute: Attribute) extends Nu
 case class AttributeValue(obj: TargetObject, attribute: Attribute) extends Number
 
 sealed trait Collection extends AstNode
+case object AllTiles extends Collection
 case class CardsInHand(player: TargetPlayer) extends Collection
 case class ObjectsInPlay(objectType: ObjectType) extends Collection
 case class ObjectsMatchingCondition(objectType: ObjectType, condition: Condition) extends Collection

@@ -37,6 +37,8 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "parse more complex actions" in {
     parse("Deal 2 damage to a robot that has 3 or less speed") shouldEqual
       DealDamage(Choose(ObjectsMatchingCondition(Robot, AttributeComparison(Speed, LessThanOrEqualTo(Scalar(3))))), Scalar(2))
+    parse ("Deal 1 damage to all robots adjacent to a tile") shouldEqual
+      DealDamage(All(ObjectsMatchingCondition(Robot,AdjacentTo(Choose(AllTiles)))),Scalar(1))
 
     // The following action texts were provided by James:
     parse("Set all stats of all creatures in play to 3") shouldEqual

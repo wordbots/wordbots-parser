@@ -60,6 +60,7 @@ object CodeGenerator {
       case AttributeValue(obj, attr) => s"attributeValue(${g(obj)}, ${g(attr)})"
 
       // Collections
+      case AllTiles => s"allTiles()"
       case CardsInHand(player) => s"cardsInHand(${g(player)})"
       case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
       case ObjectsMatchingCondition(objType, condition) => s"objectsMatchingCondition(${g(objType)}, ${g(condition)})"
