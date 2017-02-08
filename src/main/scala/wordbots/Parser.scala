@@ -75,7 +75,8 @@ object Lexicon {
     ("after attacking" -> (S\S, λ {a: Action => At(AfterAttack(ThisRobot), a)})) +
     (Seq("all", "each") -> Seq(
       (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
-      (NP/NP, λ {c: Collection => All(c)})
+      (NP/NP, λ {c: Collection => All(c)}),
+      (NP/PP, λ {c: Collection => All(c)})
     )) +
     ("all" / Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})) +
@@ -164,7 +165,10 @@ object Lexicon {
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
     (Seq("when", "whenever") -> ((S/S)/S, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
-    ("your" -> (Adj, Form(Self): SemanticState)) +
+    ("your" -> Seq(
+      (NP/N, λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(Self))}),
+      (Adj, Form(Self): SemanticState)
+    )) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
     (IntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +
