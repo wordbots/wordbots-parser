@@ -84,13 +84,10 @@ class ParserSpec extends FlatSpec with Matchers {
     // The following ability texts were provided by James:
     parse("Your adjacent robots have +1 attack") shouldEqual
       AttributeAdjustment(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisRobot), ControlledBy(Self)))), Attack, Plus(Scalar(1)))
-
     parse("This robot can't attack") shouldEqual
       ApplyEffect(ThisRobot, CannotAttack)
-
     parse("This robot's stats can't be changed") shouldEqual
       FreezeAttribute(ThisRobot, AllAttributes)
-
     parse("Robots you play cost 2 less") shouldEqual
       AttributeAdjustment(All(CardsInHandOfType(Self, Robot)), Cost, Minus(Scalar(2)))
   }
