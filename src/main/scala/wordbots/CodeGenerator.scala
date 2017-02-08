@@ -5,7 +5,7 @@ object CodeGenerator {
 
   private def g(node: AstNode): String = {
     node match {
-      case At(trigger, action) => s"setTrigger(${g(trigger)}, ${g(action)});"
+      case At(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
 
       // Actions
       case And(action1, action2) => s"(function () { ${g(action1)}(); ${g(action2)}(); })"
@@ -20,8 +20,8 @@ object CodeGenerator {
 
       // Triggers
       case AfterAttack(obj) => s"triggers['afterAttack'](${g(obj)})"
-      case AfterDamageReceived(obj) => s"triggers['afterPlayed'](${g(obj)})"
-      case AfterPlayed(obj) => s"triggers['afterDamageReceived'](${g(obj)})"
+      case AfterDamageReceived(obj) => s"triggers['afterDamageReceived'](${g(obj)})"
+      case AfterPlayed(obj) => s"triggers['afterPlayed'](${g(obj)})"
       case BeginningOfTurn(player) => s"triggers['beginningOfTurn'](${g(player)})"
       case EndOfTurn(player) => s"triggers['endOfTurn'](${g(player)})"
 
