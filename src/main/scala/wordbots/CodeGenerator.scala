@@ -18,6 +18,10 @@ object CodeGenerator {
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
 
+      // Passive abilities
+      case AttributeAdjustment(target, attr, num) =>
+        s"(function () { setAbility(abilities['attributeAdjustment'](function () { return ${g(target)}; }, ${g(attr)}, ${g(num)})); })"
+
       // Triggers
       case AfterAttack(obj) => s"triggers['afterAttack'](${g(obj)})"
       case AfterDamageReceived(obj) => s"triggers['afterDamageReceived'](${g(obj)})"
@@ -64,6 +68,7 @@ object CodeGenerator {
       case CardsInHand(player) => s"cardsInHand(${g(player)})"
       case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
       case ObjectsMatchingCondition(objType, condition) => s"objectsMatchingCondition(${g(objType)}, ${g(condition)})"
+      case ObjectsMatchingConditions(objType, conditions) => s"objectsMatchingConditions(${g(objType)}, ${conditions.map(g).mkString("[", ", ", "]")})"
         
       // Labels
       case l: Label => s"'${getLabelName(l)}'"
