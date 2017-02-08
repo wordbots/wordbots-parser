@@ -19,8 +19,12 @@ object CodeGenerator {
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
 
       // Passive abilities
-      case AttributeAdjustment(target, attr, num) =>
-        s"(function () { setAbility(abilities['attributeAdjustment'](function () { return ${g(target)}; }, ${g(attr)}, ${g(num)})); })"
+      case ApplyEffect(target, effect) =>
+        s"(function () { setAbility(abilities['applyEffect'](function () { return ${g(target)}; }, ${g(effect)})); })"
+      case AttributeAdjustment(target, attr, op) =>
+        s"(function () { setAbility(abilities['attributeAdjustment'](function () { return ${g(target)}; }, ${g(attr)}, ${g(op)})); })"
+      case FreezeAttribute(target, attr) =>
+        s"(function () { setAbility(abilities['freezeAttribute'](function () { return ${g(target)}; }, ${g(attr)})); })"
 
       // Triggers
       case AfterAttack(obj) => s"triggers['afterAttack'](${g(obj)})"
@@ -66,6 +70,7 @@ object CodeGenerator {
       // Collections
       case AllTiles => s"allTiles()"
       case CardsInHand(player) => s"cardsInHand(${g(player)})"
+      case CardsInHandOfType(player, cardType) => s"cardsInHand(${g(player)}, ${g(cardType)})"
       case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
       case ObjectsMatchingCondition(objType, condition) => s"objectsMatchingCondition(${g(objType)}, ${g(condition)})"
       case ObjectsMatchingConditions(objType, conditions) => s"objectsMatchingConditions(${g(objType)}, ${conditions.map(g).mkString("[", ", ", "]")})"

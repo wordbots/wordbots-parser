@@ -80,6 +80,21 @@ class ParserSpec extends FlatSpec with Matchers {
       At(AfterDamageReceived(ThisRobot), Draw(Self, Scalar(1)))
   }
 
+  it should "parse passive abilities for creatures" in {
+    // The following ability texts were provided by James:
+    parse("Your adjacent robots have +1 attack") shouldEqual
+      AttributeAdjustment(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisRobot), ControlledBy(Self)))), Attack, Plus(Scalar(1)))
+
+    parse("This robot can't attack") shouldEqual
+      ApplyEffect(ThisRobot, CannotAttack)
+
+    parse("This robot's stats can't be changed") shouldEqual
+      FreezeAttribute(ThisRobot, AllAttributes)
+
+    parse("Robots you play cost 2 less") shouldEqual
+      AttributeAdjustment(All(CardsInHandOfType(Self, Robot)), Cost, Minus(Scalar(2)))
+  }
+
   it should "generate JS code for actions" in {
     generateJS("Draw a card") should be ("(function () { actions['draw'](targets['self'](), 1); })")
     generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsInPlay('robot'))); })")

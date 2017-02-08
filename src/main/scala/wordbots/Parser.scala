@@ -61,6 +61,9 @@ object Lexicon {
 
     // "my" / ["thing", "stuff"] = ["my thing", "my stuff"]
     def /(nextWords: Seq[String]): Seq[String] = nextWords.map(s"$str " +)
+
+    // "my" / ["thing", "stuff"] = ["thing", "stuff", "my thing", "my stuff"]
+    def /?/(nextWords: Seq[String]): Seq[String] = nextWords ++ nextWords.map(s"$str " +)
   }
 
   val lexicon =  ParserDict[CcgCat]() +
@@ -78,20 +81,26 @@ object Lexicon {
       (NP/NP, λ {c: Collection => All(c)}),
       (NP/PP, λ {c: Collection => All(c)})
     )) +
-    ("all" / Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
+    ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     ("attacks" -> (S\NP, λ {o: TargetObject => AfterAttack(o)})) +
     ("beginning" -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
     (Seq("can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
+    ("can't attack" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotAttack)})) +
+    ("can't be changed" -> (S\NP, λ {t: TargetAttribute => FreezeAttribute(t.target, t.attr)})) +
     ("card".s -> Seq(
+      (N, Form(AnyCard): SemanticState),
       (NP\Num, λ {num: Number => Cards(num)}),
       (NP/Adj, λ {num: Number => Cards(num)}),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player)})
     )) +
     ("control".s -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingCondition(o, ControlledBy(p))}})) +
-    ("cost" -> (N, Form(Cost): SemanticState)) +
+    ("cost" -> Seq(
+      (N, Form(Cost): SemanticState),
+      ((S\NP)/Adv, λ {o: Operation => λ {cp: CardPlay => AttributeAdjustment(All(CardsInHandOfType(cp.player, cp.cardType)), Cost, o)}})
+    )) +
     ("damage" -> Seq(
       ((S/PP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
       ((S\NP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
@@ -117,7 +126,8 @@ object Lexicon {
     ("end" -> (NP/PP, λ {turn: Turn => EndOfTurn(turn.player)})) +
     ("energy" -> Seq(
       (NP|Num, λ {amount: Number => Energy(amount)}),
-      (NP/Adj, λ {amount: Number => Energy(amount)})
+      (NP/Adj, λ {amount: Number => Energy(amount)}),
+      (S\S, λ ({case AttributeAdjustment(target, Cost, op) => AttributeAdjustment(target, Cost, op)}: PF))  // "X costs Y more/less" == "X costs Y more/less energy"
     )) +
     ("equal" -> (Adj/PP, identity)) +
     ("everything" -> (N, Form(AllObjects): SemanticState)) +
@@ -140,13 +150,16 @@ object Lexicon {
     ("is" -> (X|X, identity)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ThisRobot, a)})) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
+    ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
+    ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     ("more than" -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("must" -> (X/X, identity)) +
     ("number" -> (Num/PP, λP ({case c: Collection => Count(c)
                                case All(c)        => Count(c)}: PF))) +
     ("or less" -> (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)})) +
+    ("play".s -> ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})) +
     ("played" -> (S\NP, λ {t: TargetObject => AfterPlayed(t)})) +
     (Seq("power", "attack") -> (N, Form(Attack): SemanticState)) +
     ("reduce" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}})) +
@@ -163,6 +176,7 @@ object Lexicon {
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingCondition(o, c)}})) +
     ("the" -> (X/X, identity)) +
     ("this" / Seq("robot", "creature") -> (NP, Form(ThisRobot): SemanticState)) +
+    ("this" / Seq("robot's", "creature's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisRobot, a)})) +
     ("total" -> ((Num/PP)/N, λP {a: Attribute => λP ({case c: Collection => AttributeSum(c, a)
                                                       case All(c)        => AttributeSum(c, a)}: PF)})) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +

@@ -17,7 +17,12 @@ case class ModifyEnergy(target: Target, operation: Operation) extends Action
 case class SetAttribute(target: Target, attribute: Attribute, num: Number) extends Action
 
 sealed trait PassiveAbility extends AstNode
+case class ApplyEffect(target: Target, effect: Effect) extends PassiveAbility
 case class AttributeAdjustment(target: Target, attribute: Attribute, operation: Operation) extends PassiveAbility
+case class FreezeAttribute(target: Target, attribute: Attribute) extends PassiveAbility
+
+sealed trait Effect extends Label
+case object CannotAttack extends Effect
 
 sealed trait Trigger extends AstNode
 case class AfterAttack(target: TargetObject) extends Trigger
@@ -62,13 +67,18 @@ case class AttributeValue(obj: TargetObject, attribute: Attribute) extends Numbe
 sealed trait Collection extends AstNode
 case object AllTiles extends Collection
 case class CardsInHand(player: TargetPlayer) extends Collection
+case class CardsInHandOfType(player: TargetPlayer, cardType: CardType) extends Collection
 case class ObjectsInPlay(objectType: ObjectType) extends Collection
 case class ObjectsMatchingCondition(objectType: ObjectType, condition: Condition) extends Collection
 case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends Collection
 
-sealed trait ObjectType extends Label
+sealed trait CardType extends Label
+case object AnyCard extends CardType
+case object Event extends CardType
+sealed trait ObjectType extends CardType
 case object Robot extends ObjectType
 case object Kernel extends ObjectType
+case object Structure extends ObjectType
 case object AllObjects extends ObjectType
 
 sealed trait Attribute extends Label
@@ -90,3 +100,5 @@ case class Damage(amount: Number)
 case class Energy(amount: Number)
 case class Hand(player: TargetPlayer)
 case class Turn(player: TargetPlayer)
+case class TargetAttribute(target: TargetObject, attr: Attribute)
+case class CardPlay(player: TargetPlayer, cardType: CardType)
