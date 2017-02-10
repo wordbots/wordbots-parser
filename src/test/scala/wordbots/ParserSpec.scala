@@ -36,17 +36,17 @@ class ParserSpec extends FlatSpec with Matchers {
 
   it should "parse more complex actions" in {
     parse("Deal 2 damage to a robot that has 3 or less speed") shouldEqual
-      DealDamage(Choose(ObjectsMatchingCondition(Robot, AttributeComparison(Speed, LessThanOrEqualTo(Scalar(3))))), Scalar(2))
+      DealDamage(Choose(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Speed, LessThanOrEqualTo(Scalar(3)))))), Scalar(2))
     parse ("Deal 1 damage to all robots adjacent to a tile") shouldEqual
-      DealDamage(All(ObjectsMatchingCondition(Robot,AdjacentTo(Choose(AllTiles)))),Scalar(1))
+      DealDamage(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(Choose(AllTiles))))),Scalar(1))
 
     // The following action texts were provided by James:
     parse("Set all stats of all creatures in play to 3") shouldEqual
       SetAttribute(All(ObjectsInPlay(Robot)), AllAttributes, Scalar(3))
     parse("Draw cards equal to the number of creatures you control") shouldEqual
-      Draw(Self, Count(ObjectsMatchingCondition(Robot, ControlledBy(Self))))
+      Draw(Self, Count(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self)))))
     parse("Deal damage to a creature equal to the total power of creatures you control") shouldEqual
-      DealDamage(Choose(ObjectsInPlay(Robot)), AttributeSum(ObjectsMatchingCondition(Robot, ControlledBy(Self)), Attack))
+      DealDamage(Choose(ObjectsInPlay(Robot)), AttributeSum(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), Attack))
     parse("Double the attack of all creatures in play") shouldEqual
       ModifyAttribute(All(ObjectsInPlay(Robot)), Attack, Multiply(Scalar(2)))
     parse("Double the attack and halve the life (rounded up) of all creatures in play") shouldEqual
@@ -73,7 +73,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("At the beginning of each of your turns, this creature gains 1 attack") shouldEqual
       At(BeginningOfTurn(Self), ModifyAttribute(ThisRobot, Attack, Plus(Scalar(1))))
     parse("When this creature attacks, it deals damage to all adjacent creatures") shouldEqual
-      At(AfterAttack(ThisRobot), DealDamage(All(ObjectsMatchingCondition(Robot, AdjacentTo(ThisRobot))), AttributeValue(ThisRobot, Attack)))
+      At(AfterAttack(ThisRobot), DealDamage(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisRobot)))), AttributeValue(ThisRobot, Attack)))
     parse("When this creature is played, reduce the cost of a card in your hand by 3") shouldEqual
       At(AfterPlayed(ThisRobot), ModifyAttribute(Choose(CardsInHand(Self)), Cost, Minus(Scalar(3))))
     parse("Whenever this creature takes damage, draw a card") shouldEqual
@@ -89,7 +89,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("This robot's stats can't be changed") shouldEqual
       FreezeAttribute(ThisRobot, AllAttributes)
     parse("Robots you play cost 2 less") shouldEqual
-      AttributeAdjustment(All(CardsInHandOfType(Self, Robot)), Cost, Minus(Scalar(2)))
+      AttributeAdjustment(All(CardsInHand(Self, Robot)), Cost, Minus(Scalar(2)))
   }
 
   it should "generate JS code for actions" in {

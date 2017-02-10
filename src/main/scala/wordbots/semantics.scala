@@ -66,10 +66,8 @@ case class AttributeValue(obj: TargetObject, attribute: Attribute) extends Numbe
 
 sealed trait Collection extends AstNode
 case object AllTiles extends Collection
-case class CardsInHand(player: TargetPlayer) extends Collection
-case class CardsInHandOfType(player: TargetPlayer, cardType: CardType) extends Collection
+case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard) extends Collection
 case class ObjectsInPlay(objectType: ObjectType) extends Collection
-case class ObjectsMatchingCondition(objectType: ObjectType, condition: Condition) extends Collection
 case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends Collection
 
 sealed trait CardType extends Label
