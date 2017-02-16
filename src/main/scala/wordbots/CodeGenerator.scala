@@ -17,6 +17,7 @@ object CodeGenerator {
       case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
+      case TakeControl(player, target) => s"(function () { actions['takeControl'](${g(player)}, ${g(target)}); })"
 
       // Passive abilities
       case ApplyEffect(target, effect) =>
@@ -29,6 +30,7 @@ object CodeGenerator {
       // Triggers
       case AfterAttack(obj) => s"triggers['afterAttack'](${g(obj)})"
       case AfterDamageReceived(obj) => s"triggers['afterDamageReceived'](${g(obj)})"
+      case AfterDestroyed(obj, cause) => s"triggers['afterDestroyed'](${g(obj)}, ${g(cause)})"
       case AfterPlayed(obj) => s"triggers['afterPlayed'](${g(obj)})"
       case BeginningOfTurn(player) => s"triggers['beginningOfTurn'](${g(player)})"
       case EndOfTurn(player) => s"triggers['endOfTurn'](${g(player)})"
@@ -37,11 +39,13 @@ object CodeGenerator {
       case Choose(collection) => s"targets['choose'](${g(collection)})"
       case All(collection) => s"targets['all'](${g(collection)})"
       case ThisRobot => "targets['thisRobot']()"
+      case It => "targets['it']()"
 
       // Target players
       case Self => "targets['self']()"
       case Opponent => "targets['opponent']()"
       case AllPlayers => "targets['allPlayers']()"
+      case ControllerOf(targetObject) => s"targets['controllerOf'](${g(targetObject)})"
 
       // Conditions
       case AdjacentTo(obj) => s"conditions['adjacentTo'](${g(obj)})"

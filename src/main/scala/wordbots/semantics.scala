@@ -15,6 +15,7 @@ case class Draw(target: TargetPlayer, num: Number) extends Action
 case class ModifyAttribute(target: Target, attribute: Attribute, operation: Operation) extends Action
 case class ModifyEnergy(target: Target, operation: Operation) extends Action
 case class SetAttribute(target: Target, attribute: Attribute, num: Number) extends Action
+case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
 
 sealed trait PassiveAbility extends AstNode
 case class ApplyEffect(target: Target, effect: Effect) extends PassiveAbility
@@ -27,6 +28,7 @@ case object CannotAttack extends Effect
 sealed trait Trigger extends AstNode
 case class AfterAttack(target: TargetObject) extends Trigger
 case class AfterDamageReceived(target: TargetObject) extends Trigger
+case class AfterDestroyed(target: TargetObject, cause: Event = AnyEvent) extends Trigger
 case class AfterPlayed(Target: TargetObject) extends Trigger
 case class BeginningOfTurn(player: TargetPlayer) extends Trigger
 case class EndOfTurn(player: TargetPlayer) extends Trigger
@@ -36,10 +38,12 @@ sealed trait TargetObject extends Target
 case class Choose(collection: Collection) extends TargetObject
 case class All(collection: Collection) extends TargetObject
 case object ThisRobot extends TargetObject
+case object It extends TargetObject
 sealed trait TargetPlayer extends Target
 case object Self extends TargetPlayer
 case object Opponent extends TargetPlayer
 case object AllPlayers extends TargetPlayer
+case class ControllerOf(t: TargetObject) extends TargetPlayer
 
 sealed trait Condition extends AstNode
 case class AdjacentTo(obj: TargetObject) extends Condition
@@ -78,6 +82,10 @@ case object Robot extends ObjectType
 case object Kernel extends ObjectType
 case object Structure extends ObjectType
 case object AllObjects extends ObjectType
+
+sealed trait Event extends Label
+case object AnyEvent extends Event
+case object Combat extends Event
 
 sealed trait Attribute extends Label
 case object Attack extends Attribute

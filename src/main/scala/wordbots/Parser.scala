@@ -16,10 +16,6 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     val result: SemanticParseResult[CcgCat] = parse(input)
 
     val output = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
-    val code = result.bestParse.map(_.semantic) match {
-      case Some(Form(v: AstNode)) => CodeGenerator.generateJS(v)
-      case _ => "(n/a)"
-    }
 
     // If there's no parse, try to figure out what went wrong ... perhaps there's an unidentified token?
     if (result.bestParse.isEmpty) {
@@ -32,6 +28,12 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     println(s"Input: $input")
     // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
+
+    val code = result.bestParse.map(_.semantic) match {
+      case Some(Form(v: AstNode)) => CodeGenerator.generateJS(v)
+      case _ => "(n/a)"
+    }
+
     println(s"Generated JS code: $code")
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.
@@ -62,7 +64,7 @@ object Lexicon {
     // "my" / ["thing", "stuff"] = ["my thing", "my stuff"]
     def /(nextWords: Seq[String]): Seq[String] = nextWords.map(s"$str " +)
 
-    // "my" / ["thing", "stuff"] = ["thing", "stuff", "my thing", "my stuff"]
+    // "my" /?/ ["thing", "stuff"] = ["thing", "stuff", "my thing", "my stuff"]
     def /?/(nextWords: Seq[String]): Seq[String] = nextWords ++ nextWords.map(s"$str " +)
   }
 
@@ -84,7 +86,8 @@ object Lexicon {
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
-    ("attacks" -> (S\NP, λ {o: TargetObject => AfterAttack(o)})) +
+    ("attacks" -> (S\NP, λP ({case Choose(coll) => AfterAttack(All(coll))  // For this and other triggers, replace Choose targets w/ All targets.
+                              case t: TargetObject => AfterAttack(t)}: PF))) +
     ("beginning" -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
     (Seq("can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
@@ -111,6 +114,8 @@ object Lexicon {
     )) +
     (Seq("deal", "it deals", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
     ("destroy" -> (S/NP, λ {t: Target => Destroy(t)})) +
+    ("destroyed" -> (S\NP, λP ({case Choose(coll) => AfterDestroyed(All(coll))
+                                case t: TargetObject => AfterDestroyed(t)}: PF))) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
     ("discard" -> Seq(
       (S/NP, λ {c: Cards => Discard(Self, c.num)}),
@@ -146,10 +151,13 @@ object Lexicon {
       (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}})
     )) +
     (Seq("health", "life") -> (N, Form(Health): SemanticState)) +
-    ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     (Seq("in", "of") -> (PP/NP, identity)) +
+    ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
+    ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("is" -> (X|X, identity)) +
+    ("it" -> (NP, Form(It): SemanticState)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ThisRobot, a)})) +
+    ("its controller" -> (NP, Form(ControllerOf(It)): SemanticState)) +
     ("kernel" -> (N, Form(Kernel): SemanticState)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
@@ -158,10 +166,12 @@ object Lexicon {
     ("must" -> (X/X, identity)) +
     ("number" -> (Num/PP, λP ({case c: Collection => Count(c)
                                case All(c)        => Count(c)}: PF))) +
+    ("object".s -> (N, Form(AllObjects): SemanticState)) +
     ("or less" -> (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)})) +
     ("play".s -> ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})) +
-    ("played" -> (S\NP, λ {t: TargetObject => AfterPlayed(t)})) +
+    ("played" -> (S\NP, λP ({case Choose(coll) => AfterPlayed(All(coll))
+                              case t: TargetObject => AfterPlayed(t)}: PF))) +
     (Seq("power", "attack") -> (N, Form(Attack): SemanticState)) +
     ("reduce" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}})) +
     (("robot".s ++ "creature".s) -> (N, Form(Robot): SemanticState)) +
@@ -169,7 +179,9 @@ object Lexicon {
     ("(rounded up)" -> (Adv, Form(RoundedUp): SemanticState)) +
     ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: Target => λ {num: Number => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
-    ("takes damage" -> (S\NP, λ {t: TargetObject => AfterDamageReceived(t)})) +
+    ("take control" -> (S/PP, λ {t: TargetObject => TakeControl(Self, t)})) +
+    ("takes damage" -> (S\NP, λP ({case Choose(coll) => AfterDamageReceived(All(coll))
+                                   case t: TargetObject => AfterDamageReceived(t)}: PF))) +
     ("to" -> Seq(
       (PP/NP, identity),
       (PP/Num, identity)
