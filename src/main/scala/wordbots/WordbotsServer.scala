@@ -6,6 +6,8 @@ import org.http4s.dsl._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
 
+import scala.util.{Failure, Success, Try}
+
 import scalaz.concurrent.Task
 
 object WordbotsServer extends ServerApp {
@@ -19,7 +21,12 @@ object WordbotsServer extends ServerApp {
       format match {
         case Some("js") =>
          result.bestParse.map(_.semantic) match {
-            case Some(Form(v: AstNode)) => Ok(CodeGenerator.generateJS(v))
+            case Some(Form(v: AstNode)) =>
+              AstValidator.validate(v) match {
+                case Success(_) => Ok(CodeGenerator.generateJS(v))
+                case Failure(ex: Throwable) =>
+                  InternalServerError("{\"error\": \"" + ex.getMessage + "\"}")
+              }
             case _ =>
               val unrecognizedTokens = Parser.findUnrecognizedTokens(input)
               InternalServerError("{\"error\": \"Parse failed\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}")
