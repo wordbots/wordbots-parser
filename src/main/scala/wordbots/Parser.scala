@@ -8,7 +8,7 @@ import com.workday.montague.semantics._
 import com.workday.montague.semantics.{λ => λP}
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
-import scala.util.{Failure, Try}
+import scala.util.Try
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   def parse(input: String): SemanticParseResult[CcgCat] = parse(input, tokenizer)
@@ -27,9 +27,11 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
       }
     }
 
+    // scalastyle:off regex
     println(s"Input: $input")
     // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
+    // scalastyle:on regex
 
     val validated: Option[Try[Unit]] = result.bestParse.map(_.semantic).flatMap {
       case Form(v: AstNode) => Some(AstValidator.validate(v))
@@ -41,8 +43,10 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
       case _ => None
     }
 
+    // scalastyle:off regex
     println(s"Validation output: $validated")
     println(s"Generated JS code: $code")
+    // scalastyle:on regex
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.
     result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
@@ -65,6 +69,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 object Lexicon {
   type PF = PartialFunction[AstNode, AstNode] // Partial function literals have to be explicitly typed because scala compiler is dumb.
 
+  // scalastyle:off method.name
   implicit class StringImplicits(val str: String) extends AnyVal {
     // "blah".s = ["blah", "blahs"]
     def s: Seq[String] = Seq(str, str + "s")
@@ -75,6 +80,7 @@ object Lexicon {
     // "my" /?/ ["thing", "stuff"] = ["thing", "stuff", "my thing", "my stuff"]
     def /?/(nextWords: Seq[String]): Seq[String] = nextWords ++ nextWords.map(s"$str " +)
   }
+  // scalastyle:on method.name
 
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
@@ -141,7 +147,7 @@ object Lexicon {
     ("energy" -> Seq(
       (NP|Num, λ {amount: Number => Energy(amount)}),
       (NP/Adj, λ {amount: Number => Energy(amount)}),
-      (S\S, λ ({case AttributeAdjustment(target, Cost, op) => AttributeAdjustment(target, Cost, op)}: PF))  // "X costs Y more/less" == "X costs Y more/less energy"
+      (S\S, λ ({case AttributeAdjustment(target, Cost, op) => AttributeAdjustment(target, Cost, op)}: PF))  // "X costs Y more" == "X costs Y more energy"
     )) +
     ("equal" -> (Adj/PP, identity)) +
     ("everything" -> (N, Form(AllObjects): SemanticState)) +
@@ -215,7 +221,7 @@ object Lexicon {
 }
 
 case class PrefixedIntegerMatcher(prefix: String) extends TokenMatcher[Int] {
-  def apply(str: String) = {
+  def apply(str: String): Seq[Int] = {
     try {
       if (str.startsWith(prefix)) {
         Seq(Integer.parseInt(str.stripPrefix(prefix)))

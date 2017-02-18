@@ -3,6 +3,8 @@ package wordbots
 object CodeGenerator {
   def generateJS(node: AstNode): String = g(node)
 
+  // scalastyle:off method.length
+  // scalastyle:off cyclomatic.complexity
   private def g(node: AstNode): String = {
     node match {
       case At(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
@@ -76,11 +78,13 @@ object CodeGenerator {
       case CardsInHand(player, cardType) => s"cardsInHand(${g(player)}, ${g(cardType)})"
       case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
       case ObjectsMatchingConditions(objType, conditions) => s"objectsMatchingConditions(${g(objType)}, ${conditions.map(g).mkString("[", ", ", "]")})"
-        
+
       // Labels
       case l: Label => s"'${getLabelName(l)}'"
     }
   }
+  // scalastyle:on method.length
+  // scalastyle:on cyclomatic.complexity
 
   private def getLabelName(label: Label): String = {
     label.getClass.getSimpleName.toLowerCase.split('$')(0)

@@ -42,13 +42,16 @@ object WordbotsServer extends ServerApp {
   }
 
   val host = "0.0.0.0"
+  val defaultPort = 8080
   val port = (Option(System.getenv("PORT")) orElse
     Option(System.getenv("HTTP_PORT")))
     .map(_.toInt)
-    .getOrElse(8080)
+    .getOrElse(defaultPort)
 
   override def server(args: List[String]): Task[Server] = {
+    // scalastyle:off regex
     println(s"Starting server on '$host:$port' ...")
+    // scalastyle:on regex
 
     BlazeBuilder
       .bindHttp(port, host)

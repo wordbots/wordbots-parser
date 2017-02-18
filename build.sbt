@@ -3,7 +3,7 @@ version := "0.0-SNAPSHOT"
 
 val http4sVersion = "0.15.3"
 
-//resolvers += Resolver.sonatypeRepo("snapshots")
+resolvers += Resolver.sonatypeRepo("releases")
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",

@@ -1,5 +1,7 @@
 package wordbots
 
+// scalastye:off number.of.types
+
 sealed trait AstNode extends Product
 
 sealed trait Label extends AstNode
@@ -109,3 +111,5 @@ case class Hand(player: TargetPlayer)
 case class Turn(player: TargetPlayer)
 case class TargetAttribute(target: TargetObject, attr: Attribute)
 case class CardPlay(player: TargetPlayer, cardType: CardType)
+
+// scalastyle:on number.of.types
