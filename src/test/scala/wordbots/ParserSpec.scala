@@ -3,15 +3,20 @@ package wordbots
 import com.workday.montague.semantics.{Form, Nonsense}
 import org.scalatest._
 
+import scala.util.{Success, Failure}
+
 class ParserSpec extends FlatSpec with Matchers {
   def parse(input: String) = {
     println(s"Parsing $input...")
     Parser.parse(input).bestParse match {
       case Some(parse) => parse.semantic match {
-        case Form(v) => {
+        case Form(v: AstNode) => {
           println(s"    $v")
           CodeGenerator.generateJS(v.asInstanceOf[AstNode])  // Make sure that valid JS can be generated!
-          v
+          AstValidator.validate(v) match {  // Make sure the AstValidator successfully validates the parsed ast!
+            case Success(_) => v
+            case f: Failure[_] => f
+          }
         }
         case _ => Nonsense
       }
@@ -29,8 +34,6 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Gain 2 energy") should equal (ModifyEnergy(Self, Plus(Scalar(2))))
     parse("Deal 2 damage to a robot") should equal (DealDamage(Choose(ObjectsInPlay(Robot)), Scalar(2)))
     parse("Deal 2 damage to yourself") should equal (DealDamage(Self, Scalar(2)))
-    parse("Discard a card") should equal (Discard(Self, Scalar(1)))
-    parse("Your opponent must discard a card") should equal (Discard(Opponent, Scalar(1)))
     parse("Give a robot +1 speed") should equal (ModifyAttribute(Choose(ObjectsInPlay(Robot)), Speed, Plus(Scalar(1))))
   }
 
@@ -111,5 +114,14 @@ class ParserSpec extends FlatSpec with Matchers {
     generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsInPlay('robot'))); })")
     generateJS("Gain 2 energy") should be ("(function () { actions['modifyEnergy'](targets['self'](), function (x) { return x + 2; }); })")
     generateJS("Give a robot +1 speed") should be ("(function () { actions['modifyAttribute'](targets['choose'](objectsInPlay('robot')), 'speed', function (x) { return x + 1; }); })")
+  }
+
+  it should "disallow choosing targets inside a triggered action, *except* for AfterPlayed triggers" in {
+    parse("When this robot is destroyed, destroy a robot.") shouldEqual
+      Failure(ValidationError("Choosing targets not allowed for triggered actions."))
+
+    parse("When this robot is played, destroy a robot.") should not equal
+      Failure(ValidationError("Choosing targets not allowed for triggered actions."))
+
   }
 }

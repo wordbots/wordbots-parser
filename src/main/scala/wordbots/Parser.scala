@@ -8,6 +8,8 @@ import com.workday.montague.semantics._
 import com.workday.montague.semantics.{λ => λP}
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
+import scala.util.{Failure, Try}
+
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   def parse(input: String): SemanticParseResult[CcgCat] = parse(input, tokenizer)
 
@@ -15,7 +17,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     val input = args.mkString(" ")
     val result: SemanticParseResult[CcgCat] = parse(input)
 
-    val output = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
+    val output: String = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
 
     // If there's no parse, try to figure out what went wrong ... perhaps there's an unidentified token?
     if (result.bestParse.isEmpty) {
@@ -29,11 +31,17 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
 
-    val code = result.bestParse.map(_.semantic) match {
-      case Some(Form(v: AstNode)) => CodeGenerator.generateJS(v)
-      case _ => "(n/a)"
+    val validated: Option[Try[Unit]] = result.bestParse.map(_.semantic).flatMap {
+      case Form(v: AstNode) => Some(AstValidator.validate(v))
+      case _ => None
     }
 
+    val code: Option[String] = result.bestParse.map(_.semantic).flatMap {
+      case Form(v: AstNode) => Some(CodeGenerator.generateJS(v))
+      case _ => None
+    }
+
+    println(s"Validation output: $validated")
     println(s"Generated JS code: $code")
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.

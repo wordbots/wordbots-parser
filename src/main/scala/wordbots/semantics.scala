@@ -1,6 +1,7 @@
 package wordbots
 
-sealed trait AstNode
+sealed trait AstNode extends Product
+
 sealed trait Label extends AstNode
 
 case class At(trigger: Trigger, action: Action) extends AstNode

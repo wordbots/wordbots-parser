@@ -28,12 +28,12 @@ object CodeGenerator {
         s"(function () { setAbility(abilities['freezeAttribute'](function () { return ${g(target)}; }, ${g(attr)})); })"
 
       // Triggers
-      case AfterAttack(obj) => s"triggers['afterAttack'](${g(obj)})"
-      case AfterDamageReceived(obj) => s"triggers['afterDamageReceived'](${g(obj)})"
-      case AfterDestroyed(obj, cause) => s"triggers['afterDestroyed'](${g(obj)}, ${g(cause)})"
-      case AfterPlayed(obj) => s"triggers['afterPlayed'](${g(obj)})"
-      case BeginningOfTurn(player) => s"triggers['beginningOfTurn'](${g(player)})"
-      case EndOfTurn(player) => s"triggers['endOfTurn'](${g(player)})"
+      case AfterAttack(targetObj) => s"triggers['afterAttack'](function () { return ${g(targetObj)}; })"
+      case AfterDamageReceived(targetObj) => s"triggers['afterDamageReceived'](function () { return ${g(targetObj)}; })"
+      case AfterDestroyed(targetObj, cause) => s"triggers['afterDestroyed'](function () { return ${g(targetObj)}; }, ${g(cause)})"
+      case AfterPlayed(targetObj) => s"triggers['afterPlayed'](function () { return ${g(targetObj)}; })"
+      case BeginningOfTurn(targetPlayer) => s"triggers['beginningOfTurn'](function () { return ${g(targetPlayer)}; })"
+      case EndOfTurn(targetPlayer) => s"triggers['endOfTurn'](function () { return ${g(targetPlayer)}; })"
 
       // Target objects
       case Choose(collection) => s"targets['choose'](${g(collection)})"
