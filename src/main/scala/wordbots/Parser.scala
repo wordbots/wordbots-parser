@@ -172,7 +172,7 @@ object Lexicon {
     ("it" -> (NP, Form(It): SemanticState)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ThisRobot, a)})) +
     ("its controller" -> (NP, Form(ControllerOf(It)): SemanticState)) +
-    ("kernel" -> (N, Form(Kernel): SemanticState)) +
+    ("kernel".s -> (N, Form(Kernel): SemanticState)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
