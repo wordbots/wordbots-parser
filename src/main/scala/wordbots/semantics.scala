@@ -10,12 +10,12 @@ sealed trait Action extends AstNode
   case class And(action1: Action, action2: Action) extends Action
   case class CanMoveAgain(target: TargetObject) extends Action
   case class DealDamage(target: Target, num: Number) extends Action
-  case class Destroy(target: Target) extends Action
-  case class Discard(target: TargetPlayer, num: Number) extends Action
+  case class Destroy(target: TargetObject) extends Action
+  case class Discard(target: TargetObject) extends Action
   case class Draw(target: TargetPlayer, num: Number) extends Action
-  case class ModifyAttribute(target: Target, attribute: Attribute, operation: Operation) extends Action
-  case class ModifyEnergy(target: Target, operation: Operation) extends Action
-  case class SetAttribute(target: Target, attribute: Attribute, num: Number) extends Action
+  case class ModifyAttribute(target: TargetObject, attribute: Attribute, operation: Operation) extends Action
+  case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
+  case class SetAttribute(target: TargetObject, attribute: Attribute, num: Number) extends Action
   case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
 
 sealed trait PassiveAbility extends AstNode
@@ -35,6 +35,7 @@ sealed trait Trigger extends AstNode
   case class EndOfTurn(player: TargetPlayer) extends Trigger
 
 sealed trait Target extends AstNode
+  // TODO Separate into TargetObject and TargetCard. (This would require two different types of Choose.)
   sealed trait TargetObject extends Target
     case class Choose(collection: Collection) extends TargetObject
     case class All(collection: Collection) extends TargetObject
@@ -70,10 +71,12 @@ sealed trait Number extends AstNode
   case class AttributeValue(obj: TargetObject, attribute: Attribute) extends Number
 
 sealed trait Collection extends AstNode
-  case object AllTiles extends Collection
-  case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard) extends Collection
-  case class ObjectsInPlay(objectType: ObjectType) extends Collection
-  case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends Collection
+  sealed trait CardCollection extends Collection
+    case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard) extends CardCollection
+  sealed trait ObjectCollection extends Collection
+    case object AllTiles extends ObjectCollection
+    case class ObjectsInPlay(objectType: ObjectType) extends ObjectCollection
+    case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends ObjectCollection
 
 sealed trait CardType extends Label
   case object AnyCard extends CardType
@@ -99,12 +102,13 @@ sealed trait Rounding extends Label
   case object RoundedUp extends Rounding
   case object RoundedDown extends Rounding
 
-case class CurriedAction(action: Target => Action)
+case class CurriedAction(action: TargetObject => Action)
 
 // These container classes are used to store state mid-parse but not expressed in the final parsed AST.
 case class Cards(num: Number)
 case class Damage(amount: Number)
 case class Energy(amount: Number)
+case class Life(amount: Number)
 case class Hand(player: TargetPlayer)
 case class Turn(player: TargetPlayer)
 case class TargetAttribute(target: TargetObject, attr: Attribute)

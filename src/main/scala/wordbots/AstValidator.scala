@@ -6,7 +6,6 @@ case class ValidationError(message: String) extends  Exception(message)
 
 object AstValidator {
   val rules: Seq[AstRule] = Seq(
-    NoDiscardAction,
     NoChooseInTriggeredAction
   )
 
@@ -29,15 +28,6 @@ sealed trait AstRule {
           case _ => Success()
         }
       }
-    }
-  }
-}
-
-object NoDiscardAction extends AstRule {
-  override def validate(node: AstNode): Try[Unit] = {
-    node match {
-      case Discard(_, _) => Failure(ValidationError("Discard action not implemented."))
-      case n: AstNode => validateChildren(this, n)
     }
   }
 }

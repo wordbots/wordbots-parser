@@ -98,7 +98,7 @@ object Lexicon {
       (NP/PP, λ {c: Collection => All(c)})
     )) +
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
-    ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: Target => And(a1.action(t), a2.action(t))}}})) +
+    ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: TargetObject => And(a1.action(t), a2.action(t))}}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     ("attacks" -> (S\NP, λP ({case Choose(coll) => AfterAttack(All(coll))  // For this and other triggers, replace Choose targets w/ All targets.
                               case t: TargetObject => AfterAttack(t)}: PF))) +
@@ -111,7 +111,10 @@ object Lexicon {
       (N, Form(AnyCard): SemanticState),
       (NP\Num, λ {num: Number => Cards(num)}),
       (NP/Adj, λ {num: Number => Cards(num)}),
-      (NP/PP, λ {hand: Hand => CardsInHand(hand.player)})
+      (NP, Form(CardsInHand(Self)): SemanticState),
+      (NP/PP, λ {hand: Hand => CardsInHand(hand.player)}),
+      (NP\N, λ {cardType: CardType => CardsInHand(Self, cardType)}),
+      ((NP/PP)\N, λ {cardType: CardType => λ {hand: Hand => CardsInHand(hand.player, cardType)}})
     )) +
     ("control".s -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(p)))}})) +
     ("cost" -> Seq(
@@ -127,17 +130,14 @@ object Lexicon {
       (S\Num, λ {amount: Number => DealDamage(Choose(ObjectsInPlay(AllObjects)), amount)})  // (if no target is given, any target can be chosen)
     )) +
     (Seq("deal", "it deals", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
-    ("destroy" -> (S/NP, λ {t: Target => Destroy(t)})) +
+    ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
     ("destroyed" -> (S\NP, λP ({case Choose(coll) => AfterDestroyed(All(coll))
                                 case t: TargetObject => AfterDestroyed(t)}: PF))) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
-    ("discard" -> Seq(
-      (S/NP, λ {c: Cards => Discard(Self, c.num)}),
-      ((S/NP)\NP, λ {t: TargetPlayer => λ {c: Cards => Discard(t, c.num)}})
-    )) +
+    ("discard" -> (S/NP, λ {t: TargetObject => Discard(t)})) +
     ("double" -> Seq(
-      ((S/PP)/N, λ {a: Attribute => λ {t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
-      (V/N, λ {a: Attribute => CurriedAction({t: Target => ModifyAttribute(t, a, Multiply(Scalar(2)))})})
+      ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
+      (V/N, λ {a: Attribute => CurriedAction({t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))})})
     )) +
     ("each" -> Seq(
       (Adj, Form(AllPlayers): SemanticState),  // e.g. "each turn"
@@ -152,25 +152,32 @@ object Lexicon {
     ("equal" -> (Adj/PP, identity)) +
     ("everything" -> (N, Form(AllObjects): SemanticState)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => All(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
-    ("gain" -> (S/NP, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))})) +
+    ("gain" -> Seq(
+      (S/NP, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))}),
+      (S/NP, λ {l: Life => ModifyAttribute(All(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))), Health, Plus(l.amount))})
+    )) +
     (Seq("gain", "gains") -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(num))}}})) +
-    ("give" -> (((S/N)/Adj)/NP, λ {t: Target => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +
+    ("give" -> (((S/N)/Adj)/NP, λ {t: TargetObject => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})) +
     ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
     ("halve" -> Seq(
-      (((S/PP)/Adv)/N, λ {a: Attribute => λ {r: Rounding => λ {t: Target => ModifyAttribute(t, a, Divide(Scalar(2), r))}}}),
-      ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => CurriedAction({t: Target => ModifyAttribute(t, a, Divide(Scalar(2), r))})}})
+      (((S/PP)/Adv)/N, λ {a: Attribute => λ {r: Rounding => λ {t: TargetObject => ModifyAttribute(t, a, Divide(Scalar(2), r))}}}),
+      ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => CurriedAction({t: TargetObject => ModifyAttribute(t, a, Divide(Scalar(2), r))})}})
     )) +
     (Seq("has", "have") -> Seq(
       ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}}),
       (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}})
     )) +
-    (Seq("health", "life") -> (N, Form(Health): SemanticState)) +
+    (Seq("health", "life") -> Seq(
+      (N, Form(Health): SemanticState),
+      (NP|Num, λ {amount: Number => Life(amount)}),
+      (NP/Adj, λ {amount: Number => Life(amount)})
+    )) +
     (Seq("in", "of") -> (PP/NP, identity)) +
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("is" -> (X|X, identity)) +
     ("it" -> (NP, Form(It): SemanticState)) +
-    ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ThisRobot, a)})) +
+    ("its" -> (Num/N, λ {a: Attribute => AttributeValue(It, a)})) +
     ("its controller" -> (NP, Form(ControllerOf(It)): SemanticState)) +
     ("kernel".s -> (N, Form(Kernel): SemanticState)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
@@ -191,7 +198,7 @@ object Lexicon {
     (("robot".s ++ "creature".s) -> (N, Form(Robot): SemanticState)) +
     ("(rounded down)" -> (Adv, Form(RoundedDown): SemanticState)) +
     ("(rounded up)" -> (Adv, Form(RoundedUp): SemanticState)) +
-    ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: Target => λ {num: Number => SetAttribute(t, a, num)}}})) +
+    ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
     ("take control" -> (S/PP, λ {t: TargetObject => TakeControl(Self, t)})) +
     ("takes damage" -> (S\NP, λP ({case Choose(coll) => AfterDamageReceived(All(coll))

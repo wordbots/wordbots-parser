@@ -41,7 +41,11 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Deal 2 damage to a robot that has 3 or less speed") shouldEqual
       DealDamage(Choose(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Speed, LessThanOrEqualTo(Scalar(3)))))), Scalar(2))
     parse ("Deal 1 damage to all robots adjacent to a tile") shouldEqual
-      DealDamage(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(Choose(AllTiles))))),Scalar(1))
+      DealDamage(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(Choose(AllTiles))))), Scalar(1))
+    parse("Discard a robot card") shouldEqual
+      Discard(Choose(CardsInHand(Self, Robot)))
+    parse("Gain life equal to its health") shouldEqual
+      ModifyAttribute(All(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))), Health, Plus(AttributeValue(It, Health)))
 
     // The following action texts were provided by James:
     parse("Set all stats of all robots in play to 3") shouldEqual
