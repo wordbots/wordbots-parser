@@ -23,7 +23,7 @@ object WordbotsServer extends ServerApp {
          result.bestParse.map(_.semantic) match {
             case Some(Form(v: AstNode)) =>
               AstValidator.validate(v) match {
-                case Success(_) => Ok(CodeGenerator.generateJS(v), headers())
+                case Success(_) => Ok("{\"js\": \"" + CodeGenerator.generateJS(v) + "\"}", headers())
                 case Failure(ex: Throwable) =>
                   InternalServerError("{\"error\": \"" + ex.getMessage + "\"}", headers())
               }
