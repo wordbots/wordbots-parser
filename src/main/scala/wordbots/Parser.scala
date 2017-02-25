@@ -5,7 +5,6 @@ import java.io.PrintWriter
 import com.workday.montague.ccg._
 import com.workday.montague.parser._
 import com.workday.montague.semantics._
-import com.workday.montague.semantics.{λ => λP}
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
 import scala.util.Try
@@ -67,8 +66,6 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 }
 
 object Lexicon {
-  type PF = PartialFunction[AstNode, AstNode] // Partial function literals have to be explicitly typed because scala compiler is dumb.
-
   // scalastyle:off method.name
   implicit class StringImplicits(val str: String) extends AnyVal {
     // "blah".s = ["blah", "blahs"]
@@ -100,8 +97,10 @@ object Lexicon {
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: TargetObject => And(a1.action(t), a2.action(t))}}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
-    ("attacks" -> (S\NP, λP ({case Choose(coll) => AfterAttack(All(coll))  // For this and other triggers, replace Choose targets w/ All targets.
-                              case t: TargetObject => AfterAttack(t)}: PF))) +
+    ("attacks" -> Seq(
+      (S\NP, λ {c: Choose => AfterAttack(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {t: TargetObject => AfterAttack(t)})
+    )) +
     ("beginning" -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
     (Seq("can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
@@ -131,8 +130,10 @@ object Lexicon {
     )) +
     (Seq("deal", "it deals", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
     ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
-    ("destroyed" -> (S\NP, λP ({case Choose(coll) => AfterDestroyed(All(coll))
-                                case t: TargetObject => AfterDestroyed(t)}: PF))) +
+    ("destroyed" -> Seq(
+      (S\NP, λ {c: Choose => AfterDestroyed(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {t: TargetObject => AfterDestroyed(t)})
+    )) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
     ("discard" -> (S/NP, λ {t: TargetObject => Discard(t)})) +
     ("double" -> Seq(
@@ -147,7 +148,7 @@ object Lexicon {
     ("energy" -> Seq(
       (NP|Num, λ {amount: Number => Energy(amount)}),
       (NP/Adj, λ {amount: Number => Energy(amount)}),
-      (S\S, λ ({case AttributeAdjustment(target, Cost, op) => AttributeAdjustment(target, Cost, op)}: PF))  // "X costs Y more" == "X costs Y more energy"
+      (S\S, λ {aa: AttributeAdjustment => AttributeAdjustment(aa.target, Cost, aa.operation)})  // "X costs Y more" == "X costs Y more energy"
     )) +
     ("equal" -> (Adj/PP, identity)) +
     ("everything" -> (N, Form(AllObjects): SemanticState)) +
@@ -185,14 +186,18 @@ object Lexicon {
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     ("more than" -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("must" -> (X/X, identity)) +
-    ("number" -> (Num/PP, λP ({case c: Collection => Count(c)
-                               case All(c)        => Count(c)}: PF))) +
+    ("number" -> Seq(
+      (Num/PP, λ {c: Collection => Count(c)}),
+      (Num/PP, λ {a: All => Count(a.collection)})
+    )) +
     ("object".s -> (N, Form(AllObjects): SemanticState)) +
     ("or less" -> (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)})) +
     ("play".s -> ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})) +
-    ("played" -> (S\NP, λP ({case Choose(coll) => AfterPlayed(All(coll))
-                              case t: TargetObject => AfterPlayed(t)}: PF))) +
+    ("played" -> Seq(
+      (S\NP, λ {c: Choose => AfterPlayed(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {t: TargetObject => AfterPlayed(t)})
+    )) +
     (Seq("power", "attack") -> (N, Form(Attack): SemanticState)) +
     ("reduce" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}})) +
     (("robot".s ++ "creature".s) -> (N, Form(Robot): SemanticState)) +
@@ -201,8 +206,10 @@ object Lexicon {
     ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
     ("take control" -> (S/PP, λ {t: TargetObject => TakeControl(Self, t)})) +
-    ("takes damage" -> (S\NP, λP ({case Choose(coll) => AfterDamageReceived(All(coll))
-                                   case t: TargetObject => AfterDamageReceived(t)}: PF))) +
+    ("takes damage" -> Seq(
+      (S\NP, λ {c: Choose => AfterDamageReceived(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {t: TargetObject => AfterDamageReceived(t)})
+    )) +
     ("to" -> Seq(
       (PP/NP, identity),
       (PP/Num, identity)
@@ -211,8 +218,10 @@ object Lexicon {
     ("the" -> (X/X, identity)) +
     ("this" / Seq("robot", "creature") -> (NP, Form(ThisRobot): SemanticState)) +
     ("this" / Seq("robot's", "creature's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisRobot, a)})) +
-    ("total" -> ((Num/PP)/N, λP {a: Attribute => λP ({case c: Collection => AttributeSum(c, a)
-                                                      case All(c)        => AttributeSum(c, a)}: PF)})) +
+    ("total" -> Seq(
+      ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}}),
+      ((Num/PP)/N, λ {a: Attribute => λ {all: All => AttributeSum(all.collection, a)}})
+    )) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
     (Seq("when", "whenever") -> ((S/S)/S, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
