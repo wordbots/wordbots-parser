@@ -23,21 +23,24 @@ object WordbotsServer extends ServerApp {
          result.bestParse.map(_.semantic) match {
             case Some(Form(v: AstNode)) =>
               AstValidator.validate(v) match {
-                case Success(_) => Ok(CodeGenerator.generateJS(v))
+                case Success(_) => Ok(CodeGenerator.generateJS(v), headers())
                 case Failure(ex: Throwable) =>
-                  InternalServerError("{\"error\": \"" + ex.getMessage + "\"}")
+                  InternalServerError("{\"error\": \"" + ex.getMessage + "\"}", headers())
               }
             case _ =>
               val unrecognizedTokens = Parser.findUnrecognizedTokens(input)
-              InternalServerError("{\"error\": \"Parse failed\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}")
+              InternalServerError(
+                "{\"error\": \"Parse failed\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}",
+                headers()
+              )
           }
 
         case Some("svg") =>
           result.bestParse
-            .map(parse => Ok(parse.toSvg, Headers(Header("Content-Type", "image/svg+xml"))))
-            .getOrElse(InternalServerError("{\"error\": \"Parse failed\"}"))
+            .map(parse => Ok(parse.toSvg, headers(Some("image/svg+xml"))))
+            .getOrElse(InternalServerError("{\"error\": \"Parse failed\"}", headers()))
 
-        case _ => BadRequest("{\"error\": \"Invalid format\"}")
+        case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
       }
   }
 
@@ -47,6 +50,13 @@ object WordbotsServer extends ServerApp {
     Option(System.getenv("HTTP_PORT")))
     .map(_.toInt)
     .getOrElse(defaultPort)
+
+  def headers(contentType: Option[String] = None): Headers = {
+    contentType match {
+      case Some(ct) => Headers(Header("Access-Control-Allow-Origin", "*"), Header("Content-Type", ct))
+      case None => Headers(Header("Access-Control-Allow-Origin", "*"))
+    }
+  }
 
   override def server(args: List[String]): Task[Server] = {
     // scalastyle:off regex
