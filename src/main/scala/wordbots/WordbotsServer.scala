@@ -6,7 +6,7 @@ import org.http4s.dsl._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 import scalaz.concurrent.Task
 

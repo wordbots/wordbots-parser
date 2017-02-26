@@ -18,17 +18,10 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
     val output: String = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
 
-    // If there's no parse, try to figure out what went wrong ... perhaps there's an unidentified token?
-    if (result.bestParse.isEmpty) {
-      val unrecognizedTokens = findUnrecognizedTokens(input)
-      if (unrecognizedTokens.nonEmpty) {
-        throw new RuntimeException(s"Unrecognized term(s): ${unrecognizedTokens.mkString(", ")}")
-      }
-    }
-
     // scalastyle:off regex
     println(s"Input: $input")
     // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
+    // println(s"Unrecognized tokens: ${findUnrecognizedTokens(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
     // scalastyle:on regex
 
@@ -56,7 +49,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     val lexicon = Lexicon.lexicon
 
     tokens.filter { token =>
-      !lexicon.map.keys.exists(_.contains(token)) && lexicon.funcs.forall(_(token).isEmpty)
+      !lexicon.map.keys.exists(_.split(' ').contains(token)) && lexicon.funcs.forall(_(token).isEmpty)
     }
   }
 
