@@ -25,20 +25,17 @@ object WordbotsServer extends ServerApp {
               AstValidator.validate(v) match {
                 case Success(_) => Ok("{\"js\": \"" + CodeGenerator.generateJS(v) + "\"}", headers())
                 case Failure(ex: Throwable) =>
-                  InternalServerError("{\"error\": \"" + ex.getMessage + "\"}", headers())
+                  Ok("{\"error\": \"" + ex.getMessage + "\"}", headers())
               }
             case _ =>
               val unrecognizedTokens = Parser.findUnrecognizedTokens(input)
-              InternalServerError(
-                "{\"error\": \"Parse failed\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}",
-                headers()
-              )
+              Ok("{\"error\": \"Parse failed\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}", headers())
           }
 
         case Some("svg") =>
           result.bestParse
             .map(parse => Ok(parse.toSvg, headers(Some("image/svg+xml"))))
-            .getOrElse(InternalServerError("{\"error\": \"Parse failed\"}", headers()))
+            .getOrElse(Ok("{\"error\": \"Parse failed\"}", headers()))
 
         case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
       }
