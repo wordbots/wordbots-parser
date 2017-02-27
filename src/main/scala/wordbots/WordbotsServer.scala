@@ -22,20 +22,26 @@ object WordbotsServer extends ServerApp {
         case Some("js") =>
          result.bestParse.map(_.semantic) match {
             case Some(Form(v: AstNode)) =>
-              val syntacticCat = result.bestParse.map(_.syntactic)
+              val syntacticCat = result.bestParse.map(_.syntactic.category).getOrElse("None")
               syntacticCat match {
-                case Some(S) =>
+                case "S" =>
                   AstValidator.validate(v) match {
                     case Success(_) => Ok("{\"js\": \"" + CodeGenerator.generateJS(v) + "\"}", headers())
                     case Failure(ex: Throwable) =>
                       Ok("{\"error\": \"" + ex.getMessage + "\"}", headers())
                   }
                 case _ =>
-                  Ok("{\"error\": \"Parser did not produce a complete sentence - expected category: Some(S), got: " + syntacticCat + "\"}", headers())
+                  val error = s"Parser did not produce a complete sentence - expected category: S, got: ${syntacticCat}, ${syntacticCat == Some(S)}"
+                  Ok("{\"error\": \"" + error + "\"}", headers())
               }
             case _ =>
               val unrecognizedTokens = Parser.findUnrecognizedTokens(input)
-              Ok("{\"error\": \"Parse failed\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}", headers())
+              if (unrecognizedTokens.nonEmpty) {
+                val error = s"Unrecognized word(s): ${unrecognizedTokens.mkString(", ")}"
+                Ok("{\"error\": \"" + error + "\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}", headers())
+              } else {
+                Ok("{\"error\": \"Parse failed.\"", headers())
+              }
           }
 
         case Some("svg") =>
