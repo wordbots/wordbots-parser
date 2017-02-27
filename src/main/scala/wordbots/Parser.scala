@@ -99,7 +99,7 @@ object Lexicon {
     (Seq("can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
     ("can't attack" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotAttack)})) +
     ("can't be changed" -> (S\NP, λ {t: TargetAttribute => FreezeAttribute(t.target, t.attr)})) +
-    ("card".s -> Seq(
+    (("card".s :+ "a card") -> Seq(
       (N, Form(AnyCard): SemanticState),
       (NP\Num, λ {num: Number => Cards(num)}),
       (NP/Adj, λ {num: Number => Cards(num)}),
@@ -144,6 +144,7 @@ object Lexicon {
       (S\S, λ {aa: AttributeAdjustment => AttributeAdjustment(aa.target, Cost, aa.operation)})  // "X costs Y more" == "X costs Y more energy"
     )) +
     ("equal" -> (Adj/PP, identity)) +
+    ("for each" -> (Adj/NP, λ {c: Collection => Count(c)})) +
     ("everything" -> (N, Form(AllObjects): SemanticState)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => All(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
     ("gain" -> Seq(
