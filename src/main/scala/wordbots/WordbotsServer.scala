@@ -22,7 +22,7 @@ object WordbotsServer extends ServerApp {
         case Some("js") =>
          result.bestParse.map(_.semantic) match {
             case Some(Form(v: AstNode)) =>
-              val syntacticCat = result.bestParse.map(_.syntactic
+              val syntacticCat = result.bestParse.map(_.syntactic)
               syntacticCat match {
                 case Some(S) =>
                   AstValidator.validate(v) match {
