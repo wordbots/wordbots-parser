@@ -219,7 +219,7 @@ object Lexicon {
     )) +
     (Seq("in", "of") -> (PP/NP, identity)) +
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
-    ("in play" -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
+    (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("is" -> (X|X, identity)) +
     ("it" -> (NP, Form(It): SemanticState)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(It, a)})) +
@@ -238,7 +238,7 @@ object Lexicon {
     ("or less" -> (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)})) +
     ("play".s -> ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})) +
-    ("played" -> Seq(
+    (Seq("played", "comes into play", "enters the board") -> Seq(
       (S\NP, λ {c: Choose => AfterPlayed(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterPlayed(t)})
     )) +
