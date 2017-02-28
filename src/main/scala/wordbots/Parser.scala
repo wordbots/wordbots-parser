@@ -39,6 +39,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
   }
 
+  // scalastyle:off cyclomatic.complexity
   def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]]): Option[String] = {
     parseResult.map(_.semantic) match {
       case Some(Form(v: AstNode)) =>
@@ -55,16 +56,42 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
         // Handle failed parse.
         if (findUnrecognizedTokens(input).nonEmpty) {
           Some(s"Unrecognized word(s): ${findUnrecognizedTokens(input).mkString(", ")}")
-        } else if (syntaxOnlyParse(input).bestParse.isEmpty) {
-          Some("Parse failed (syntax error)")
+        } else if (parseWithLexicon(input, Lexicon.syntaxLexicon).bestParse.isEmpty) {
+          // Syntax error - see if we can fix it by replacing any term with a known CCG category ...
+
+          findValidSyntaxReplacements(input).headOption match {
+            case Some((word, cat)) => Some(s"Parse failed (syntax error - '$word' should be a ${cat.toUpperCase})")
+            case _ => Some("Parse failed (syntax error)")
+          }
+
+          // (Find longest valid substring - could this also be useful for error output?)
+          // val subStrings = for {start <- 0 to words.length; end <- start + 1 to words.length} yield words.slice(start, end).mkString(" ")
+          // println(subStrings.sortBy(-_.split(" ").length).find(s => syntaxOnlyParse(s).bestParse.isDefined))
         } else {
-          Some("Parse failed (semantics error)")
+          Some("Parse failed (semantic mismatch)")
         }
     }
   }
+  // scalastyle:on cyclomatic.complexity
 
-  private def syntaxOnlyParse(input: String): SemanticParseResult[CcgCat] = {
-    new SemanticParser[CcgCat](Lexicon.syntaxLexicon).parse(input, tokenizer)
+  private def findValidSyntaxReplacements(input: String): Seq[(String, String)] = {
+    val words = input.split(" ")
+    val replacements = Seq("n", "np", "num", "adj", "adv", "s")
+    val testLexicon = Lexicon.syntaxLexicon +
+      ("(n)" -> N) + ("(np)" -> NP) + ("(num)" -> Num) + ("(adj)" -> Adj) + ("(adv)" -> Adv) + ("(s)" -> S)
+
+    for {
+      pos <- 0 until words.length
+      replacement <- replacements
+      replaced = words.slice(0, pos).mkString(" ") + " (" + replacement + ") " + words.slice(pos + 1, words.length).mkString(" ")
+      if parseWithLexicon(replaced, testLexicon).bestParse.isDefined
+    } yield {
+      (words(pos), replacement)
+    }
+  }
+
+  private def parseWithLexicon(input: String, lexicon: ParserDict[CcgCat]): SemanticParseResult[CcgCat] = {
+    new SemanticParser[CcgCat](lexicon).parse(input, tokenizer)
   }
 
   def findUnrecognizedTokens(input: String): Seq[String] = {
