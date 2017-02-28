@@ -1,56 +1,42 @@
 package wordbots
 
-import com.workday.montague.ccg.S
 import com.workday.montague.semantics.Form
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
 
-import scala.util.{Failure, Success}
 import scalaz.concurrent.Task
 
 object WordbotsServer extends ServerApp {
   object InputParamMatcher extends QueryParamDecoderMatcher[String]("input")
   object FormatParamMatcher extends OptionalQueryParamDecoderMatcher[String]("format")
 
-  val service = HttpService {
-    case request @ GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) =>
-      val result = Parser.parse(input)
+  val service = {
+    HttpService {
+      case request @ GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) =>
+        val result = Parser.parse(input).bestParse
+        val unrecognizedTokens = Parser.findUnrecognizedTokens(input).mkString("\"", "\",\"", "\"")
 
-      format match {
-        case Some("js") =>
-         result.bestParse.map(_.semantic) match {
-            case Some(Form(v: AstNode)) =>
-              val syntacticCat = result.bestParse.map(_.syntactic.category).getOrElse("None")
-              syntacticCat match {
-                case "S" =>
-                  AstValidator.validate(v) match {
-                    case Success(_) => Ok("{\"js\": \"" + CodeGenerator.generateJS(v) + "\"}", headers())
-                    case Failure(ex: Throwable) =>
-                      Ok("{\"error\": \"" + ex.getMessage + "\"}", headers())
-                  }
-                case _ =>
-                  val error = s"Parser did not produce a complete sentence - expected category: S, got: ${syntacticCat}, ${syntacticCat == Some(S)}"
-                  Ok("{\"error\": \"" + error + "\"}", headers())
-              }
-            case _ =>
-              val unrecognizedTokens = Parser.findUnrecognizedTokens(input)
-              if (unrecognizedTokens.nonEmpty) {
-                val error = s"Unrecognized word(s): ${unrecognizedTokens.mkString(", ")}"
-                Ok("{\"error\": \"" + error + "\", \"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") +  "]}", headers())
-              } else {
-                Ok("{\"error\": \"Parse failed.\"", headers())
-              }
-          }
+        format match {
+          case Some("js") =>
+            Parser.diagnoseError(input, result) match {
+              case Some(error) => errorResponse(error, unrecognizedTokens)
+              case None =>
+                result.map(_.semantic) match {
+                  case Some(Form(v: AstNode)) => successResponse(CodeGenerator.generateJS(v))
+                  case _ => errorResponse("Unspecified parser error", unrecognizedTokens)
+                }
+            }
 
-        case Some("svg") =>
-          result.bestParse
-            .map(parse => Ok(parse.toSvg, headers(Some("image/svg+xml"))))
-            .getOrElse(Ok("{\"error\": \"Parse failed\"}", headers()))
+          case Some("svg") =>
+            result
+              .map(parse => Ok(parse.toSvg, headers(Some("image/svg+xml"))))
+              .getOrElse(errorResponse("Parse failed"))
 
-        case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
-      }
+          case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
+        }
+    }
   }
 
   val host = "0.0.0.0"
@@ -59,6 +45,14 @@ object WordbotsServer extends ServerApp {
     Option(System.getenv("HTTP_PORT")))
     .map(_.toInt)
     .getOrElse(defaultPort)
+
+  def successResponse(js: String): Task[Response] = {
+    Ok("{\"js\": \"" + js + "\"}", headers())
+  }
+
+  def errorResponse(error: String, unrecognizedTokens: String = ""): Task[Response] = {
+    Ok("{\"error\": \"" + error + "\", \"unrecognizedTokens\": [" + unrecognizedTokens +  "]}", headers())
+  }
 
   def headers(contentType: Option[String] = None): Headers = {
     contentType match {

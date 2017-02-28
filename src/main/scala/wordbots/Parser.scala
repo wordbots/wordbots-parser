@@ -7,7 +7,7 @@ import com.workday.montague.parser._
 import com.workday.montague.semantics._
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   def parse(input: String): SemanticParseResult[CcgCat] = parse(input, tokenizer)
@@ -23,12 +23,8 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     // println(s"Unrecognized tokens: ${findUnrecognizedTokens(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
+    println(s"Error diagnosis: ${diagnoseError(input, result.bestParse)}")
     // scalastyle:on regex
-
-    val validated: Option[Try[Unit]] = result.bestParse.map(_.semantic).flatMap {
-      case Form(v: AstNode) => Some(AstValidator.validate(v))
-      case _ => None
-    }
 
     val code: Option[String] = result.bestParse.map(_.semantic).flatMap {
       case Form(v: AstNode) => Some(CodeGenerator.generateJS(v))
@@ -36,12 +32,39 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     }
 
     // scalastyle:off regex
-    println(s"Validation output: $validated")
     println(s"Generated JS code: $code")
     // scalastyle:on regex
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.
     result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
+  }
+
+  def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]]): Option[String] = {
+    parseResult.map(_.semantic) match {
+      case Some(Form(v: AstNode)) =>
+        // Handle successful parse.
+        parseResult.map(_.syntactic.category).getOrElse("None") match {
+          case "S" =>
+            AstValidator.validate(v) match {
+              case Success(_) => None
+              case Failure(ex: Throwable) => Some(ex.getMessage)
+            }
+          case category => Some(s"Parser did not produce a complete sentence - expected category: S, got: $category")
+        }
+      case _ =>
+        // Handle failed parse.
+        if (findUnrecognizedTokens(input).nonEmpty) {
+          Some(s"Unrecognized word(s): ${findUnrecognizedTokens(input).mkString(", ")}")
+        } else if (syntaxOnlyParse(input).bestParse.isEmpty) {
+          Some("Parse failed (syntax error)")
+        } else {
+          Some("Parse failed (semantics error)")
+        }
+    }
+  }
+
+  private def syntaxOnlyParse(input: String): SemanticParseResult[CcgCat] = {
+    new SemanticParser[CcgCat](Lexicon.syntaxLexicon).parse(input, tokenizer)
   }
 
   def findUnrecognizedTokens(input: String): Seq[String] = {
@@ -228,6 +251,12 @@ object Lexicon {
     (IntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +
     (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(Scalar(i)))}))
+
+  val syntaxLexicon = ParserDict[CcgCat](
+    lexicon.map.mapValues(definitions => definitions.map {case (syn, sem) => (syn, Ignored(""))}),
+    lexicon.funcs.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}}),
+    lexicon.fallbacks.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}})
+  )
 }
 
 case class PrefixedIntegerMatcher(prefix: String) extends TokenMatcher[Int] {
