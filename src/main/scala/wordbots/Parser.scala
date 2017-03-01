@@ -215,7 +215,7 @@ object Lexicon {
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
       (V/N, λ {a: Attribute => CurriedAction({t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))})})
     )) +
-    ("each" -> Seq(
+    (Seq("each", "every") -> Seq(
       (Adj, Form(AllPlayers): SemanticState),  // e.g. "each turn"
       (NP/PP, identity)  // e.g. "each of (your turns)"
     )) +
