@@ -1,13 +1,17 @@
 package wordbots
 
 import com.workday.montague.ccg._
-import com.workday.montague.parser._
+import com.workday.montague.parser.{ParserDict, SemanticParser, SemanticParseResult, SemanticParseNode}
 import com.workday.montague.semantics._
-import com.workday.montague.semantics.FunctionReaderMacro.λ
 
 import scala.util.{Failure, Success, Try}
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
+  sealed trait Edit
+  case class Delete(idx: Int) extends Edit
+  case class Replace(idx: Int, pos: String) extends Edit
+  case class Insert(idx: Int, pos: String) extends Edit
+
   override def main(args: Array[String]): Unit = {
     val input = args.mkString(" ")
     val result: SemanticParseResult[CcgCat] = parse(input)
@@ -84,11 +88,6 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   private def tokenizer(str: String): IndexedSeq[String] = {
     str.trim.toLowerCase.split("\\s+|[.?!,]").filter("" !=)
   }
-
-  sealed trait Edit
-  case class Delete(idx: Int) extends Edit
-  case class Replace(idx: Int, pos: String) extends Edit
-  case class Insert(idx: Int, pos: String) extends Edit
 
   private def diagnoseSyntaxError(input: String): String = {
     val words = input.split(" ")

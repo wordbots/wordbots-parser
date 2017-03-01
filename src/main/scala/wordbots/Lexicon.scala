@@ -2,7 +2,8 @@ package wordbots
 
 import com.workday.montague.ccg._
 import com.workday.montague.parser.{IntegerMatcher, ParserDict}
-import com.workday.montague.semantics.{Form, Ignored, SemanticState, _}
+import com.workday.montague.semantics._
+import com.workday.montague.semantics.FunctionReaderMacro.λ
 
 /**
   * Created by alex on 2/28/17.
