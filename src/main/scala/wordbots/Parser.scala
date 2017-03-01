@@ -61,7 +61,18 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
         } else if (parseWithLexicon(input, Lexicon.syntaxLexicon).bestParse.isEmpty) {
           Some(s"parse failed (${diagnoseSyntaxError(input)})")
         } else {
-          Some("Parse failed (semantic mismatch)")
+          parseResult.map(_.exs.nonEmpty) match {
+            case Some(true) =>
+              val msgs = parseResult.get.exs.map (
+                _.getMessage
+                  .replace("cannot be cast to", "is not a")
+                  .replaceAllLiterally("$", "")
+                  .replaceAllLiterally("wordbots.", "")
+              )
+
+              Some(s"Parse failed (semantic mismatch - ${msgs.mkString(", ")})")
+            case _ => Some("Parse failed (semantic mismatch)")
+          }
         }
     }
   }
