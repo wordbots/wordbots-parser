@@ -135,6 +135,7 @@ object Lexicon {
       (Num/PP, λ {a: All => Count(a.collection)})
     )) +
     ("object".s -> (N, Form(AllObjects): SemanticState)) +
+    (Seq("or", "and") -> ((N/N)\N, λ {o1: ObjectType => λ {o2: ObjectType => MultipleObjectTypes(Seq(o1, o2))}})) +
     ("or less" -> (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     ("or more" -> (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)})) +
     ("play".s -> ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})) +
@@ -149,6 +150,7 @@ object Lexicon {
     ("(rounded up)" -> (Adv, Form(RoundedUp): SemanticState)) +
     ("set" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}})) +
     ("speed" -> (N, Form(Speed): SemanticState)) +
+    ("structure".s -> (N, Form(Structure): SemanticState)) +
     ("take control" -> (S/PP, λ {t: TargetObject => TakeControl(Self, t)})) +
     ("takes damage" -> Seq(
       (S\NP, λ {c: Choose => AfterDamageReceived(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
@@ -160,8 +162,8 @@ object Lexicon {
     )) +
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}})) +
     ("the" -> (X/X, identity)) +
-    ("this" / Seq("robot", "creature") -> (NP, Form(ThisRobot): SemanticState)) +
-    ("this" / Seq("robot's", "creature's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisRobot, a)})) +
+    ("this" / Seq("robot", "creature", "structure") -> (NP, Form(ThisRobot): SemanticState)) +
+    ("this" / Seq("robot's", "creature's", "structure's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisRobot, a)})) +
     ("total" -> Seq(
       ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}}),
       ((Num/PP)/N, λ {a: Attribute => λ {all: All => AttributeSum(all.collection, a)}})

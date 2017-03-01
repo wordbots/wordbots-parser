@@ -3,6 +3,7 @@ package wordbots
 sealed trait AstNode extends Product
 
 sealed trait Label extends AstNode
+trait MultiLabel extends Label { def labels: Seq[Label] }
 
 case class At(trigger: Trigger, action: Action) extends AstNode
 
@@ -86,6 +87,7 @@ sealed trait CardType extends Label
     case object Kernel extends ObjectType
     case object Structure extends ObjectType
     case object AllObjects extends ObjectType
+    case class MultipleObjectTypes(labels: Seq[ObjectType]) extends ObjectType with MultiLabel
 
 sealed trait Event extends Label
   case object AnyEvent extends Event

@@ -80,6 +80,7 @@ object CodeGenerator {
       case ObjectsMatchingConditions(objType, conditions) => s"objectsMatchingConditions(${g(objType)}, ${conditions.map(g).mkString("[", ", ", "]")})"
 
       // Labels
+      case m: MultiLabel => m.labels.map(g).mkString("[", ", ", "]")
       case l: Label => s"'${getLabelName(l)}'"
     }
   }
