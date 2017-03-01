@@ -3,5 +3,5 @@ import sbt._
 object MyBuild extends Build {
   lazy val root = Project("root", file(".")) dependsOn montague
 
-  lazy val montague = RootProject(uri("git://github.com/Workday/upshot-montague.git#2e5e689"))
+  lazy val montague = RootProject(uri("git://github.com/Workday/upshot-montague.git#6c0b7a6"))
 }
