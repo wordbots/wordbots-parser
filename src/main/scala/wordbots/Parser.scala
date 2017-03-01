@@ -50,23 +50,32 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     parseResult.map(_.semantic) match {
       case Some(Form(v: AstNode)) =>
         // Handle successful semantic parse.
+        // Does the parse produce a sentence (CCG category S)?
         parseResult.map(_.syntactic.category).getOrElse("None") match {
           case "S" =>
+            // Does the parse produce a valid AST?
             AstValidator.validate(v) match {
               case Success(_) => None
               case Failure(ex: Throwable) => Some(ex.getMessage)
             }
           case category => Some(s"Parser did not produce a complete sentence - expected category: S, got: $category")
         }
+      case Some(f: Form[_]) =>
+        // Handle a semantic parse that finishes but produces an unexpected result.
+        Some(s"Parser did not produce a valid expression - expected an AstNode, got: $f")
+      case Some(l: Lambda[_]) =>
+        // Handle successful syntactic parse but incomplete semantic parse.
+        val firstArgType = l.k.toString.split(": ")(1).split(" =>")(0)
+        Some(s"Parse failed (missing $firstArgType)")
       case Some(Nonsense(_)) =>
         // Handle successful syntactic parse but failed semantic parse.
-        Some(s"parse failed (${diagnoseSemanticsError(parseResult)})")
+        Some(s"Parse failed (${diagnoseSemanticsError(parseResult)})")
       case _ =>
         // Handle failed parse.
         if (findUnrecognizedTokens(input).nonEmpty) {
           Some(s"Unrecognized word(s): ${findUnrecognizedTokens(input).mkString(", ")}")
         } else {
-          Some(s"parse failed (${diagnoseSyntaxError(input)})")
+          Some(s"Parse failed (${diagnoseSyntaxError(input)})")
         }
     }
   }
@@ -85,12 +94,12 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     findValidEdits(input).headOption match {
       case Some(Delete(idx)) =>
         s"syntax error - unexpected word '${words(idx)}'"
-      case Some(Replace(idx, pos)) =>
+      case Some(Replace(idx, pos)) if words.length > 1 =>
         val context = if (idx > 0) s"after '${words(idx - 1)}'" else s"before '${words(idx + 1)}'"
         s"syntax error - expected $pos $context but got '${words(idx)}' instead"
       case Some(Insert(idx, pos)) =>
         s"syntax error - '${words(idx)}' should be followed by $pos"
-      case None => "syntax error"
+      case _ => "syntax error"
     }
   }
 
@@ -122,6 +131,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
       replaced = words.slice(0, i).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
       inserted = words.slice(0, i + 1).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
       (candidate, edit) <- Seq((deleted, Delete(i)), (replaced, Replace(i, pos)), (inserted, Insert(i, pos)))
+      if candidate.nonEmpty
       if parseWithLexicon(candidate, syntaxOnlyLexicon).bestParse.isDefined
     } yield edit
   }
