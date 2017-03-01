@@ -178,10 +178,4 @@ object Lexicon {
     (IntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +
     (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(Scalar(i)))}))
-
-  val syntaxLexicon = ParserDict[CcgCat](
-    lexicon.map.mapValues(definitions => definitions.map {case (syn, sem) => (syn, Ignored(""))}),
-    lexicon.funcs.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}}),
-    lexicon.fallbacks.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}})
-  )
 }

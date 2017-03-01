@@ -49,7 +49,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]]): Option[String] = {
     parseResult.map(_.semantic) match {
       case Some(Form(v: AstNode)) =>
-        // Handle successful parse.
+        // Handle successful semantic parse.
         parseResult.map(_.syntactic.category).getOrElse("None") match {
           case "S" =>
             AstValidator.validate(v) match {
@@ -58,25 +58,15 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
             }
           case category => Some(s"Parser did not produce a complete sentence - expected category: S, got: $category")
         }
+      case Some(Nonsense(_)) =>
+        // Handle successful syntactic parse but failed semantic parse.
+        Some(s"parse failed (${diagnoseSemanticsError(parseResult)})")
       case _ =>
         // Handle failed parse.
         if (findUnrecognizedTokens(input).nonEmpty) {
           Some(s"Unrecognized word(s): ${findUnrecognizedTokens(input).mkString(", ")}")
-        } else if (parseWithLexicon(input, Lexicon.syntaxLexicon).bestParse.isEmpty) {
-          Some(s"parse failed (${diagnoseSyntaxError(input)})")
         } else {
-          parseResult.map(_.exs.nonEmpty) match {
-            case Some(true) =>
-              val msgs = parseResult.get.exs.map (
-                _.getMessage
-                  .replace("cannot be cast to", "is not a")
-                  .replaceAllLiterally("$", "")
-                  .replaceAllLiterally("wordbots.", "")
-              )
-
-              Some(s"Parse failed (semantic mismatch - ${msgs.mkString(", ")})")
-            case _ => Some("Parse failed (semantic mismatch)")
-          }
+          Some(s"parse failed (${diagnoseSyntaxError(input)})")
         }
     }
   }
@@ -104,10 +94,23 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     }
   }
 
+  private def diagnoseSemanticsError(parseResult: Option[SemanticParseNode[CcgCat]]): String = {
+    parseResult.map(_.exs.nonEmpty) match {
+      case Some(true) =>
+        val msgs = parseResult.get.exs.map (
+          _.getMessage
+            .replace("cannot be cast to", "is not a")
+            .replaceAllLiterally("$", "")
+            .replaceAllLiterally("wordbots.", "")
+        )
+
+        s"semantics mismatch - ${msgs.mkString(", ")}"
+      case _ => "semantics mismatch"
+    }
+  }
+
   private def findValidEdits(input: String): Stream[Edit] = {
     val words = input.split(" ")
-    val testLexicon = Lexicon.syntaxLexicon +
-      ("(n)" -> N) + ("(np)" -> NP) + ("(num)" -> Num) + ("(adj)" -> Adj) + ("(adv)" -> Adv) + ("(rel)" -> Rel) + ("(s)" -> S)
 
     for {
       i <- (0 until words.length).toStream
@@ -119,8 +122,16 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
       replaced = words.slice(0, i).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
       inserted = words.slice(0, i + 1).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
       (candidate, edit) <- Seq((deleted, Delete(i)), (replaced, Replace(i, pos)), (inserted, Insert(i, pos)))
-      if parseWithLexicon(candidate, testLexicon).bestParse.isDefined
+      if parseWithLexicon(candidate, syntaxOnlyLexicon).bestParse.isDefined
     } yield edit
+  }
+
+  private lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
+    ParserDict[CcgCat](
+      Lexicon.lexicon.map.mapValues(_.map {case (syn, sem) => (syn, Ignored(""))}),
+      Lexicon.lexicon.funcs.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}}),
+      Lexicon.lexicon.fallbacks.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}})
+    ) + ("(n)" -> N) + ("(np)" -> NP) + ("(num)" -> Num) + ("(adj)" -> Adj) + ("(adv)" -> Adv) + ("(rel)" -> Rel) + ("(s)" -> S)
   }
 
   /* Not used right now because it's too computationally expensive - N^2 or N^3 syntactic parses for a length-N input.
