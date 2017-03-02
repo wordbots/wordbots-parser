@@ -94,7 +94,7 @@ object Lexicon {
       (S\S, λ {aa: AttributeAdjustment => AttributeAdjustment(aa.target, Cost, aa.operation)})  // "X costs Y more" == "X costs Y more energy"
     )) +
     ("equal" -> (Adj/PP, identity)) +
-    ("for each" -> (Adj/NP, λ {c: Collection => Count(c)})) +
+    (Seq("for each", "for every") -> (Adj/NP, λ {c: Collection => Count(c)})) +
     ("everything" -> (N, Form(AllObjects): SemanticState)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => All(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
     ("gain" -> Seq(
