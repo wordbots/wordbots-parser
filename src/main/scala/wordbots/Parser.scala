@@ -46,7 +46,8 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     }
   }
 
-  def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]]): Option[String] = {
+  def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]])
+                   (implicit validationMode: ValidationMode = ValidateUnknownCard): Option[String] = {
     parseResult.map(_.semantic) match {
       case Some(Form(v: AstNode)) =>
         // Handle successful semantic parse.
@@ -54,7 +55,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
         parseResult.map(_.syntactic.category).getOrElse("None") match {
           case "S" =>
             // Does the parse produce a valid AST?
-            AstValidator.validate(v) match {
+            AstValidator(validationMode).validate(v) match {
               case Success(_) => None
               case Failure(ex: Throwable) => Some(ex.getMessage)
             }

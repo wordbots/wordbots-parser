@@ -2,12 +2,27 @@ package wordbots
 
 import scala.util.{Failure, Success, Try}
 
-case class ValidationError(message: String) extends  Exception(message)
+case class ValidationError(message: String) extends Exception(message)
 
-object AstValidator {
-  val rules: Seq[AstRule] = Seq(
-    NoChooseInTriggeredAction
-  )
+sealed trait ValidationMode
+case object ValidateObject extends ValidationMode
+case object ValidateEvent extends ValidationMode
+case object ValidateUnknownCard extends ValidationMode
+
+case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
+  val rules: Seq[AstRule] = mode match {
+    case ValidateObject => Seq(
+      MustBeTriggeredOrPassiveAbility,
+      NoChooseInTriggeredAction
+    )
+    case ValidateEvent => Seq(
+      MustBeAction,
+      NoChooseInTriggeredAction
+    )
+    case ValidateUnknownCard => Seq(
+      NoChooseInTriggeredAction
+    )
+  }
 
   def validate(ast: AstNode): Try[Unit] = {
     Try(rules.foreach(_.validate(ast).get))
@@ -28,6 +43,26 @@ sealed trait AstRule {
           case _ => Success()
         }
       }
+    }
+  }
+}
+
+object MustBeTriggeredOrPassiveAbility extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case At(_, _) => Success()
+      case _: PassiveAbility => Success()
+      case _ => Failure(ValidationError("Not a valid passive or triggered ability."))
+    }
+  }
+}
+
+object MustBeAction extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case At(_, _) => Failure(ValidationError("Events can't have triggered abilities."))
+      case _: PassiveAbility => Failure(ValidationError("Events can't have passive abilities."))
+      case _ => Success()
     }
   }
 }

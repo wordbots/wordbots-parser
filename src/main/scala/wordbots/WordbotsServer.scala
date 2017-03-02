@@ -11,10 +11,17 @@ import scalaz.concurrent.Task
 object WordbotsServer extends ServerApp {
   object InputParamMatcher extends QueryParamDecoderMatcher[String]("input")
   object FormatParamMatcher extends OptionalQueryParamDecoderMatcher[String]("format")
+  object ModeParamMatcher extends OptionalQueryParamDecoderMatcher[String]("mode")
 
   val service = {
     HttpService {
-      case request @ GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) =>
+      case request @ GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) +& ModeParamMatcher(mode) =>
+        implicit val validationMode = mode match {
+          case Some("object") => ValidateObject
+          case Some("event") => ValidateEvent
+          case _ => ValidateUnknownCard
+        }
+
         val result = Parser.parse(input).bestParse
         val unrecognizedTokens = Parser.findUnrecognizedTokens(input).mkString("\"", "\",\"", "\"")
 

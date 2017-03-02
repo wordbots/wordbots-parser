@@ -13,7 +13,7 @@ class ParserSpec extends FlatSpec with Matchers {
         case Form(v: AstNode) => {
           println(s"    $v")
           CodeGenerator.generateJS(v.asInstanceOf[AstNode])  // Make sure that valid JS can be generated!
-          AstValidator.validate(v) match {  // Make sure the AstValidator successfully validates the parsed ast!
+          AstValidator().validate(v) match {  // Make sure the AstValidator successfully validates the parsed ast!
             case Success(_) => v
             case f: Failure[_] => f
           }
