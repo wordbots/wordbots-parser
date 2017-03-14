@@ -28,6 +28,7 @@ object Lexicon {
       (NP/NP, λ {c: Collection => Choose(c)}),  // e.g. "a robot you control"
       (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
     )) +
+    ("a player" -> (NP, Form(Choose(ObjectsInPlay(Kernel))): SemanticState)) +
     ("a tile" -> (NP, Form(Choose(AllTiles)): SemanticState)) +
     ("adjacent" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisRobot)))})) +
     ("adjacent to" -> ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}})) +
@@ -124,7 +125,7 @@ object Lexicon {
     ("it" -> (NP, Form(It): SemanticState)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(It, a)})) +
     ("its controller" -> (NP, Form(ControllerOf(It)): SemanticState)) +
-    ("kernel".s -> (N, Form(Kernel): SemanticState)) +
+    (("kernel".s ++ "core".s) -> (N, Form(Kernel): SemanticState)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
