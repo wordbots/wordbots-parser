@@ -43,7 +43,7 @@ object CodeGenerator {
       case All(collection) => s"targets['all'](${g(collection)})"
       case ThisRobot => "targets['thisRobot']()"
       case ItO => "targets['it']()"
-      case ItP => "targets['it']()"
+      case ItP => "targets['itP']()"
 
       // Target players
       case Self => "targets['self']()"
