@@ -6,7 +6,7 @@ import org.scalatest._
 import scala.util.{Success, Failure}
 
 class ParserSpec extends FlatSpec with Matchers {
-  def parse(input: String) = {
+  def parse(input: String): Any = {
     println(s"Parsing $input...")
     Parser.parse(input).bestParse match {
       case Some(parse) => parse.semantic match {
@@ -45,7 +45,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Discard a robot card") shouldEqual
       Discard(Choose(CardsInHand(Self, Robot)))
     parse("Gain life equal to its health") shouldEqual
-      ModifyAttribute(All(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))), Health, Plus(AttributeValue(It, Health)))
+      ModifyAttribute(All(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))), Health, Plus(AttributeValue(ItO, Health)))
 
     // The following action texts were provided by James:
     parse("Set all stats of all robots in play to 3") shouldEqual
@@ -95,8 +95,7 @@ class ParserSpec extends FlatSpec with Matchers {
       At(AfterPlayed(ThisRobot), Draw(Self, Count(ObjectsMatchingConditions(MultipleObjectTypes(Seq(Robot, Structure)), Seq(AdjacentTo(ThisRobot))))))
 
     parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent creature") shouldEqual
-      At(BeginningOfTurn(AllPlayers),
-        If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
+      At(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
