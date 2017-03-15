@@ -9,6 +9,8 @@ case class At(trigger: Trigger, action: Action) extends AstNode
 
 sealed trait Action extends AstNode
   case class And(action1: Action, action2: Action) extends Action
+  case class If(condition: GlobalCondition, action: Action) extends Action
+
   case class CanMoveAgain(target: TargetObject) extends Action
   case class DealDamage(target: Target, num: Number) extends Action
   case class Destroy(target: TargetObject) extends Action
@@ -41,17 +43,21 @@ sealed trait Target extends AstNode
     case class Choose(collection: Collection) extends TargetObject
     case class All(collection: Collection) extends TargetObject
     case object ThisRobot extends TargetObject
-    case object It extends TargetObject
+    case object ItO extends TargetObject
   sealed trait TargetPlayer extends Target
     case object Self extends TargetPlayer
     case object Opponent extends TargetPlayer
     case object AllPlayers extends TargetPlayer
+    case object ItP extends TargetPlayer
     case class ControllerOf(t: TargetObject) extends TargetPlayer
 
 sealed trait Condition extends AstNode
   case class AdjacentTo(obj: TargetObject) extends Condition
   case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends Condition
   case class ControlledBy(player: TargetPlayer) extends Condition
+
+sealed trait GlobalCondition extends AstNode
+  case class CollectionExists(coll: Collection) extends GlobalCondition
 
 sealed trait Operation extends AstNode
   case class Plus(num: Number) extends Operation

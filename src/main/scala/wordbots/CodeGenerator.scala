@@ -8,6 +8,7 @@ object CodeGenerator {
   private def g(node: AstNode): String = {
     node match {
       case At(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
+      case If(condition, action) => s"(function () { if (${g(condition)}) { (${g(action)})(); } })"
 
       // Actions
       case And(action1, action2) => s"(function () { ${g(action1)}(); ${g(action2)}(); })"
@@ -41,7 +42,8 @@ object CodeGenerator {
       case Choose(collection) => s"targets['choose'](${g(collection)})"
       case All(collection) => s"targets['all'](${g(collection)})"
       case ThisRobot => "targets['thisRobot']()"
-      case It => "targets['it']()"
+      case ItO => "targets['it']()"
+      case ItP => "targets['it']()"
 
       // Target players
       case Self => "targets['self']()"
@@ -53,6 +55,9 @@ object CodeGenerator {
       case AdjacentTo(obj) => s"conditions['adjacentTo'](${g(obj)})"
       case AttributeComparison(attr, comp) => s"conditions['attributeComparison'](${g(attr)}, ${g(comp)})"
       case ControlledBy(player) => s"conditions['controlledBy'](${g(player)})"
+
+      // Global conditions
+      case CollectionExists(coll) => s"(${g(coll)}.length > 0)"
 
       // Arithmetic operations
       case Plus(num) => s"function (x) { return x + ${g(num)}; }"

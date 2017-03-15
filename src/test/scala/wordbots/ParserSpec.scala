@@ -88,11 +88,15 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("When this robot is played, reduce the cost of a card in your hand by 2") shouldEqual
       At(AfterPlayed(ThisRobot), ModifyAttribute(Choose(CardsInHand(Self, AnyCard)), Cost, Minus(Scalar(2))))
     parse("Whenever a robot is destroyed in combat, deal 1 damage to its controller.") shouldEqual
-      At(AfterDestroyed(All(ObjectsInPlay(Robot)), Combat), DealDamage(ControllerOf(It), Scalar(1)))
+      At(AfterDestroyed(All(ObjectsInPlay(Robot)), Combat), DealDamage(ControllerOf(ItO), Scalar(1)))
     parse("When this robot is destroyed, take control of all adjacent robots.") shouldEqual
       At(AfterDestroyed(ThisRobot), TakeControl(Self, All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisRobot))))))
     parse("When this structure comes into play, draw a card for each adjacent robot or structure") shouldEqual
       At(AfterPlayed(ThisRobot), Draw(Self, Count(ObjectsMatchingConditions(MultipleObjectTypes(Seq(Robot, Structure)), Seq(AdjacentTo(ThisRobot))))))
+
+    parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent creature") shouldEqual
+      At(BeginningOfTurn(AllPlayers),
+        If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
