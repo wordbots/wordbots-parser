@@ -85,8 +85,8 @@ class ParserSpec extends FlatSpec with Matchers {
       ApplyEffect(ThisRobot, CanMoveOverObjects)
 
     // Taunt
-    parse("Adjacent robots can only attack this object") shouldEqual
-      ApplyEffect(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot)))), CanOnlyAttack(ThisRobot))
+    parse("Your opponent's adjacent robots can only attack this object") shouldEqual
+      ApplyEffect(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(Opponent)))), CanOnlyAttack(ThisRobot))
   }
 
   it should "parse triggers for robots" in {

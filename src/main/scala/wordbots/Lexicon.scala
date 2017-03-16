@@ -192,6 +192,11 @@ object Lexicon {
       (Adj, Form(Self): SemanticState)
     )) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
+    ("your opponent's" -> Seq(
+      (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
+      (NP/NP, λ {c: ObjectsMatchingConditions => All(ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Opponent)))}),
+      (Adj, Form(Opponent): SemanticState)
+    )) +
     (IntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +
     (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(Scalar(i)))}))
