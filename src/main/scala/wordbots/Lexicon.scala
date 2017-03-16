@@ -30,7 +30,10 @@ object Lexicon {
     )) +
     ("a player" -> (NP, Form(Choose(ObjectsInPlay(Kernel))): SemanticState)) +
     ("a tile" -> (NP, Form(Choose(AllTiles)): SemanticState)) +
-    ("adjacent" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisRobot)))})) +
+    ("adjacent" -> Seq(
+      (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisRobot)))}),
+      (NP/N, λ {o: ObjectType => All(ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisRobot))))})
+    )) +
     ("adjacent to" -> ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}})) +
     ("after attacking" -> (S\S, λ {a: Action => At(AfterAttack(ThisRobot), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
@@ -48,6 +51,8 @@ object Lexicon {
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
     (Seq("can move", "can move and attack", "can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
+    ("can move over other objects" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CanMoveOverObjects)})) +
+    ("can only attack" -> ((S\NP)/NP, λ {target: TargetObject => λ {attacker: TargetObject => ApplyEffect(attacker, CanOnlyAttack(target))}})) +
     ("can't attack" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotAttack)})) +
     ("can't be changed" -> (S\NP, λ {t: TargetAttribute => FreezeAttribute(t.target, t.attr)})) +
     (("card".s :+ "a card") -> Seq(
@@ -172,8 +177,8 @@ object Lexicon {
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}})) +
     (Seq("that player", "they") -> (NP, Form(ItP): SemanticState)) +
     ("the" -> (X/X, identity)) +
-    ("this" / Seq("robot", "creature", "structure") -> (NP, Form(ThisRobot): SemanticState)) +
-    ("this" / Seq("robot's", "creature's", "structure's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisRobot, a)})) +
+    ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisRobot): SemanticState)) +
+    ("this" / Seq("robot's", "creature's", "structure's", "object's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisRobot, a)})) +
     ("total" -> Seq(
       ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}}),
       ((Num/PP)/N, λ {a: Attribute => λ {all: All => AttributeSum(all.collection, a)}})

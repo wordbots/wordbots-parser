@@ -30,6 +30,9 @@ object CodeGenerator {
       case FreezeAttribute(target, attr) =>
         s"(function () { setAbility(abilities['freezeAttribute'](function () { return ${g(target)}; }, ${g(attr)})); })"
 
+      // Effects
+      case CanOnlyAttack(target) => s"'canonlyattack', {target: ${g(target)}}"
+
       // Triggers
       case AfterAttack(targetObj) => s"triggers['afterAttack'](function () { return ${g(targetObj)}; })"
       case AfterDamageReceived(targetObj) => s"triggers['afterDamageReceived'](function () { return ${g(targetObj)}; })"

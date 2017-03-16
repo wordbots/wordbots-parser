@@ -26,8 +26,10 @@ sealed trait PassiveAbility extends AstNode
   case class AttributeAdjustment(target: Target, attribute: Attribute, operation: Operation) extends PassiveAbility
   case class FreezeAttribute(target: Target, attribute: Attribute) extends PassiveAbility
 
-sealed trait Effect extends Label
-  case object CannotAttack extends Effect
+sealed trait Effect extends AstNode
+  case object CanMoveOverObjects extends Effect with Label
+  case object CannotAttack extends Effect with Label
+  case class CanOnlyAttack(target: TargetObject) extends Effect
 
 sealed trait Trigger extends AstNode
   case class AfterAttack(target: TargetObject) extends Trigger
@@ -42,13 +44,13 @@ sealed trait Target extends AstNode
   sealed trait TargetObject extends Target
     case class Choose(collection: Collection) extends TargetObject
     case class All(collection: Collection) extends TargetObject
-    case object ThisRobot extends TargetObject
-    case object ItO extends TargetObject
+    case object ThisRobot extends TargetObject  // TODO: Rename to ThisObject.
+    case object ItO extends TargetObject  // (Salient object)
   sealed trait TargetPlayer extends Target
     case object Self extends TargetPlayer
     case object Opponent extends TargetPlayer
     case object AllPlayers extends TargetPlayer
-    case object ItP extends TargetPlayer
+    case object ItP extends TargetPlayer  // (Salient player)
     case class ControllerOf(t: TargetObject) extends TargetPlayer
 
 sealed trait Condition extends AstNode

@@ -71,6 +71,24 @@ class ParserSpec extends FlatSpec with Matchers {
       parse("Deal damage to a robot equal to the total power of all robots you control")
   }
 
+  it should "parse keyword abilities" in {
+    // Defender
+    parse("This robot can't attack") shouldEqual
+      ApplyEffect(ThisRobot, CannotAttack)
+
+    // Haste
+    parse("This robot can move and attack immediately after it is played") shouldEqual
+      At(AfterPlayed(ItO), CanMoveAgain(ThisRobot))
+
+    // Jump
+    parse("This robot can move over other objects") shouldEqual
+      ApplyEffect(ThisRobot, CanMoveOverObjects)
+
+    // Taunt
+    parse("Adjacent robots can only attack this object") shouldEqual
+      ApplyEffect(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot)))), CanOnlyAttack(ThisRobot))
+  }
+
   it should "parse triggers for robots" in {
     // The following trigger texts were provided by James:
     parse("At the end of each turn, each robot takes 1 damage") shouldEqual
@@ -93,9 +111,6 @@ class ParserSpec extends FlatSpec with Matchers {
       At(AfterDestroyed(ThisRobot), TakeControl(Self, All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisRobot))))))
     parse("When this structure comes into play, draw a card for each adjacent robot or structure") shouldEqual
       At(AfterPlayed(ThisRobot), Draw(Self, Count(ObjectsMatchingConditions(MultipleObjectTypes(Seq(Robot, Structure)), Seq(AdjacentTo(ThisRobot))))))
-
-    parse("This robot can move and attack immediately after it is played") shouldEqual
-      At(AfterPlayed(ItO), CanMoveAgain(ThisRobot))
 
     parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent creature") shouldEqual
       At(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
