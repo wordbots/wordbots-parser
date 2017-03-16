@@ -94,6 +94,9 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("When this structure comes into play, draw a card for each adjacent robot or structure") shouldEqual
       At(AfterPlayed(ThisRobot), Draw(Self, Count(ObjectsMatchingConditions(MultipleObjectTypes(Seq(Robot, Structure)), Seq(AdjacentTo(ThisRobot))))))
 
+    parse("This robot can move and attack immediately after it is played") shouldEqual
+      At(AfterPlayed(ItO), CanMoveAgain(ThisRobot))
+
     parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent creature") shouldEqual
       At(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
   }
