@@ -132,6 +132,7 @@ object Lexicon {
     )) +
     ("if" -> ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}})) +
     (Seq("in", "of") -> (PP/NP, identity)) +
+    ("instead" -> (S|S, λ {a: Action => Instead(a)})) +
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("is" -> (X|X, identity)) +

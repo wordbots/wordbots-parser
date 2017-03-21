@@ -10,6 +10,7 @@ case class At(trigger: Trigger, action: Action) extends AstNode
 sealed trait Action extends AstNode
   case class And(action1: Action, action2: Action) extends Action
   case class If(condition: GlobalCondition, action: Action) extends Action
+  case class Instead(action: Action) extends Action
 
   case class CanMoveAgain(target: TargetObject) extends Action
   case class DealDamage(target: Target, num: Number) extends Action
