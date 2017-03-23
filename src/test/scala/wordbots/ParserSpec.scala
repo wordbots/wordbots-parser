@@ -31,7 +31,7 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "parse simple actions" in {
     parse("Draw a card") should equal (Draw(Self, Scalar(1)))
     parse("Destroy a robot") should equal (Destroy(Choose(ObjectsInPlay(Robot))))
-    parse("Gain 2 energy") should equal (ModifyEnergy(Self, Plus(Scalar(2))))
+    parse("Gain two energy") should equal (ModifyEnergy(Self, Plus(Scalar(2))))
     parse("Deal 2 damage to a robot") should equal (DealDamage(Choose(ObjectsInPlay(Robot)), Scalar(2)))
     parse("Deal 2 damage to yourself") should equal (DealDamage(Self, Scalar(2)))
     parse("Give a robot +1 speed") should equal (ModifyAttribute(Choose(ObjectsInPlay(Robot)), Speed, Plus(Scalar(1))))

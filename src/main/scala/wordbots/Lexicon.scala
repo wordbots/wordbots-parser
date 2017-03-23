@@ -1,7 +1,7 @@
 package wordbots
 
 import com.workday.montague.ccg._
-import com.workday.montague.parser.{IntegerMatcher, ParserDict}
+import com.workday.montague.parser.{IntegerMatcher, ParserDict, TokenMatcher}
 import com.workday.montague.semantics._
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
@@ -199,6 +199,7 @@ object Lexicon {
       (Adj, Form(Opponent): SemanticState)
     )) +
     (IntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
+    (NumberWordMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +
     (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(Scalar(i)))}))
 }
