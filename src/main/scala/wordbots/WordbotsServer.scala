@@ -43,6 +43,15 @@ object WordbotsServer extends ServerApp {
 
           case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
         }
+
+      case request @ GET -> Root / "lexicon" :? FormatParamMatcher(format) =>
+        val terms: List[String] = Lexicon.lexicon.map.keys.toList
+
+        format match {
+          case Some("json") => Ok(terms.sorted.mkString("[\"", "\", \"", "\"]"), headers())
+          case None => Ok(s"I can understand ${terms.size.toString} terms:\n\n${terms.sorted.mkString("\n")}", headers())
+          case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
+        }
     }
   }
 
