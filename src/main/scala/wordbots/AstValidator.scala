@@ -12,7 +12,7 @@ case object ValidateUnknownCard extends ValidationMode
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val rules: Seq[AstRule] = mode match {
     case ValidateObject => Seq(
-      MustBeTriggeredOrPassiveAbility,
+      MustBeAbility,
       NoChooseInTriggeredAction
     )
     case ValidateEvent => Seq(
@@ -47,12 +47,13 @@ sealed trait AstRule {
   }
 }
 
-object MustBeTriggeredOrPassiveAbility extends AstRule {
+object MustBeAbility extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
-      case At(_, _) => Success()
+      case TriggeredAbility(_, _) => Success()
+      case ActivatedAbility(_) => Success()
       case _: PassiveAbility => Success()
-      case _ => Failure(ValidationError("Not a valid passive or triggered ability."))
+      case _ => Failure(ValidationError("Not a valid passive, triggered, or activated ability."))
     }
   }
 }
@@ -60,7 +61,8 @@ object MustBeTriggeredOrPassiveAbility extends AstRule {
 object MustBeAction extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
-      case At(_, _) => Failure(ValidationError("Events can't have triggered abilities."))
+      case TriggeredAbility(_, _) => Failure(ValidationError("Events can't have triggered abilities."))
+      case ActivatedAbility(_) => Failure(ValidationError("Events can't have activated abilities."))
       case _: PassiveAbility => Failure(ValidationError("Events can't have passive abilities."))
       case _ => Success()
     }
@@ -79,8 +81,8 @@ object NoChooseInTriggeredAction extends AstRule {
 
   override def validate(node: AstNode): Try[Unit] = {
     node match {
-      case At(AfterPlayed(_), action) => Success()  // Choosing targets *is* allowed for AfterPlayed triggers.
-      case At(_, action) => validateChildren(NoChooseTarget, node)
+      case TriggeredAbility(AfterPlayed(_), action) => Success()  // Choosing targets *is* allowed for AfterPlayed triggers.
+      case TriggeredAbility(_, action) => validateChildren(NoChooseTarget, node)
       case n: AstNode => validateChildren(this, n)
     }
   }

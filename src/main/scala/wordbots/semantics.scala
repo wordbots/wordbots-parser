@@ -5,7 +5,8 @@ sealed trait AstNode extends Product
 sealed trait Label extends AstNode
 trait MultiLabel extends Label { def labels: Seq[Label] }
 
-case class At(trigger: Trigger, action: Action) extends AstNode
+case class TriggeredAbility(trigger: Trigger, action: Action) extends AstNode
+case class ActivatedAbility(action: Action) extends AstNode
 
 sealed trait Action extends AstNode
   case class And(action1: Action, action2: Action) extends Action

@@ -30,12 +30,13 @@ object Lexicon {
     )) +
     ("a player" -> (NP, Form(Choose(ObjectsInPlay(Kernel))): SemanticState)) +
     ("a tile" -> (NP, Form(Choose(AllTiles)): SemanticState)) +
+    ("activate:" -> (S/S, λ {a: Action => ActivatedAbility(a)})) +
     ("adjacent" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisRobot)))}),
       (NP/N, λ {o: ObjectType => All(ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisRobot))))})
     )) +
     ("adjacent to" -> ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}})) +
-    ("after attacking" -> (S\S, λ {a: Action => At(AfterAttack(ThisRobot), a)})) +
+    ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisRobot), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
       (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => All(c)}),
@@ -43,7 +44,7 @@ object Lexicon {
     )) +
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: TargetObject => And(a1.action(t), a2.action(t))}}})) +
-    ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
+    ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     ("attacks" -> Seq(
       (S\NP, λ {c: Choose => AfterAttack(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterAttack(t)})
@@ -185,7 +186,7 @@ object Lexicon {
       ((Num/PP)/N, λ {a: Attribute => λ {all: All => AttributeSum(all.collection, a)}})
     )) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
-    (Seq("when", "whenever", "after", "immediately after") -> ((S|S)|S, λ {t: Trigger => λ {a: Action => At(t, a)}})) +
+    (Seq("when", "whenever", "after", "immediately after") -> ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
