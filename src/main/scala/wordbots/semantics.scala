@@ -36,7 +36,7 @@ sealed trait Effect extends AstNode
 sealed trait Trigger extends AstNode
   case class AfterAttack(target: TargetObject) extends Trigger
   case class AfterDamageReceived(target: TargetObject) extends Trigger
-  case class AfterDestroyed(target: TargetObject, cause: Event = AnyEvent) extends Trigger
+  case class AfterDestroyed(target: TargetObject, cause: TriggerEvent = AnyEvent) extends Trigger
   case class AfterPlayed(Target: TargetObject) extends Trigger
   case class BeginningOfTurn(player: TargetPlayer) extends Trigger
   case class EndOfTurn(player: TargetPlayer) extends Trigger
@@ -64,12 +64,14 @@ sealed trait GlobalCondition extends AstNode
   case class CollectionExists(coll: Collection) extends GlobalCondition
 
 sealed trait Operation extends AstNode
+  case class Constant(num: Number) extends Operation
   case class Plus(num: Number) extends Operation
   case class Minus(num: Number) extends Operation
   case class Multiply(num: Number) extends Operation
   case class Divide(num: Number, rounding: Rounding) extends Operation
 
 sealed trait Comparison extends AstNode
+  case class EqualTo(num: Number) extends Comparison
   case class GreaterThan(num: Number) extends Comparison
   case class GreaterThanOrEqualTo(num: Number) extends Comparison
   case class LessThan(num: Number) extends Comparison
@@ -99,9 +101,9 @@ sealed trait CardType extends Label
     case object AllObjects extends ObjectType
     case class MultipleObjectTypes(labels: Seq[ObjectType]) extends ObjectType with MultiLabel
 
-sealed trait Event extends Label
-  case object AnyEvent extends Event
-  case object Combat extends Event
+sealed trait TriggerEvent extends Label
+  case object AnyEvent extends TriggerEvent
+  case object Combat extends TriggerEvent
 
 sealed trait Attribute extends Label
   case object Attack extends Attribute
@@ -124,4 +126,5 @@ case class Life(amount: Number)
 case class Hand(player: TargetPlayer)
 case class Turn(player: TargetPlayer)
 case class TargetAttribute(target: TargetObject, attr: Attribute)
+case class AttributeAmount(amount: Number, attr: Attribute)
 case class CardPlay(player: TargetPlayer, cardType: CardType)

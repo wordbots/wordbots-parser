@@ -66,6 +66,7 @@ object CodeGenerator {
       case CollectionExists(coll) => s"(${g(coll)}.length > 0)"
 
       // Arithmetic operations
+      case Constant(num) => s"function (x) { return ${g(num)}; }"
       case Plus(num) => s"function (x) { return x + ${g(num)}; }"
       case Minus(num) => s"function (x) { return x - ${g(num)}; }"
       case Multiply(num) => s"function (x) { return x * ${g(num)}; }"
@@ -73,6 +74,7 @@ object CodeGenerator {
       case Divide(num, RoundedUp) => s"function (x) { return Math.ceil(x / ${g(num)}); }"
 
       // Comparisons
+      case EqualTo(num) => s"(function (x) { return x === ${g(num)}; })"
       case GreaterThan(num) => s"(function (x) { return x > ${g(num)}; })"
       case GreaterThanOrEqualTo(num) => s"(function (x) { return x >= ${g(num)}; })"
       case LessThan(num) => s"(function (x) { return x < ${g(num)}; })"
