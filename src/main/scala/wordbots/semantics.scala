@@ -36,7 +36,7 @@ sealed trait Effect extends AstNode
 sealed trait Trigger extends AstNode
   case class AfterAttack(target: TargetObject) extends Trigger
   case class AfterDamageReceived(target: TargetObject) extends Trigger
-  case class AfterDestroyed(target: TargetObject, cause: Event = AnyEvent) extends Trigger
+  case class AfterDestroyed(target: TargetObject, cause: TriggerEvent = AnyEvent) extends Trigger
   case class AfterPlayed(Target: TargetObject) extends Trigger
   case class BeginningOfTurn(player: TargetPlayer) extends Trigger
   case class EndOfTurn(player: TargetPlayer) extends Trigger
@@ -101,9 +101,9 @@ sealed trait CardType extends Label
     case object AllObjects extends ObjectType
     case class MultipleObjectTypes(labels: Seq[ObjectType]) extends ObjectType with MultiLabel
 
-sealed trait Event extends Label
-  case object AnyEvent extends Event
-  case object Combat extends Event
+sealed trait TriggerEvent extends Label
+  case object AnyEvent extends TriggerEvent
+  case object Combat extends TriggerEvent
 
 sealed trait Attribute extends Label
   case object Attack extends Attribute

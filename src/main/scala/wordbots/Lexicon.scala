@@ -74,6 +74,9 @@ object Lexicon {
     ) +
     ("cost" -> Seq(
       (N, Form(Cost): SemanticState),
+      ((S\NP)/Num, λ {i: Scalar => λ {t: Target => AttributeAdjustment(t, Cost, Constant(i))}}),
+      ((S\NP)/Adv, λ {o: Operation => λ {t: Target => AttributeAdjustment(t, Cost, o)}}),
+      ((S\NP)/Num, λ {i: Scalar => λ {cp: CardPlay => AttributeAdjustment(All(CardsInHand(cp.player, cp.cardType)), Cost, Constant(i))}}),
       ((S\NP)/Adv, λ {o: Operation => λ {cp: CardPlay => AttributeAdjustment(All(CardsInHand(cp.player, cp.cardType)), Cost, o)}})
     )) +
     ("damage" -> Seq(
@@ -107,6 +110,9 @@ object Lexicon {
       (S\S, λ {aa: AttributeAdjustment => AttributeAdjustment(aa.target, Cost, aa.operation)})  // "X costs Y more" == "X costs Y more energy"
     )) +
     ("equal" -> (Adj/PP, identity)) +
+    ("events" -> Seq(
+      (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)})  // e.g. "All events in your hand"
+    )) +
     (Seq("for each", "for every") -> (Adj/NP, λ {c: Collection => Count(c)})) +
     ("everything" -> (N, Form(AllObjects): SemanticState)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => All(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
@@ -178,7 +184,10 @@ object Lexicon {
       (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)})
     )) +
     ("reduce" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}})) +
-    (("robot".s ++ "creature".s) -> (N, Form(Robot): SemanticState)) +
+    (("robot".s ++ "creature".s) -> Seq(
+      (N, Form(Robot): SemanticState),
+      (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)})  // e.g. "all robots in your hand"
+    )) +
     ("(rounded down)" -> (Adv, Form(RoundedDown): SemanticState)) +
     ("(rounded up)" -> (Adv, Form(RoundedUp): SemanticState)) +
     ("set" -> Seq(
@@ -189,7 +198,10 @@ object Lexicon {
       (N, Form(Speed): SemanticState),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)})
     )) +
-    ("structure".s -> (N, Form(Structure): SemanticState)) +
+    ("structure".s -> Seq(
+      (N, Form(Structure): SemanticState),
+      (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Structure)})  // e.g. "All structures in your hand"
+    )) +
     ("take control" -> (S/PP, λ {t: TargetObject => TakeControl(Self, t)})) +
     ("takes damage" -> Seq(
       (S\NP, λ {c: Choose => AfterDamageReceived(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
@@ -222,7 +234,7 @@ object Lexicon {
       (Adj, Form(Self): SemanticState)
     )) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
-    ("your opponent's" -> Seq(
+    (Seq("your opponent's", "all of your opponent's") -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => All(ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Opponent)))}),
       (Adj, Form(Opponent): SemanticState)
