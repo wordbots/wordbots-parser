@@ -35,6 +35,12 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Deal 2 damage to a robot") should equal (DealDamage(Choose(ObjectsInPlay(Robot)), Scalar(2)))
     parse("Deal 2 damage to yourself") should equal (DealDamage(Self, Scalar(2)))
     parse("Give a robot +1 speed") should equal (ModifyAttribute(Choose(ObjectsInPlay(Robot)), Speed, Plus(Scalar(1))))
+
+    // (From 4/10/17 playtest session:)
+    parse("Give a robot 0 attack") shouldEqual
+      SetAttribute(Choose(ObjectsInPlay(Robot)), Attack, Scalar(0))
+    parse("Set a robot's attack to 0") shouldEqual
+      SetAttribute(Choose(ObjectsInPlay(Robot)), Attack, Scalar(0))
   }
 
   it should "parse more complex actions" in {
@@ -47,7 +53,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Gain life equal to its health") shouldEqual
       ModifyAttribute(All(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))), Health, Plus(AttributeValue(ItO, Health)))
 
-    // The following action texts were provided by James:
+    // (The following action texts were provided by James:)
     parse("Set all stats of all robots in play to 3") shouldEqual
       SetAttribute(All(ObjectsInPlay(Robot)), AllAttributes, Scalar(3))
     parse("Draw cards equal to the number of robots you control") shouldEqual
@@ -61,6 +67,12 @@ class ParserSpec extends FlatSpec with Matchers {
         ModifyAttribute(All(ObjectsInPlay(Robot)), Attack, Multiply(Scalar(2))),
         ModifyAttribute(All(ObjectsInPlay(Robot)), Health, Divide(Scalar(2), RoundedUp))
       )
+
+    // (From 4/10/17 playtest session:)
+    parse("Destroy a robot with 4 attack or more") shouldEqual
+      Destroy(Choose(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Attack, GreaterThanOrEqualTo(Scalar(4)))))))
+    parse("Double the health of a robot") shouldEqual
+      ModifyAttribute(Choose(ObjectsInPlay(Robot)), Health, Multiply(Scalar(2)))
   }
 
   it should "deal with ambiguous uses of 'all'" in {
@@ -90,7 +102,7 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   it should "parse triggers for robots" in {
-    // The following trigger texts were provided by James:
+    // (The following trigger texts were provided by James:)
     parse("At the end of each turn, each robot takes 1 damage") shouldEqual
       TriggeredAbility(EndOfTurn(AllPlayers), DealDamage(All(ObjectsInPlay(Robot)), Scalar(1)))
     parse("This robot gains a second move action after attacking") shouldEqual
@@ -114,6 +126,10 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent creature") shouldEqual
       TriggeredAbility(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
+
+    // (From 4/10/17 playtest session:)
+    parse("At the end of each turn, destroy all of your opponent's adjacent robots") shouldEqual
+      TriggeredAbility(EndOfTurn(AllPlayers), Destroy(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(Opponent))))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -125,7 +141,7 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   it should "parse passive abilities for robots" in {
-    // The following ability texts were provided by James:
+    // (The following ability texts were provided by James:)
     parse("Your adjacent robots have +1 attack") shouldEqual
       AttributeAdjustment(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisRobot), ControlledBy(Self)))), Attack, Plus(Scalar(1)))
     parse("This robot can't attack") shouldEqual
@@ -134,6 +150,12 @@ class ParserSpec extends FlatSpec with Matchers {
       FreezeAttribute(ThisRobot, AllAttributes)
     parse("Robots you play cost 2 less") shouldEqual
       AttributeAdjustment(All(CardsInHand(Self, Robot)), Cost, Minus(Scalar(2)))
+
+    // (From 4/10/17 playtest session:)
+    parse("All cards in your hand cost 1 less energy") shouldEqual
+      AttributeAdjustment(All(CardsInHand(Self, AnyCard)), Cost, Minus(Scalar(1)))
+    parse("All robots in your hand cost 1") shouldEqual
+      AttributeAdjustment(All(CardsInHand(Self, Robot)), Cost, Constant(Scalar(1)))
   }
 
   it should "parse activated abilities for robots" in {

@@ -64,12 +64,14 @@ sealed trait GlobalCondition extends AstNode
   case class CollectionExists(coll: Collection) extends GlobalCondition
 
 sealed trait Operation extends AstNode
+  case class Constant(num: Number) extends Operation
   case class Plus(num: Number) extends Operation
   case class Minus(num: Number) extends Operation
   case class Multiply(num: Number) extends Operation
   case class Divide(num: Number, rounding: Rounding) extends Operation
 
 sealed trait Comparison extends AstNode
+  case class EqualTo(num: Number) extends Comparison
   case class GreaterThan(num: Number) extends Comparison
   case class GreaterThanOrEqualTo(num: Number) extends Comparison
   case class LessThan(num: Number) extends Comparison
@@ -124,4 +126,5 @@ case class Life(amount: Number)
 case class Hand(player: TargetPlayer)
 case class Turn(player: TargetPlayer)
 case class TargetAttribute(target: TargetObject, attr: Attribute)
+case class AttributeAmount(amount: Number, attr: Attribute)
 case class CardPlay(player: TargetPlayer, cardType: CardType)
