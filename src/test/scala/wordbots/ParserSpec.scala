@@ -67,6 +67,8 @@ class ParserSpec extends FlatSpec with Matchers {
         ModifyAttribute(All(ObjectsInPlay(Robot)), Attack, Multiply(Scalar(2))),
         ModifyAttribute(All(ObjectsInPlay(Robot)), Health, Divide(Scalar(2), RoundedUp))
       )
+    parse("Destroy all robots with energy cost three or greater") shouldEqual
+      Destroy(All(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(3)))))))
 
     // (From 4/10/17 playtest session:)
     parse("Destroy a robot with 4 attack or more") shouldEqual

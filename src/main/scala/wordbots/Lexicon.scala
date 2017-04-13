@@ -72,7 +72,7 @@ object Lexicon {
       ((S/NP)\NP,
         λ {p: TargetPlayer => λ {c: ObjectsMatchingConditions => CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(p)))}})
     ) +
-    ("cost" -> Seq(
+    (Seq("cost", "energy cost") -> Seq(
       (N, Form(Cost): SemanticState),
       ((S\NP)/Num, λ {i: Scalar => λ {t: Target => AttributeAdjustment(t, Cost, Constant(i))}}),
       ((S\NP)/Adv, λ {o: Operation => λ {t: Target => AttributeAdjustment(t, Cost, o)}}),
@@ -225,7 +225,8 @@ object Lexicon {
     ("with" -> Seq(  // "with" = "that" + "has"
       ((NP\N)/NP, λ {ac: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ac))}}),
       (((NP\N)/N)/Num, λ {i: Scalar => λ {a: Attribute => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AttributeComparison(a, EqualTo(i))))}}}),
-      (((NP\N)/N)/Adj, λ {c: Comparison => λ {a: Attribute => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AttributeComparison(a, c)))}}})
+      (((NP\N)/N)/Adj, λ {c: Comparison => λ {a: Attribute => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AttributeComparison(a, c)))}}}),
+      (((NP\N)/Adj)/N, λ {a: Attribute => λ {c: Comparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AttributeComparison(a, c)))}}})
     )) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your" -> Seq(
