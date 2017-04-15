@@ -5,6 +5,7 @@ import org.scalatest._
 
 import scala.util.{Success, Failure}
 
+// scalastyle:off line.size.limit
 class ParserSpec extends FlatSpec with Matchers {
   def parse(input: String): Any = {
     println(s"Parsing $input...")
@@ -31,6 +32,8 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "parse simple actions" in {
     parse("Draw a card") should equal (Draw(Self, Scalar(1)))
     parse("Destroy a robot") should equal (Destroy(Choose(ObjectsInPlay(Robot))))
+    parse("Destroy a random robot") should equal (Destroy(Random(Scalar(1), ObjectsInPlay(Robot))))
+    parse("Discard a random card") should equal (Discard(Random(Scalar(1), CardsInHand(Self, AnyCard))))
     parse("Gain two energy") should equal (ModifyEnergy(Self, Plus(Scalar(2))))
     parse("Deal 2 damage to a robot") should equal (DealDamage(Choose(ObjectsInPlay(Robot)), Scalar(2)))
     parse("Deal 2 damage to yourself") should equal (DealDamage(Self, Scalar(2)))
@@ -132,6 +135,8 @@ class ParserSpec extends FlatSpec with Matchers {
     // (From 4/10/17 playtest session:)
     parse("At the end of each turn, destroy all of your opponent's adjacent robots") shouldEqual
       TriggeredAbility(EndOfTurn(AllPlayers), Destroy(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(Opponent))))))
+    parse("When this robot comes into play, discard 2 random cards") shouldEqual
+      TriggeredAbility(AfterPlayed(ThisRobot), Discard(Random(Scalar(2), CardsInHand(Self))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -181,3 +186,4 @@ class ParserSpec extends FlatSpec with Matchers {
 
   }
 }
+// scalastyle:on line.size.limit

@@ -183,6 +183,10 @@ object Lexicon {
       (N, Form(Attack): SemanticState),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)})
     )) +
+    ("random" -> Seq(
+      ((NP/N)\Num, λ {num: Number => λ {o: ObjectType => Random(num, ObjectsInPlay(o))}}),  // e.g. "Destroy a random robot"
+      ((NP/NP)\Num, λ {num: Number => λ {c: Collection => Random(num, c)}})  // e.g. "Discard 2 random cards"
+    )) +
     ("reduce" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}})) +
     (("robot".s ++ "creature".s) -> Seq(
       (N, Form(Robot): SemanticState),

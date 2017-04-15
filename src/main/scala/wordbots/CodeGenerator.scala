@@ -47,6 +47,7 @@ object CodeGenerator {
       // Target objects
       case Choose(collection) => s"targets['choose'](${g(collection)})"
       case All(collection) => s"targets['all'](${g(collection)})"
+      case Random(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
       case ThisRobot => "targets['thisRobot']()"
       case ItO => "targets['it']()"
       case ItP => "targets['itP']()"

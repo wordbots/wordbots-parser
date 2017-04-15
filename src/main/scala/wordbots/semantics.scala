@@ -46,6 +46,7 @@ sealed trait Target extends AstNode
   sealed trait TargetObject extends Target
     case class Choose(collection: Collection) extends TargetObject
     case class All(collection: Collection) extends TargetObject
+    case class Random(num: Number, collection: Collection) extends TargetObject
     case object ThisRobot extends TargetObject  // TODO: Rename to ThisObject.
     case object ItO extends TargetObject  // (Salient object)
   sealed trait TargetPlayer extends Target
