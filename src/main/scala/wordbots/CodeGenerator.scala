@@ -33,7 +33,7 @@ object CodeGenerator {
       case FreezeAttribute(target, attr) =>
         s"(function () { setAbility(abilities['freezeAttribute'](function () { return ${g(target)}; }, ${g(attr)})); })"
       case GiveAbility(target, ability) =>
-        s"""(function () { setAbility(abilities['giveAbility'](function () { return ${g(target)}; }, "${g(ability)}")); })"""
+        s"""(function () { setAbility(abilities['giveAbility'](function () { return ${g(target)}; }, \\"${g(ability)}\\")); })"""
 
       // Effects
       case CanOnlyAttack(target) => s"'canonlyattack', {target: ${g(target)}}"
