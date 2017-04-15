@@ -50,9 +50,7 @@ sealed trait AstRule {
 object MustBeAbility extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
-      case TriggeredAbility(_, _) => Success()
-      case ActivatedAbility(_) => Success()
-      case _: PassiveAbility => Success()
+      case _: Ability => Success()
       case _ => Failure(ValidationError("Not a valid passive, triggered, or activated ability."))
     }
   }

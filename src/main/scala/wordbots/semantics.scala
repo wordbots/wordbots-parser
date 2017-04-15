@@ -5,8 +5,9 @@ sealed trait AstNode extends Product
 sealed trait Label extends AstNode
 trait MultiLabel extends Label { def labels: Seq[Label] }
 
-case class TriggeredAbility(trigger: Trigger, action: Action) extends AstNode
-case class ActivatedAbility(action: Action) extends AstNode
+sealed trait Ability extends AstNode
+case class TriggeredAbility(trigger: Trigger, action: Action) extends Ability
+case class ActivatedAbility(action: Action) extends Ability
 
 sealed trait Action extends AstNode
   case class And(action1: Action, action2: Action) extends Action
@@ -23,10 +24,11 @@ sealed trait Action extends AstNode
   case class SetAttribute(target: TargetObject, attribute: Attribute, num: Number) extends Action
   case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
 
-sealed trait PassiveAbility extends AstNode
+sealed trait PassiveAbility extends Ability
   case class ApplyEffect(target: Target, effect: Effect) extends PassiveAbility
   case class AttributeAdjustment(target: Target, attribute: Attribute, operation: Operation) extends PassiveAbility
   case class FreezeAttribute(target: Target, attribute: Attribute) extends PassiveAbility
+  case class GiveAbility(target: Target, ability: Ability) extends PassiveAbility
 
 sealed trait Effect extends AstNode
   case object CanMoveOverObjects extends Effect with Label

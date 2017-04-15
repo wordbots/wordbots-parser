@@ -1,7 +1,7 @@
 package wordbots
 
 import com.workday.montague.ccg._
-import com.workday.montague.parser.{IntegerMatcher, ParserDict, TokenMatcher}
+import com.workday.montague.parser.ParserDict
 import com.workday.montague.semantics._
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
@@ -137,7 +137,8 @@ object Lexicon {
       (S/NP, λ {ac: AttributeComparison => ac}),
       ((S/N)/Num, λ {i: Scalar => λ {a: Attribute => AttributeComparison(a, EqualTo(i))}}),
       ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}}),
-      (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}})
+      (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}}),
+      ((S\NP)/Rel, λ {a: Ability => λ {t: TargetObject => GiveAbility(t, a)}})
     )) +
     (Seq("health", "life") -> Seq(
       (N, Form(Health): SemanticState),
@@ -243,6 +244,10 @@ object Lexicon {
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => All(ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Opponent)))}),
       (Adj, Form(Opponent): SemanticState)
+    )) +
+    ("\"" -> Seq(
+      (Quoted/S, identity),
+      (Rel\Quoted, identity)
     )) +
     (StrictIntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (NumberWordMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
