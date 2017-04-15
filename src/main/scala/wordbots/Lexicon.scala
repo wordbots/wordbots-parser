@@ -137,8 +137,8 @@ object Lexicon {
       (S/NP, λ {ac: AttributeComparison => ac}),
       ((S/N)/Num, λ {i: Scalar => λ {a: Attribute => AttributeComparison(a, EqualTo(i))}}),
       ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}}),
-      (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}}),
-      ((S\NP)/Rel, λ {a: Ability => λ {t: TargetObject => GiveAbility(t, a)}})
+      ((S\NP)/S, λ {a: Ability => λ {t: TargetObject => GiveAbility(t, a)}}),
+      (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}})
     )) +
     (Seq("health", "life") -> Seq(
       (N, Form(Health): SemanticState),
@@ -247,7 +247,7 @@ object Lexicon {
     )) +
     ("\"" -> Seq(
       (Quoted/S, identity),
-      (Rel\Quoted, identity)
+      (S\Quoted, identity)
     )) +
     (StrictIntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (NumberWordMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
