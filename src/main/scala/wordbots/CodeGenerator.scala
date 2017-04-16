@@ -7,10 +7,6 @@ object CodeGenerator {
   // scalastyle:off cyclomatic.complexity
   private def g(node: AstNode): String = {
     node match {
-      case ActivatedAbility(action) => s"""(function () { setAbility(abilities['activated'](\\"${g(action)}\\")); })"""
-      case TriggeredAbility(trigger, Instead(action)) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}, {override: true}); })"
-      case TriggeredAbility(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
-
       case If(condition, action) => s"(function () { if (${g(condition)}) { (${g(action)})(); } })"
 
       // Actions
@@ -24,6 +20,12 @@ object CodeGenerator {
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
       case TakeControl(player, target) => s"(function () { actions['takeControl'](${g(player)}, ${g(target)}); })"
+
+      // Activated and triggered abilities
+      case ActivatedAbility(action) =>
+        s"""(function () { setAbility(abilities['activated']((function () { return ${g(ThisRobot)}; }, \\"${g(action)}\\")); })"""
+      case TriggeredAbility(trigger, Instead(action)) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}, {override: true}); })"
+      case TriggeredAbility(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
 
       // Passive abilities
       case ApplyEffect(target, effect) =>
