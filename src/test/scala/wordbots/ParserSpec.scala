@@ -173,6 +173,8 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "parse activated abilities for robots" in {
     parse("Activate: Destroy this robot") shouldEqual
       ActivatedAbility(Destroy(ThisRobot))
+    parse("Activate: Draw a card, then discard a card") shouldEqual
+      ActivatedAbility(And(Draw(Self, Scalar(1)), Discard(Choose(CardsInHand(Self, AnyCard)))))
   }
 
   it should "generate JS code for actions" in {

@@ -221,6 +221,7 @@ object Lexicon {
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}})) +
     (Seq("that player", "they") -> (NP, Form(ItP): SemanticState)) +
     ("the" -> (X/X, identity)) +
+    ("then" -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisRobot): SemanticState)) +
     ("this" / Seq("robot's", "creature's", "structure's", "object's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisRobot, a)})) +
     ("total" -> Seq(
