@@ -7,7 +7,7 @@ object CodeGenerator {
   // scalastyle:off cyclomatic.complexity
   private def g(node: AstNode): String = {
     node match {
-      case ActivatedAbility(action) => s"(function () { setAbility(abilities['activated'](${g(action)}); })"
+      case ActivatedAbility(action) => s"(function () { setAbility(abilities['activated'](${g(action)})); })"
       case TriggeredAbility(trigger, Instead(action)) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}, {override: true}); })"
       case TriggeredAbility(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
 
