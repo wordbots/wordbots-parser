@@ -23,7 +23,7 @@ object CodeGenerator {
 
       // Activated and triggered abilities
       case ActivatedAbility(action) =>
-        s"""(function () { setAbility(abilities['activated']((function () { return ${g(ThisRobot)}; }, \\"${g(action)}\\")); })"""
+        s"""(function () { setAbility(abilities['activated'](function () { return ${g(ThisRobot)}; }, \\"${g(action)}\\")); })"""
       case TriggeredAbility(trigger, Instead(action)) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}, {override: true}); })"
       case TriggeredAbility(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
 
