@@ -24,6 +24,7 @@ object Lexicon {
 
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
+      (N/N, λ {o: ObjectType => o}),
       (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),  // e.g. "a robot"
       (NP/NP, λ {c: Collection => Choose(c)}),  // e.g. "a robot you control"
       (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
@@ -38,7 +39,7 @@ object Lexicon {
       (NP/N, λ {o: ObjectType => All(ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisRobot))))})
     )) +
     ("adjacent to" -> ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}})) +
-    ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisRobot), a)})) +
+    ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisRobot, AllObjects), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
       (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => All(c)}),
@@ -48,8 +49,9 @@ object Lexicon {
     ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: TargetObject => And(a1.action(t), a2.action(t))}}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     ("attacks" -> Seq(
-      (S\NP, λ {c: Choose => AfterAttack(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
-      (S\NP, λ {t: TargetObject => AfterAttack(t)})
+      (S\NP, λ {c: Choose => AfterAttack(All(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
+      ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterAttack(t, o)}})
     )) +
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +

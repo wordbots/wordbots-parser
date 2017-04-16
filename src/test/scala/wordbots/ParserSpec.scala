@@ -129,14 +129,16 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("When this structure comes into play, draw a card for each adjacent robot or structure") shouldEqual
       TriggeredAbility(AfterPlayed(ThisRobot), Draw(Self, Count(ObjectsMatchingConditions(MultipleObjectTypes(Seq(Robot, Structure)), Seq(AdjacentTo(ThisRobot))))))
 
-    parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent creature") shouldEqual
-      TriggeredAbility(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
-
     // (From 4/10/17 playtest session:)
     parse("At the end of each turn, destroy all of your opponent's adjacent robots") shouldEqual
       TriggeredAbility(EndOfTurn(AllPlayers), Destroy(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(Opponent))))))
     parse("When this robot comes into play, discard 2 random cards") shouldEqual
       TriggeredAbility(AfterPlayed(ThisRobot), Discard(Random(Scalar(2), CardsInHand(Self))))
+
+    parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent creature") shouldEqual
+      TriggeredAbility(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
+    parse("Whenever this robot attacks a kernel, draw a card") shouldEqual
+      TriggeredAbility(AfterAttack(ThisRobot, Kernel), Draw(Self, Scalar(1)))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
