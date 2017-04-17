@@ -139,6 +139,8 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
     parse("Whenever this robot attacks a kernel, draw a card") shouldEqual
       TriggeredAbility(AfterAttack(ThisRobot, Kernel), Draw(Self, Scalar(1)))
+    parse("When this robot is played, destroy all robots and gain 2 life") shouldEqual
+      TriggeredAbility(AfterPlayed(ThisRobot), And(Destroy(All(ObjectsInPlay(Robot))), ModifyAttribute(All(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))), Health, Plus(Scalar(2)))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
