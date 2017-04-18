@@ -24,7 +24,7 @@ object Lexicon {
 
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
-      (N/N, λ {o: ObjectType => o}),
+      (N/N, identity),
       (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),  // e.g. "a robot"
       (NP/NP, λ {c: Collection => Choose(c)}),  // e.g. "a robot you control"
       (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
@@ -113,7 +113,8 @@ object Lexicon {
       (S\S, λ {aa: AttributeAdjustment => AttributeAdjustment(aa.target, Cost, aa.operation)})  // "X costs Y more" == "X costs Y more energy"
     )) +
     ("equal" -> (Adj/PP, identity)) +
-    ("events" -> Seq(
+    ("event".s -> Seq(
+      (N, Form(Event): SemanticState),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)})  // e.g. "All events in your hand"
     )) +
     (Seq("for each", "for every") -> (Adj/NP, λ {c: Collection => Count(c)})) +
@@ -177,7 +178,10 @@ object Lexicon {
       (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)}),
       (NP\N, λ {aa: AttributeAmount => AttributeComparison(aa.attr, GreaterThanOrEqualTo(aa.amount))})
     )) +
-    ("play".s -> ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})) +
+    ("play".s -> Seq(
+      ((S/N)\NP, λ {t: TargetPlayer => λ {c: CardType => AfterCardPlay(t, c)}}),  // e.g. "[whenever] you play a robot, [do something]"
+      ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})  // e.g. "robots you play [cost X less, etc]"
+    )) +
     (Seq("played", "comes into play", "enters the board") -> Seq(
       (S\NP, λ {c: Choose => AfterPlayed(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterPlayed(t)})

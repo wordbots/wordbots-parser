@@ -136,6 +136,8 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(AfterPlayed(ThisObject), Discard(Random(Scalar(2), CardsInHand(Self))))
     parse("When this robot is played, destroy all other robots") shouldEqual
       TriggeredAbility(AfterPlayed(ThisObject), Destroy(All(Other(ObjectsInPlay(Robot)))))
+    parse("Whenever you play an event, draw a card") shouldEqual
+      TriggeredAbility(AfterCardPlay(Self, Event), Draw(Self, Scalar(1)))
 
     parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent robot") shouldEqual
       TriggeredAbility(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))

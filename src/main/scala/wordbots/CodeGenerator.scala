@@ -42,6 +42,7 @@ object CodeGenerator {
 
       // Triggers
       case AfterAttack(targetObj, objectType) => s"triggers['afterAttack'](function () { return ${g(targetObj)}; }, ${g(objectType)})"
+      case AfterCardPlay(targetPlayer, cardType) => s"triggers['afterAttack'](function () { return ${g(targetPlayer)}; }, ${g(cardType)})"
       case AfterDamageReceived(targetObj) => s"triggers['afterDamageReceived'](function () { return ${g(targetObj)}; })"
       case AfterDestroyed(targetObj, cause) => s"triggers['afterDestroyed'](function () { return ${g(targetObj)}; }, ${g(cause)})"
       case AfterPlayed(targetObj) => s"triggers['afterPlayed'](function () { return ${g(targetObj)}; })"
