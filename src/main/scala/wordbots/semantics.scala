@@ -11,9 +11,7 @@ case class ActivatedAbility(action: Action) extends Ability
 
 sealed trait Action extends AstNode
   case class MultipleActions(actions: Seq[Action]) extends Action
-  object And {
-    def apply(actions: Action*): MultipleActions = new MultipleActions(actions)
-  }
+  object And { def apply(actions: Action*): MultipleActions = MultipleActions(actions) }
 
   case class If(condition: GlobalCondition, action: Action) extends Action
   case class Instead(action: Action) extends Action
@@ -127,8 +125,6 @@ sealed trait Attribute extends Label
 sealed trait Rounding extends Label
   case object RoundedUp extends Rounding
   case object RoundedDown extends Rounding
-
-case class CurriedAction(action: TargetObject => Action)
 
 // These container classes are used to store state mid-parse but not expressed in the final parsed AST.
 case class Cards(num: Number)

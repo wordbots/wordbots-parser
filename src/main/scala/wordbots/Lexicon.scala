@@ -46,10 +46,7 @@ object Lexicon {
       (NP/PP, λ {c: Collection => All(c)})
     )) +
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
-    ("and" -> Seq(
-      (conj, λ {a: Any => λ {b: Any => Seq(b, a)}}),
-      (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: TargetObject => And(a1.action(t), a2.action(t))}}})
-    )) +
+    ("and" -> (conj, λ {a: Any => λ {b: Any => Seq(b, a)}})) +
     (Seq("and", "then") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     ("attacks" -> Seq(
@@ -103,7 +100,7 @@ object Lexicon {
     ("discard" -> (S/NP, λ {t: TargetObject => Discard(t)})) +
     ("double" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
-      (V/N, λ {a: Attribute => CurriedAction({t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))})})
+      (V/N, λ {a: Attribute => AttributeOperation(Multiply(Scalar(2)), a)})
     )) +
     (Seq("each", "every", "each player's", "every player's") -> Seq(
       (Adj, Form(AllPlayers): SemanticState),  // e.g. "each turn"
@@ -129,6 +126,11 @@ object Lexicon {
       ((S/NP)\NP, λ {p: TargetPlayer => λ {e: Energy => ModifyEnergy(p, Plus(e.amount))}}),  // Y gains X energy.
       (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(num))}}})  // Y gains X (attribute).
     )) +
+    (("get".s ++ "gain".s ++ Seq("has", "have")) -> Seq( // "[All robots] get/gain/have ..."
+      (((S/N)/Num)\NP, λ {t: TargetObject => λ {i: Scalar => λ {a: Attribute => SetAttribute(t, a, i)}}}),  // "... X attack"
+      (((S/N)/Adj)\NP, λ {t: TargetObject => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}}),  // "... +X attack"
+      ((S/NP)\NP, λ {t: TargetObject => λ {ops: Seq[AttributeOperation] => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})  // "... +X attack and +Y speed"
+    )) +
     ("give" -> Seq(
       (((S/N)/Num)/NP, λ {t: TargetObject => λ {i: Scalar => λ {a: Attribute => SetAttribute(t, a, i)}}}),
       (((S/N)/Adj)/NP, λ {t: TargetObject => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}}),
@@ -137,7 +139,7 @@ object Lexicon {
     ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
     ("halve" -> Seq(
       (((S/PP)/Adv)/N, λ {a: Attribute => λ {r: Rounding => λ {t: TargetObject => ModifyAttribute(t, a, Divide(Scalar(2), r))}}}),
-      ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => CurriedAction({t: TargetObject => ModifyAttribute(t, a, Divide(Scalar(2), r))})}})
+      ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => AttributeOperation(Divide(Scalar(2), r), a)}})
     )) +
     (Seq("has", "have") -> Seq(
       (S/NP, λ {ac: AttributeComparison => ac}),
@@ -173,6 +175,7 @@ object Lexicon {
       (Num/PP, λ {a: All => Count(a.collection)})
     )) +
     ("object".s -> (N, Form(AllObjects): SemanticState)) +
+    ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
     ("other" -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
     (Seq("or", "and") -> ((N/N)\N, λ {o1: ObjectType => λ {o2: ObjectType => MultipleObjectTypes(Seq(o1, o2))}})) +
     ("or less" -> Seq(
