@@ -23,7 +23,7 @@ object CodeGenerator {
 
       // Activated and triggered abilities
       case ActivatedAbility(action) =>
-        s"""(function () { setAbility(abilities['activated'](function () { return ${g(ThisRobot)}; }, \\"${g(action)}\\")); })"""
+        s"""(function () { setAbility(abilities['activated'](function () { return ${g(ThisObject)}; }, \\"${g(action)}\\")); })"""
       case TriggeredAbility(trigger, Instead(action)) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}, {override: true}); })"
       case TriggeredAbility(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
 
@@ -52,7 +52,7 @@ object CodeGenerator {
       case Choose(collection) => s"targets['choose'](${g(collection)})"
       case All(collection) => s"targets['all'](${g(collection)})"
       case Random(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
-      case ThisRobot => "targets['thisRobot']()"
+      case ThisObject => "targets['thisRobot']()"
       case ItO => "targets['it']()"
       case ItP => "targets['itP']()"
 
@@ -96,6 +96,7 @@ object CodeGenerator {
       case CardsInHand(player, cardType) => s"cardsInHand(${g(player)}, ${g(cardType)})"
       case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
       case ObjectsMatchingConditions(objType, conditions) => s"objectsMatchingConditions(${g(objType)}, ${conditions.map(g).mkString("[", ", ", "]")})"
+      case Other(collection) => s"other(${g(collection)})"
 
       // Labels
       case m: MultiLabel => m.labels.map(g).mkString("[", ", ", "]")

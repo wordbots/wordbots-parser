@@ -30,16 +30,16 @@ object Lexicon {
       (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
     )) +
     ("a player" -> (NP, Form(Choose(ObjectsInPlay(Kernel))): SemanticState)) +
-    ("a" / Seq("robot's", "creature's") -> (NP/N, λ {a: Attribute => TargetAttribute(Choose(ObjectsInPlay(Robot)), a)})) +
+    ("a robot's" -> (NP/N, λ {a: Attribute => TargetAttribute(Choose(ObjectsInPlay(Robot)), a)})) +
     ("a structure's" -> (NP/N, λ {a: Attribute => TargetAttribute(Choose(ObjectsInPlay(Structure)), a)})) +
     ("a tile" -> (NP, Form(Choose(AllTiles)): SemanticState)) +
     ("activate:" -> (S/S, λ {a: Action => ActivatedAbility(a)})) +
     ("adjacent" -> Seq(
-      (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisRobot)))}),
-      (NP/N, λ {o: ObjectType => All(ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisRobot))))})
+      (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisObject)))}),
+      (NP/N, λ {o: ObjectType => All(ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisObject))))})
     )) +
     ("adjacent to" -> ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}})) +
-    ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisRobot, AllObjects), a)})) +
+    ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisObject, AllObjects), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
       (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
       (NP/NP, λ {c: Collection => All(c)}),
@@ -87,7 +87,7 @@ object Lexicon {
       ((S\NP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
       ((S/Adj)/PP, λ {t: Target => λ {amount: Number => DealDamage(t, amount)}}),
       ((S\NP)/Adj, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
-      (S/PP, λ {t: Target => DealDamage(t, AttributeValue(ThisRobot, Attack))}),  // (by default, a robot deals damage equal to its power)
+      (S/PP, λ {t: Target => DealDamage(t, AttributeValue(ThisObject, Attack))}),  // (by default, a robot deals damage equal to its power)
       (S\Num, λ {amount: Number => DealDamage(Choose(ObjectsInPlay(AllObjects)), amount)})  // (if no target is given, any target can be chosen)
     )) +
     (Seq("deal", "it deals", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
@@ -167,6 +167,7 @@ object Lexicon {
       (Num/PP, λ {a: All => Count(a.collection)})
     )) +
     ("object".s -> (N, Form(AllObjects): SemanticState)) +
+    ("other" -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
     (Seq("or", "and") -> ((N/N)\N, λ {o1: ObjectType => λ {o2: ObjectType => MultipleObjectTypes(Seq(o1, o2))}})) +
     ("or less" -> Seq(
       (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)}),
@@ -190,7 +191,7 @@ object Lexicon {
       ((NP/NP)\Num, λ {num: Number => λ {c: Collection => Random(num, c)}})  // e.g. "Discard 2 random cards"
     )) +
     ("reduce" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}})) +
-    (("robot".s ++ "creature".s) -> Seq(
+    ("robot".s -> Seq(
       (N, Form(Robot): SemanticState),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)})  // e.g. "all robots in your hand"
     )) +
@@ -213,6 +214,7 @@ object Lexicon {
       (S\NP, λ {c: Choose => AfterDamageReceived(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterDamageReceived(t)})
     )) +
+    (Seq("target", "a target") -> (NP/NP, λ {c: Collection => Choose(c)})) +
     ("to" -> Seq(
       (PP/NP, identity),
       (PP/Num, identity)
@@ -220,14 +222,16 @@ object Lexicon {
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}})) +
     (Seq("that player", "they") -> (NP, Form(ItP): SemanticState)) +
     ("the" -> (X/X, identity)) +
-    ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisRobot): SemanticState)) +
-    ("this" / Seq("robot's", "creature's", "structure's", "object's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisRobot, a)})) +
+    ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisObject): SemanticState)) +
+    ("this" / Seq("robot's", "creature's", "structure's", "object's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisObject, a)})) +
     ("total" -> Seq(
       ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}}),
       ((Num/PP)/N, λ {a: Attribute => λ {all: All => AttributeSum(all.collection, a)}})
     )) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
-    (Seq("when", "whenever", "after", "immediately after") -> ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
+    (Seq("when", "whenever", "after", "immediately after", "each time", "every time") ->
+      ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})
+    ) +
     ("with" -> Seq(  // "with" = "that" + "has"
       ((NP\N)/NP, λ {ac: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ac))}}),
       (((NP\N)/N)/Num, λ {i: Scalar => λ {a: Attribute => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AttributeComparison(a, EqualTo(i))))}}}),

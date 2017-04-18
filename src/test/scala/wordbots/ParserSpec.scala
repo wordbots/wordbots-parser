@@ -91,19 +91,19 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "parse keyword abilities" in {
     // Defender
     parse("This robot can't attack") shouldEqual
-      ApplyEffect(ThisRobot, CannotAttack)
+      ApplyEffect(ThisObject, CannotAttack)
 
     // Haste
     parse("This robot can move and attack immediately after it is played") shouldEqual
-      TriggeredAbility(AfterPlayed(ItO), CanMoveAgain(ThisRobot))
+      TriggeredAbility(AfterPlayed(ItO), CanMoveAgain(ThisObject))
 
     // Jump
     parse("This robot can move over other objects") shouldEqual
-      ApplyEffect(ThisRobot, CanMoveOverObjects)
+      ApplyEffect(ThisObject, CanMoveOverObjects)
 
     // Taunt
     parse("Your opponent's adjacent robots can only attack this object") shouldEqual
-      ApplyEffect(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(Opponent)))), CanOnlyAttack(ThisRobot))
+      ApplyEffect(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject), ControlledBy(Opponent)))), CanOnlyAttack(ThisObject))
   }
 
   it should "parse triggers for robots" in {
@@ -111,36 +111,38 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("At the end of each turn, each robot takes 1 damage") shouldEqual
       TriggeredAbility(EndOfTurn(AllPlayers), DealDamage(All(ObjectsInPlay(Robot)), Scalar(1)))
     parse("This robot gains a second move action after attacking") shouldEqual
-      TriggeredAbility(AfterAttack(ThisRobot), CanMoveAgain(ThisRobot))
+      TriggeredAbility(AfterAttack(ThisObject), CanMoveAgain(ThisObject))
     parse("At the beginning of each of your turns, this robot gains 1 attack") shouldEqual
-      TriggeredAbility(BeginningOfTurn(Self), ModifyAttribute(ThisRobot, Attack, Plus(Scalar(1))))
+      TriggeredAbility(BeginningOfTurn(Self), ModifyAttribute(ThisObject, Attack, Plus(Scalar(1))))
     parse("When this robot attacks, it deals damage to all adjacent robots") shouldEqual
-      TriggeredAbility(AfterAttack(ThisRobot), DealDamage(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisRobot)))), AttributeValue(ThisRobot, Attack)))
+      TriggeredAbility(AfterAttack(ThisObject), DealDamage(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject)))), AttributeValue(ThisObject, Attack)))
     parse("When this robot is played, reduce the cost of a card in your hand by 3") shouldEqual
-      TriggeredAbility(AfterPlayed(ThisRobot), ModifyAttribute(Choose(CardsInHand(Self)), Cost, Minus(Scalar(3))))
+      TriggeredAbility(AfterPlayed(ThisObject), ModifyAttribute(Choose(CardsInHand(Self)), Cost, Minus(Scalar(3))))
     parse("Whenever this robot takes damage, draw a card") shouldEqual
-      TriggeredAbility(AfterDamageReceived(ThisRobot), Draw(Self, Scalar(1)))
+      TriggeredAbility(AfterDamageReceived(ThisObject), Draw(Self, Scalar(1)))
     parse("When this robot is played, reduce the cost of a card in your hand by 2") shouldEqual
-      TriggeredAbility(AfterPlayed(ThisRobot), ModifyAttribute(Choose(CardsInHand(Self, AnyCard)), Cost, Minus(Scalar(2))))
+      TriggeredAbility(AfterPlayed(ThisObject), ModifyAttribute(Choose(CardsInHand(Self, AnyCard)), Cost, Minus(Scalar(2))))
     parse("Whenever a robot is destroyed in combat, deal 1 damage to its controller.") shouldEqual
       TriggeredAbility(AfterDestroyed(All(ObjectsInPlay(Robot)), Combat), DealDamage(ControllerOf(ItO), Scalar(1)))
     parse("When this robot is destroyed, take control of all adjacent robots.") shouldEqual
-      TriggeredAbility(AfterDestroyed(ThisRobot), TakeControl(Self, All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisRobot))))))
+      TriggeredAbility(AfterDestroyed(ThisObject), TakeControl(Self, All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject))))))
     parse("When this structure comes into play, draw a card for each adjacent robot or structure") shouldEqual
-      TriggeredAbility(AfterPlayed(ThisRobot), Draw(Self, Count(ObjectsMatchingConditions(MultipleObjectTypes(Seq(Robot, Structure)), Seq(AdjacentTo(ThisRobot))))))
+      TriggeredAbility(AfterPlayed(ThisObject), Draw(Self, Count(ObjectsMatchingConditions(MultipleObjectTypes(Seq(Robot, Structure)), Seq(AdjacentTo(ThisObject))))))
 
     // (From 4/10/17 playtest session:)
     parse("At the end of each turn, destroy all of your opponent's adjacent robots") shouldEqual
-      TriggeredAbility(EndOfTurn(AllPlayers), Destroy(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(Opponent))))))
+      TriggeredAbility(EndOfTurn(AllPlayers), Destroy(All(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject), ControlledBy(Opponent))))))
     parse("When this robot comes into play, discard 2 random cards") shouldEqual
-      TriggeredAbility(AfterPlayed(ThisRobot), Discard(Random(Scalar(2), CardsInHand(Self))))
+      TriggeredAbility(AfterPlayed(ThisObject), Discard(Random(Scalar(2), CardsInHand(Self))))
+    parse("When this robot is played, destroy all other robots") shouldEqual
+      TriggeredAbility(AfterPlayed(ThisObject), Destroy(All(Other(ObjectsInPlay(Robot)))))
 
-    parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent creature") shouldEqual
-      TriggeredAbility(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisRobot), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
+    parse("At the start of each player's turn, that player gains 1 energy if they control an adjacent robot") shouldEqual
+      TriggeredAbility(BeginningOfTurn(AllPlayers), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject), ControlledBy(ItP)))), ModifyEnergy(ItP, Plus(Scalar(1)))))
     parse("Whenever this robot attacks a kernel, draw a card") shouldEqual
-      TriggeredAbility(AfterAttack(ThisRobot, Kernel), Draw(Self, Scalar(1)))
+      TriggeredAbility(AfterAttack(ThisObject, Kernel), Draw(Self, Scalar(1)))
     parse("When this robot is played, destroy all robots and gain 2 life") shouldEqual
-      TriggeredAbility(AfterPlayed(ThisRobot), And(Destroy(All(ObjectsInPlay(Robot))), ModifyAttribute(All(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))), Health, Plus(Scalar(2)))))
+      TriggeredAbility(AfterPlayed(ThisObject), And(Destroy(All(ObjectsInPlay(Robot))), ModifyAttribute(All(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))), Health, Plus(Scalar(2)))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -154,11 +156,11 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "parse passive abilities for robots" in {
     // (The following ability texts were provided by James:)
     parse("Your adjacent robots have +1 attack") shouldEqual
-      AttributeAdjustment(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisRobot), ControlledBy(Self)))), Attack, Plus(Scalar(1)))
+      AttributeAdjustment(All(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Self)))), Attack, Plus(Scalar(1)))
     parse("This robot can't attack") shouldEqual
-      ApplyEffect(ThisRobot, CannotAttack)
+      ApplyEffect(ThisObject, CannotAttack)
     parse("This robot's stats can't be changed") shouldEqual
-      FreezeAttribute(ThisRobot, AllAttributes)
+      FreezeAttribute(ThisObject, AllAttributes)
     parse("Robots you play cost 2 less") shouldEqual
       AttributeAdjustment(All(CardsInHand(Self, Robot)), Cost, Minus(Scalar(2)))
 
@@ -174,7 +176,7 @@ class ParserSpec extends FlatSpec with Matchers {
 
   it should "parse activated abilities for robots" in {
     parse("Activate: Destroy this robot") shouldEqual
-      ActivatedAbility(Destroy(ThisRobot))
+      ActivatedAbility(Destroy(ThisObject))
     parse("Activate: Draw a card, then discard a card") shouldEqual
       ActivatedAbility(And(Draw(Self, Scalar(1)), Discard(Choose(CardsInHand(Self, AnyCard)))))
   }

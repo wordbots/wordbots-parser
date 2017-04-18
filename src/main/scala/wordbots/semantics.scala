@@ -49,7 +49,7 @@ sealed trait Target extends AstNode
     case class Choose(collection: Collection) extends TargetObject
     case class All(collection: Collection) extends TargetObject
     case class Random(num: Number, collection: Collection) extends TargetObject
-    case object ThisRobot extends TargetObject  // TODO: Rename to ThisObject.
+    case object ThisObject extends TargetObject
     case object ItO extends TargetObject  // (Salient object)
   sealed trait TargetPlayer extends Target
     case object Self extends TargetPlayer
@@ -93,6 +93,7 @@ sealed trait Collection extends AstNode
     case object AllTiles extends ObjectCollection
     case class ObjectsInPlay(objectType: ObjectType) extends ObjectCollection
     case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends ObjectCollection
+    case class Other(collection: Collection) extends ObjectCollection
 
 sealed trait CardType extends Label
   case object AnyCard extends CardType
