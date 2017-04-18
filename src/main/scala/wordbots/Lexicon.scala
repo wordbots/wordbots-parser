@@ -46,7 +46,10 @@ object Lexicon {
       (NP/PP, λ {c: Collection => All(c)})
     )) +
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
-    ("and" -> (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: TargetObject => And(a1.action(t), a2.action(t))}}})) +
+    ("and" -> Seq(
+      (conj, λ {a: Any => λ {b: Any => Seq(b, a)}}),
+      (((S/PP)/V)\V, λ {a1: CurriedAction => λ {a2: CurriedAction => λ {t: TargetObject => And(a1.action(t), a2.action(t))}}})
+    )) +
     (Seq("and", "then") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     ("attacks" -> Seq(
@@ -128,7 +131,8 @@ object Lexicon {
     )) +
     ("give" -> Seq(
       (((S/N)/Num)/NP, λ {t: TargetObject => λ {i: Scalar => λ {a: Attribute => SetAttribute(t, a, i)}}}),
-      (((S/N)/Adj)/NP, λ {t: TargetObject => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}})
+      (((S/N)/Adj)/NP, λ {t: TargetObject => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}}),
+      ((S/NP)/NP, λ {t: TargetObject => λ {ops: Seq[AttributeOperation] => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})
     )) +
     ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
     ("halve" -> Seq(
@@ -145,6 +149,7 @@ object Lexicon {
     (Seq("health", "life") -> Seq(
       (N, Form(Health): SemanticState),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Health)}),
+      (NP\Adj, λ {op: Operation => AttributeOperation(op, Health)}),
       (NP|Num, λ {amount: Number => Life(amount)}),
       (NP/Adj, λ {amount: Number => Life(amount)})
     )) +
@@ -188,7 +193,8 @@ object Lexicon {
     )) +
     (Seq("power", "attack") -> Seq(
       (N, Form(Attack): SemanticState),
-      (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)})
+      (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)}),
+      (NP\Adj, λ {op: Operation => AttributeOperation(op, Attack)})
     )) +
     ("random" -> Seq(
       ((NP/N)\Num, λ {num: Number => λ {o: ObjectType => Random(num, ObjectsInPlay(o))}}),  // e.g. "Destroy a random robot"
@@ -207,7 +213,8 @@ object Lexicon {
     )) +
     ("speed" -> Seq(
       (N, Form(Speed): SemanticState),
-      (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)})
+      (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)}),
+      (NP\Adj, λ {op: Operation => AttributeOperation(op, Speed)})
     )) +
     ("structure".s -> Seq(
       (N, Form(Structure): SemanticState),

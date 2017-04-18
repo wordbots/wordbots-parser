@@ -10,7 +10,11 @@ case class TriggeredAbility(trigger: Trigger, action: Action) extends Ability
 case class ActivatedAbility(action: Action) extends Ability
 
 sealed trait Action extends AstNode
-  case class And(action1: Action, action2: Action) extends Action
+  case class MultipleActions(actions: Seq[Action]) extends Action
+  object And {
+    def apply(actions: Action*): MultipleActions = new MultipleActions(actions)
+  }
+
   case class If(condition: GlobalCondition, action: Action) extends Action
   case class Instead(action: Action) extends Action
 
@@ -23,6 +27,8 @@ sealed trait Action extends AstNode
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
   case class SetAttribute(target: TargetObject, attribute: Attribute, num: Number) extends Action
   case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
+
+  case class SaveTarget(target: Target) extends Action
 
 sealed trait PassiveAbility extends Ability
   case class ApplyEffect(target: Target, effect: Effect) extends PassiveAbility
@@ -52,6 +58,7 @@ sealed trait Target extends AstNode
     case class Random(num: Number, collection: Collection) extends TargetObject
     case object ThisObject extends TargetObject
     case object ItO extends TargetObject  // (Salient object)
+    case object SavedTargetObject extends TargetObject
   sealed trait TargetPlayer extends Target
     case object Self extends TargetPlayer
     case object Opponent extends TargetPlayer
@@ -132,4 +139,5 @@ case class Hand(player: TargetPlayer)
 case class Turn(player: TargetPlayer)
 case class TargetAttribute(target: TargetObject, attr: Attribute)
 case class AttributeAmount(amount: Number, attr: Attribute)
+case class AttributeOperation(op: Operation, attr: Attribute)
 case class CardPlay(player: TargetPlayer, cardType: CardType)

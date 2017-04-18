@@ -7,10 +7,11 @@ object CodeGenerator {
   // scalastyle:off cyclomatic.complexity
   private def g(node: AstNode): String = {
     node match {
+      // Actions: Meta
       case If(condition, action) => s"(function () { if (${g(condition)}) { (${g(action)})(); } })"
+      case MultipleActions(actions) => s"(function () { ${actions.map(action => s"${g(action)}();").mkString(" ")} })"
 
-      // Actions
-      case And(action1, action2) => s"(function () { ${g(action1)}(); ${g(action2)}(); })"
+      // Actions: Normal
       case CanMoveAgain(target) => s"(function () { actions['canMoveAgain'](${g(target)}); })"
       case DealDamage(target, num) => s"(function () { actions['dealDamage'](${g(target)}, ${g(num)}); })"
       case Destroy(target) => s"(function () { actions['destroy'](${g(target)}); })"
@@ -20,6 +21,9 @@ object CodeGenerator {
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
       case TakeControl(player, target) => s"(function () { actions['takeControl'](${g(player)}, ${g(target)}); })"
+
+      // Actions: Utility
+      case SaveTarget(target) => s"(function () { save('target', ${g(target)}); })"
 
       // Activated and triggered abilities
       case ActivatedAbility(action) =>
@@ -56,6 +60,7 @@ object CodeGenerator {
       case ThisObject => "targets['thisRobot']()"
       case ItO => "targets['it']()"
       case ItP => "targets['itP']()"
+      case SavedTargetObject => "load('target')"
 
       // Target players
       case Self => "targets['self']()"

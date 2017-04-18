@@ -66,10 +66,10 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Double the attack of all robots in play") shouldEqual
       ModifyAttribute(All(ObjectsInPlay(Robot)), Attack, Multiply(Scalar(2)))
     parse("Double the attack and halve the life (rounded up) of all robots in play") shouldEqual
-      And(
+      MultipleActions(Seq(
         ModifyAttribute(All(ObjectsInPlay(Robot)), Attack, Multiply(Scalar(2))),
         ModifyAttribute(All(ObjectsInPlay(Robot)), Health, Divide(Scalar(2), RoundedUp))
-      )
+      ))
     parse("Destroy all robots with energy cost three or greater") shouldEqual
       Destroy(All(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(3)))))))
 
@@ -78,6 +78,13 @@ class ParserSpec extends FlatSpec with Matchers {
       Destroy(Choose(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Attack, GreaterThanOrEqualTo(Scalar(4)))))))
     parse("Double the health of a robot") shouldEqual
       ModifyAttribute(Choose(ObjectsInPlay(Robot)), Health, Multiply(Scalar(2)))
+
+    parse("Give a robot +1 attack and +1 health") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(Choose(ObjectsInPlay(Robot))),
+        ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
+    ))
   }
 
   it should "deal with ambiguous uses of 'all'" in {
