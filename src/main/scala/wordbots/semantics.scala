@@ -95,7 +95,7 @@ sealed trait Number extends AstNode
 sealed trait Collection extends AstNode
   sealed trait CardCollection extends Collection
     case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard) extends CardCollection
-  sealed trait ObjectCollection extends Collection
+  sealed trait ObjectCollection extends Collection with TargetObject
     case object AllTiles extends ObjectCollection
     case class ObjectsInPlay(objectType: ObjectType) extends ObjectCollection
     case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends ObjectCollection
