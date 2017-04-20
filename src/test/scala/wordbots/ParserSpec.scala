@@ -88,6 +88,24 @@ class ParserSpec extends FlatSpec with Matchers {
         ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
         ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
     ))
+
+    // New terms for alpha v0.4:
+    parse("Draw 3 cards, then immediately end your turn") shouldEqual
+      MultipleActions(Seq(Draw(Self, Scalar(3)), EndTurn))
+    parse("Deal 1 damage to each robot that attacked last turn") shouldEqual
+      DealDamage(ObjectsMatchingConditions(Robot, Seq(HasProperty(AttackedThisTurn))), Scalar(1))
+    parse("Destroy a damaged robot") shouldEqual
+      Destroy(Choose(ObjectsMatchingConditions(Robot, Seq(HasProperty(IsDamaged)))))
+    parse("Draw cards equal to your energy") shouldEqual
+      Draw(Self, EnergyAmount(Self))
+    parse("Give a robot \"Activate: Deal 1 damage to a random robot.\"") shouldEqual
+      GiveAbility(Choose(ObjectsInPlay(Robot)), parse("Activate: Deal 1 damage to a random robot").asInstanceOf[ActivatedAbility])
+    parse("Give a robot +1 speed and \"This robot can move over other objects\"") shouldEqual // ("Give a robot +1 speed and Jump")
+      MultipleActions(Seq(
+        SaveTarget(Choose(ObjectsInPlay(Robot))),
+        ModifyAttribute(SavedTargetObject, Speed, Plus(Scalar(1))),
+        GiveAbility(SavedTargetObject, ApplyEffect(ThisObject, CanMoveOverObjects))
+      ))
   }
 
   it should "deal with ambiguous uses of 'all'" in {
@@ -155,6 +173,16 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(AfterAttack(ThisObject, Kernel), Draw(Self, Scalar(1)))
     parse("When this robot is played, destroy all robots and gain 2 life") shouldEqual
       TriggeredAbility(AfterPlayed(ThisObject), And(Destroy(ObjectsInPlay(Robot)), ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(Scalar(2)))))
+
+    // New terms for alpha v0.4:
+    parse("Whenever this robot moves, it takes 1 damage") shouldEqual
+      TriggeredAbility(AfterMove(ThisObject), DealDamage(ItO, Scalar(1)))
+    parse("Whenever an enemy robot moves, gain 1 life") shouldEqual
+      TriggeredAbility(AfterMove(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Opponent)))), ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(Scalar(1))))
+    parse("When this robot is played, swap all robots' health and attack.") shouldEqual
+      TriggeredAbility(AfterPlayed(ThisObject), SwapAttributes(ObjectsInPlay(Robot), Health, Attack))
+    parse("When this robot is destroyed, deal 2 damage to all objects within 2 spaces.") shouldEqual
+      TriggeredAbility(AfterDestroyed(ThisObject), DealDamage(ObjectsMatchingConditions(AllObjects, Seq(WithinDistanceOf(Scalar(2), ThisObject))), Scalar(2)))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -183,7 +211,15 @@ class ParserSpec extends FlatSpec with Matchers {
       AttributeAdjustment(All(CardsInHand(Self, Robot)), Cost, Constant(Scalar(1)))
 
     parse("All of your robots have \"Activate: Draw a card\"") shouldEqual
-      GiveAbility(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), ActivatedAbility(Draw(Self, Scalar(1))))
+      HasAbility(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), ActivatedAbility(Draw(Self, Scalar(1))))
+
+    // New terms for alpha v0.4:
+    parse("All friendly robots within 2 spaces have +1 speed") shouldEqual
+      AttributeAdjustment(ObjectsMatchingConditions(Robot, Seq(WithinDistanceOf(Scalar(2), ThisObject), ControlledBy(Self))), Speed, Plus(Scalar(1)))
+    parse("This robot only deals damage when attacking.") shouldEqual
+      ApplyEffect(ThisObject, CannotFightBack)
+    parse("Adjacent robots' attributes can’t be changed.") shouldEqual
+      FreezeAttribute(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject))), AllAttributes)
   }
 
   it should "parse activated abilities for robots" in {
@@ -191,6 +227,10 @@ class ParserSpec extends FlatSpec with Matchers {
       ActivatedAbility(Destroy(ThisObject))
     parse("Activate: Draw a card, then discard a card") shouldEqual
       ActivatedAbility(And(Draw(Self, Scalar(1)), Discard(Choose(CardsInHand(Self, AnyCard)))))
+
+    // New terms for alpha v0.4:
+    parse("Activate: Restore an adjacent object's health.") shouldEqual
+      ActivatedAbility(RestoreHealth(Choose(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(ThisObject))))))
   }
 
   it should "generate JS code for actions" in {

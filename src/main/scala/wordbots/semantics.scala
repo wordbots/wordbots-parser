@@ -21,9 +21,13 @@ sealed trait Action extends AstNode
   case class Destroy(target: TargetObject) extends Action
   case class Discard(target: TargetObject) extends Action
   case class Draw(target: TargetPlayer, num: Number) extends Action
+  case object EndTurn extends Action
+  case class GiveAbility(target: TargetObject, ability: Ability) extends Action
   case class ModifyAttribute(target: TargetObject, attribute: Attribute, operation: Operation) extends Action
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
+  case class RestoreHealth(target: TargetObject) extends Action
   case class SetAttribute(target: TargetObject, attribute: Attribute, num: Number) extends Action
+  case class SwapAttributes(target: TargetObject, attr1: Attribute, attr2: Attribute) extends Action
   case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
 
   case class SaveTarget(target: Target) extends Action
@@ -32,11 +36,12 @@ sealed trait PassiveAbility extends Ability
   case class ApplyEffect(target: Target, effect: Effect) extends PassiveAbility
   case class AttributeAdjustment(target: Target, attribute: Attribute, operation: Operation) extends PassiveAbility
   case class FreezeAttribute(target: Target, attribute: Attribute) extends PassiveAbility
-  case class GiveAbility(target: Target, ability: Ability) extends PassiveAbility
+  case class HasAbility(target: Target, ability: Ability) extends PassiveAbility
 
 sealed trait Effect extends AstNode
   case object CanMoveOverObjects extends Effect with Label
   case object CannotAttack extends Effect with Label
+  case object CannotFightBack extends Effect with Label
   case class CanOnlyAttack(target: TargetObject) extends Effect
 
 sealed trait Trigger extends AstNode
@@ -44,6 +49,7 @@ sealed trait Trigger extends AstNode
   case class AfterCardPlay(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
   case class AfterDamageReceived(target: TargetObject) extends Trigger
   case class AfterDestroyed(target: TargetObject, cause: TriggerEvent = AnyEvent) extends Trigger
+  case class AfterMove(Target: TargetObject) extends Trigger
   case class AfterPlayed(Target: TargetObject) extends Trigger
   case class BeginningOfTurn(player: TargetPlayer) extends Trigger
   case class EndOfTurn(player: TargetPlayer) extends Trigger
@@ -68,6 +74,8 @@ sealed trait Condition extends AstNode
   case class AdjacentTo(obj: TargetObject) extends Condition
   case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends Condition
   case class ControlledBy(player: TargetPlayer) extends Condition
+  case class HasProperty(property: Property) extends Condition
+  case class WithinDistanceOf(distance: Number, obj: TargetObject) extends Condition
 
 sealed trait GlobalCondition extends AstNode
   case class CollectionExists(coll: Collection) extends GlobalCondition
@@ -88,9 +96,10 @@ sealed trait Comparison extends AstNode
 
 sealed trait Number extends AstNode
   case class Scalar(num: Int) extends Number
-  case class Count(collection: Collection) extends Number
   case class AttributeSum(collection: Collection, attribute: Attribute) extends Number
   case class AttributeValue(obj: TargetObject, attribute: Attribute) extends Number
+  case class Count(collection: Collection) extends Number
+  case class EnergyAmount(player: TargetPlayer) extends Number
 
 sealed trait Collection extends AstNode
   sealed trait CardCollection extends Collection
@@ -121,6 +130,10 @@ sealed trait Attribute extends Label
   case object Health extends Attribute
   case object Speed extends Attribute
   case object AllAttributes extends Attribute
+
+sealed trait Property extends Label
+  case object AttackedThisTurn extends Property
+  case object IsDamaged extends Property
 
 sealed trait Rounding extends Label
   case object RoundedUp extends Rounding
