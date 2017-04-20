@@ -38,9 +38,10 @@ object Lexicon {
     ("adjacent to" -> ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}})) +
     ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisObject, AllObjects), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
-      (NP/N, λ {o: ObjectType => All(ObjectsInPlay(o))}),
-      (NP/NP, λ {c: Collection => All(c)}),
-      (NP/PP, λ {c: Collection => All(c)})
+      (NP/N, λ {o: ObjectType => ObjectsInPlay(o)}),
+      (NP/NP, λ {c: CardCollection => All(c)}),
+      (NP/NP, λ {c: Collection => c}),
+      (NP/PP, λ {c: Collection => c})
     )) +
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("and" -> (conj, λ {a: Any => λ {b: Any => Seq(b, a)}})) +
@@ -119,7 +120,7 @@ object Lexicon {
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => All(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
     (Seq("gain", "gains") -> Seq(
       (S/NP, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))}),  // Gain X energy.
-      (S/NP, λ {l: Life => ModifyAttribute(All(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))), Health, Plus(l.amount))}),  // Gain X life.
+      (S/NP, λ {l: Life => ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(l.amount))}),  // Gain X life.
       ((S/NP)\NP, λ {p: TargetPlayer => λ {e: Energy => ModifyEnergy(p, Plus(e.amount))}}),  // Y gains X energy.
       (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(num))}}})  // Y gains X (attribute).
     )) +
@@ -167,10 +168,7 @@ object Lexicon {
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("must" -> (X/X, identity)) +
-    ("number" -> Seq(
-      (Num/PP, λ {c: Collection => Count(c)}),
-      (Num/PP, λ {a: All => Count(a.collection)})
-    )) +
+    ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
     ("object".s -> (N, Form(AllObjects): SemanticState)) +
     ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
     ("other" -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
@@ -235,10 +233,7 @@ object Lexicon {
     ("the" -> (X/X, identity)) +
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisObject): SemanticState)) +
     ("this" / Seq("robot's", "creature's", "structure's", "object's") -> (NP/N, λ {a: Attribute => TargetAttribute(ThisObject, a)})) +
-    ("total" -> Seq(
-      ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}}),
-      ((Num/PP)/N, λ {a: Attribute => λ {all: All => AttributeSum(all.collection, a)}})
-    )) +
+    ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
     (Seq("when", "whenever", "after", "immediately after", "each time", "every time") ->
       ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})
@@ -252,13 +247,13 @@ object Lexicon {
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
     ("your" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
-      (NP/NP, λ {c: ObjectsMatchingConditions => All(ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Self)))}),
+      (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Self))}),
       (Adj, Form(Self): SemanticState)
     )) +
     ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
     (Seq("your opponent's", "all of your opponent's") -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
-      (NP/NP, λ {c: ObjectsMatchingConditions => All(ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Opponent)))}),
+      (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Opponent))}),
       (Adj, Form(Opponent): SemanticState)
     )) +
     ("\"" -> Seq(
