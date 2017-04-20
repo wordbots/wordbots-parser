@@ -3,6 +3,8 @@ package wordbots
 object CodeGenerator {
   def generateJS(node: AstNode): String = g(node)
 
+  def escape(str: String) = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\"
+
   // scalastyle:off method.length
   // scalastyle:off cyclomatic.complexity
   private def g(node: AstNode): String = {
@@ -18,7 +20,7 @@ object CodeGenerator {
       case Discard(target) => s"(function () { actions['discard'](${g(target)}); })"
       case Draw(target, num) => s"(function () { actions['draw'](${g(target)}, ${g(num)}); })"
       case EndTurn => "(function () { actions['endTurn'](); })"
-      case GiveAbility(target, ability) => s"""(function () { actions['giveAbility'](${g(target)}, \\"${g(ability)}\\"); })"""
+      case GiveAbility(target, ability) => s"""(function () { actions['giveAbility'](${g(target)}, \\"${escape(g(ability))}\\"); })"""
       case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case RestoreHealth(target) => s"(function () { actions['restoreHealth'](${g(target)}); })"
@@ -31,7 +33,7 @@ object CodeGenerator {
 
       // Activated and triggered abilities
       case ActivatedAbility(action) =>
-        s"""(function () { setAbility(abilities['activated'](function () { return ${g(ThisObject)}; }, \\"${g(action)}\\")); })"""
+        s"""(function () { setAbility(abilities['activated'](function () { return ${g(ThisObject)}; }, \\"${escape(g(action))}\\")); })"""
       case TriggeredAbility(trigger, Instead(action)) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}, {override: true}); })"
       case TriggeredAbility(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
 
@@ -43,7 +45,7 @@ object CodeGenerator {
       case FreezeAttribute(target, attr) =>
         s"(function () { setAbility(abilities['freezeAttribute'](function () { return ${g(target)}; }, ${g(attr)})); })"
       case HasAbility(target, ability) =>
-        s"""(function () { setAbility(abilities['giveAbility'](function () { return ${g(target)}; }, \\"${g(ability)}\\")); })"""
+        s"""(function () { setAbility(abilities['giveAbility'](function () { return ${g(target)}; }, \\"${escape(g(ability))}\\")); })"""
 
       // Effects
       case CanOnlyAttack(target) => s"'canonlyattack', {target: ${g(target)}}"
