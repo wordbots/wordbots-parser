@@ -178,7 +178,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Whenever this robot moves, it takes 1 damage") shouldEqual
       TriggeredAbility(AfterMove(ThisObject), DealDamage(ItO, Scalar(1)))
     parse("Whenever an enemy robot moves, gain 1 life") shouldEqual
-      TriggeredAbility(AfterMove(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Opponent)))), ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(Scalar(1))))
+      TriggeredAbility(AfterMove(All(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Opponent))))), ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(Scalar(1))))
     parse("When this robot is played, swap all robots' health and attack.") shouldEqual
       TriggeredAbility(AfterPlayed(ThisObject), SwapAttributes(ObjectsInPlay(Robot), Health, Attack))
     parse("When this robot is destroyed, deal 2 damage to all objects within 2 spaces.") shouldEqual
@@ -235,9 +235,9 @@ class ParserSpec extends FlatSpec with Matchers {
 
   it should "generate JS code for actions" in {
     generateJS("Draw a card") should be ("(function () { actions['draw'](targets['self'](), 1); })")
-    generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsInPlay('robot'))); })")
+    generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsMatchingConditions('robot', []))); })")
     generateJS("Gain 2 energy") should be ("(function () { actions['modifyEnergy'](targets['self'](), function (x) { return x + 2; }); })")
-    generateJS("Give a robot +1 speed") should be ("(function () { actions['modifyAttribute'](targets['choose'](objectsInPlay('robot')), 'speed', function (x) { return x + 1; }); })")
+    generateJS("Give a robot +1 speed") should be ("(function () { actions['modifyAttribute'](targets['choose'](objectsMatchingConditions('robot', [])), 'speed', function (x) { return x + 1; }); })")
   }
 
   it should "disallow choosing targets inside a triggered action, *except* for AfterPlayed triggers" in {

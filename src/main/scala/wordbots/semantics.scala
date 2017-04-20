@@ -106,7 +106,7 @@ sealed trait Collection extends AstNode
     case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard) extends CardCollection
   sealed trait ObjectCollection extends Collection with TargetObject
     case object AllTiles extends ObjectCollection
-    case class ObjectsInPlay(objectType: ObjectType) extends ObjectCollection
+    object ObjectsInPlay { def apply(objectType: ObjectType): ObjectCollection = ObjectsMatchingConditions(objectType, Seq()) }
     case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends ObjectCollection
     case class Other(collection: Collection) extends ObjectCollection
 
@@ -140,12 +140,15 @@ sealed trait Rounding extends Label
   case object RoundedDown extends Rounding
 
 // These container classes are used to store state mid-parse but not expressed in the final parsed AST.
+// Unary container classes:
 case class Cards(num: Number)
 case class Damage(amount: Number)
 case class Energy(amount: Number)
 case class Life(amount: Number)
 case class Hand(player: TargetPlayer)
+case class Spaces(num: Number)
 case class Turn(player: TargetPlayer)
+// Binary container classes:
 case class TargetAttribute(target: TargetObject, attr: Attribute)
 case class AttributeAmount(amount: Number, attr: Attribute)
 case class AttributeOperation(op: Operation, attr: Attribute)

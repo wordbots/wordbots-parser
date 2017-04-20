@@ -108,7 +108,6 @@ object CodeGenerator {
       // Collections
       case AllTiles => s"allTiles()"
       case CardsInHand(player, cardType) => s"cardsInHand(${g(player)}, ${g(cardType)})"
-      case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
       case ObjectsMatchingConditions(objType, conditions) => s"objectsMatchingConditions(${g(objType)}, ${conditions.map(g).mkString("[", ", ", "]")})"
       case Other(collection) => s"other(${g(collection)})"
 
