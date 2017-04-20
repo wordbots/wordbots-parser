@@ -132,7 +132,10 @@ sealed trait Attribute extends Label
   case object AllAttributes extends Attribute
 
 sealed trait Property extends Label
+  case object AttackedLastTurn extends Property
   case object AttackedThisTurn extends Property
+  case object MovedLastTurn extends Property
+  case object MovedThisTurn extends Property
   case object IsDamaged extends Property
 
 sealed trait Rounding extends Label

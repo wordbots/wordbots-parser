@@ -93,7 +93,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Draw 3 cards, then immediately end your turn") shouldEqual
       MultipleActions(Seq(Draw(Self, Scalar(3)), EndTurn))
     parse("Deal 1 damage to each robot that attacked last turn") shouldEqual
-      DealDamage(ObjectsMatchingConditions(Robot, Seq(HasProperty(AttackedThisTurn))), Scalar(1))
+      DealDamage(ObjectsMatchingConditions(Robot, Seq(HasProperty(AttackedLastTurn))), Scalar(1))
     parse("Destroy a damaged robot") shouldEqual
       Destroy(Choose(ObjectsMatchingConditions(Robot, Seq(HasProperty(IsDamaged)))))
     parse("Draw cards equal to your energy") shouldEqual

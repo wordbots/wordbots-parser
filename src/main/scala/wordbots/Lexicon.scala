@@ -57,7 +57,8 @@ object Lexicon {
       (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
       ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterAttack(t, o)}})
     )) +
-    (Seq("attacked this turn", "attacked last turn") -> (S, Form(HasProperty(AttackedThisTurn)): SemanticState)) +
+    ("attacked last turn" -> (S, Form(HasProperty(AttackedLastTurn)): SemanticState)) +
+    ("attacked this turn" -> (S, Form(HasProperty(AttackedThisTurn)): SemanticState)) +
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
     (Seq("can move", "can move and attack", "can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
@@ -183,6 +184,8 @@ object Lexicon {
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
+    ("moved last turn" -> (S, Form(HasProperty(MovedLastTurn)): SemanticState)) +
+    ("moved this turn" -> (S, Form(HasProperty(MovedThisTurn)): SemanticState)) +
     ("moves" -> Seq(
       (S\NP, λ {c: Choose => AfterMove(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterMove(t)})
