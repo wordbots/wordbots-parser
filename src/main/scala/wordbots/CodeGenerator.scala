@@ -17,9 +17,13 @@ object CodeGenerator {
       case Destroy(target) => s"(function () { actions['destroy'](${g(target)}); })"
       case Discard(target) => s"(function () { actions['discard'](${g(target)}); })"
       case Draw(target, num) => s"(function () { actions['draw'](${g(target)}, ${g(num)}); })"
+      case EndTurn => "(function () { actions['endTurn'](); })"
+      case GiveAbility(target, ability) => s"""(function () { actions['giveAbility'](${g(target)}, \\"${g(ability)}\\"); })"""
       case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
+      case RestoreHealth(target) => s"(function () { actions['restoreHealth'](${g(target)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
+      case SwapAttributes(target, attr1, attr2) => s"(function () { actions['swapAttributes'](${g(target)}, ${g(attr1)}, ${g(attr2)}); })"
       case TakeControl(player, target) => s"(function () { actions['takeControl'](${g(player)}, ${g(target)}); })"
 
       // Actions: Utility
@@ -38,7 +42,7 @@ object CodeGenerator {
         s"(function () { setAbility(abilities['attributeAdjustment'](function () { return ${g(target)}; }, ${g(attr)}, ${g(op)})); })"
       case FreezeAttribute(target, attr) =>
         s"(function () { setAbility(abilities['freezeAttribute'](function () { return ${g(target)}; }, ${g(attr)})); })"
-      case GiveAbility(target, ability) =>
+      case HasAbility(target, ability) =>
         s"""(function () { setAbility(abilities['giveAbility'](function () { return ${g(target)}; }, \\"${g(ability)}\\")); })"""
 
       // Effects
@@ -49,6 +53,7 @@ object CodeGenerator {
       case AfterCardPlay(targetPlayer, cardType) => s"triggers['afterCardPlay'](function () { return ${g(targetPlayer)}; }, ${g(cardType)})"
       case AfterDamageReceived(targetObj) => s"triggers['afterDamageReceived'](function () { return ${g(targetObj)}; })"
       case AfterDestroyed(targetObj, cause) => s"triggers['afterDestroyed'](function () { return ${g(targetObj)}; }, ${g(cause)})"
+      case AfterMove(targetObj) => s"triggers['afterMove'](function () { return ${g(targetObj)}; })"
       case AfterPlayed(targetObj) => s"triggers['afterPlayed'](function () { return ${g(targetObj)}; })"
       case BeginningOfTurn(targetPlayer) => s"triggers['beginningOfTurn'](function () { return ${g(targetPlayer)}; })"
       case EndOfTurn(targetPlayer) => s"triggers['endOfTurn'](function () { return ${g(targetPlayer)}; })"
@@ -72,6 +77,8 @@ object CodeGenerator {
       case AdjacentTo(obj) => s"conditions['adjacentTo'](${g(obj)})"
       case AttributeComparison(attr, comp) => s"conditions['attributeComparison'](${g(attr)}, ${g(comp)})"
       case ControlledBy(player) => s"conditions['controlledBy'](${g(player)})"
+      case HasProperty(property) => s"conditions['hasProperty'](${g(property)})"
+      case WithinDistanceOf(distance: Number, obj: TargetObject) => s"conditions['withinDistanceOf'](${g(distance)}, ${g(obj)})"
 
       // Global conditions
       case CollectionExists(coll) => s"(${g(coll)}.length > 0)"
@@ -93,14 +100,14 @@ object CodeGenerator {
 
       // Numbers
       case Scalar(int) => s"$int"
-      case Count(collection) => s"count(${g(collection)})"
       case AttributeSum(collection, attr) => s"attributeSum(${g(collection)}, ${g(attr)})"
       case AttributeValue(obj, attr) => s"attributeValue(${g(obj)}, ${g(attr)})"
+      case Count(collection) => s"count(${g(collection)})"
+      case EnergyAmount(player) => s"energyAmount(${g(player)})"
 
       // Collections
       case AllTiles => s"allTiles()"
       case CardsInHand(player, cardType) => s"cardsInHand(${g(player)}, ${g(cardType)})"
-      case ObjectsInPlay(objType) => s"objectsInPlay(${g(objType)})"
       case ObjectsMatchingConditions(objType, conditions) => s"objectsMatchingConditions(${g(objType)}, ${conditions.map(g).mkString("[", ", ", "]")})"
       case Other(collection) => s"other(${g(collection)})"
 
