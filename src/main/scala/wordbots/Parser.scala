@@ -87,6 +87,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   private def tokenizer(str: String): IndexedSeq[String] = {
     str.trim
       .toLowerCase
+      .replaceAllLiterally("\' ", " \' ")
       .replaceAllLiterally("\'s", " \'s ")
       .replaceAllLiterally("\"", " \" ")
       .split("\\s+|[.?!,]")

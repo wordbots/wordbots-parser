@@ -215,10 +215,10 @@ class ParserSpec extends FlatSpec with Matchers {
 
     // New terms for alpha v0.4:
     parse("All friendly robots within 2 spaces have +1 speed") shouldEqual
-      AttributeAdjustment(ObjectsMatchingConditions(Robot, Seq(WithinDistanceOf(Scalar(2), ThisObject), ControlledBy(Self))), Speed, Plus(Scalar(1)))
+      AttributeAdjustment(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self), WithinDistanceOf(Scalar(2), ThisObject))), Speed, Plus(Scalar(1)))
     parse("This robot only deals damage when attacking.") shouldEqual
       ApplyEffect(ThisObject, CannotFightBack)
-    parse("Adjacent robots' attributes can’t be changed.") shouldEqual
+    parse("Adjacent robots' attributes can't be changed.") shouldEqual
       FreezeAttribute(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject))), AllAttributes)
   }
 
