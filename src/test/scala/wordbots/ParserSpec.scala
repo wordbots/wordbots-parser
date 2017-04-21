@@ -88,6 +88,15 @@ class ParserSpec extends FlatSpec with Matchers {
         ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
         ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
     ))
+    parse("Give a robot -1 speed and -1 attack and +1 health") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(Choose(ObjectsInPlay(Robot))),
+        ModifyAttribute(SavedTargetObject, Speed, Minus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Attack, Minus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
+      ))
+    parse("Reduce the cost of robot cards in your hand by 1") shouldEqual
+      ModifyAttribute(All(CardsInHand(Self, Robot)), Cost, Minus(Scalar(1)))
 
     // New terms for alpha v0.4:
     parse("Draw 3 cards, then immediately end your turn") shouldEqual
@@ -106,6 +115,8 @@ class ParserSpec extends FlatSpec with Matchers {
         ModifyAttribute(SavedTargetObject, Speed, Plus(Scalar(1))),
         GiveAbility(SavedTargetObject, ApplyEffect(ThisObject, CanMoveOverObjects))
       ))
+    parse("Swap the health and attack of all robots in play") shouldEqual
+      SwapAttributes(ObjectsInPlay(Robot), Health, Attack)
   }
 
   it should "deal with ambiguous uses of 'all'" in {

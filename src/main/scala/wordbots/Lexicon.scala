@@ -48,6 +48,7 @@ object Lexicon {
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
     ("and" -> Seq(
       (conj, λ {b: Any => λ {a: Any => Seq(a, b)}}),
+      (conj, λ {b: Any => λ {a: Seq[Any] => a :+ b}}),
       ((S/S)\NP, λ {a: Any => λ {b: Any => (a, b)}})
     )) +
     (Seq("and", "then") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
@@ -221,7 +222,10 @@ object Lexicon {
       ((NP/N)\Num, λ {num: Number => λ {o: ObjectType => Random(num, ObjectsInPlay(o))}}),  // e.g. "Destroy a random robot"
       ((NP/NP)\Num, λ {num: Number => λ {c: Collection => Random(num, c)}})  // e.g. "Discard 2 random cards"
     )) +
-    ("reduce" -> (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}})) +
+    ("reduce" -> Seq(
+      (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}}),
+      (((S/PP)/PP)/N, λ {a: Attribute => λ {c: CardsInHand => λ {num: Number => ModifyAttribute(All(c), a, Minus(num))}}})
+    )) +
     ("restore" -> (S/NP, λ {ta: TargetAttribute => ta.attr match { case Health => RestoreHealth(ta.target); case a => Fail(s"Expected Health, got $a")}})) +
     (("robot".s :+ "robots '") -> Seq(
       (N, Form(Robot): SemanticState),
@@ -243,7 +247,10 @@ object Lexicon {
       (N, Form(Structure): SemanticState),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Structure)})  // e.g. "All structures in your hand"
     )) +
-    ("swap" -> ((S/N)/NP, λ {t: TargetObject => λ {attrs: Seq[Attribute] => SwapAttributes(t, attrs(0), attrs(1))}})) +
+    ("swap" -> Seq(
+      ((S/N)/NP, λ {t: TargetObject => λ {attrs: Seq[Attribute] => SwapAttributes(t, attrs(0), attrs(1))}}),
+      ((S/PP)/N, λ {attrs: Seq[Attribute] => λ {t: TargetObject => SwapAttributes(t, attrs(0), attrs(1))}})
+    )) +
     ("take control" -> (S/PP, λ {t: TargetObject => TakeControl(Self, t)})) +
     ("takes damage" -> Seq(
       (S\NP, λ {c: Choose => AfterDamageReceived(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
