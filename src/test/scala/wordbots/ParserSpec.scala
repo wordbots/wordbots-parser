@@ -211,7 +211,8 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("This robot can't attack") shouldEqual
       ApplyEffect(ThisObject, CannotAttack)
     parse("This robot's stats can't be changed") shouldEqual
-      FreezeAttribute(ThisObject, AllAttributes)
+      Failure(ValidationError("FreezeAttribute is not implemented yet."))
+      // FreezeAttribute(ThisObject, AllAttributes)
     parse("Robots you play cost 2 less") shouldEqual
       AttributeAdjustment(All(CardsInHand(Self, Robot)), Cost, Minus(Scalar(2)))
 
@@ -230,7 +231,8 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("This robot only deals damage when attacking.") shouldEqual
       ApplyEffect(ThisObject, CannotFightBack)
     parse("Adjacent robots' attributes can't be changed.") shouldEqual
-      FreezeAttribute(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject))), AllAttributes)
+      Failure(ValidationError("FreezeAttribute is not implemented yet."))
+      // FreezeAttribute(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject))), AllAttributes)
   }
 
   it should "parse activated abilities for robots" in {

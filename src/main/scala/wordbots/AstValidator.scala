@@ -10,18 +10,15 @@ case object ValidateEvent extends ValidationMode
 case object ValidateUnknownCard extends ValidationMode
 
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
+  val baseRules: Seq[AstRule] = Seq(
+    NoChooseInTriggeredAction,
+    NoUnimplementedRules
+  )
+
   val rules: Seq[AstRule] = mode match {
-    case ValidateObject => Seq(
-      MustBeAbility,
-      NoChooseInTriggeredAction
-    )
-    case ValidateEvent => Seq(
-      MustBeAction,
-      NoChooseInTriggeredAction
-    )
-    case ValidateUnknownCard => Seq(
-      NoChooseInTriggeredAction
-    )
+    case ValidateObject => baseRules :+ MustBeAbility
+    case ValidateEvent => baseRules :+ MustBeAction
+    case ValidateUnknownCard => baseRules
   }
 
   def validate(ast: AstNode): Try[Unit] = {
@@ -47,22 +44,11 @@ sealed trait AstRule {
   }
 }
 
-object MustBeAbility extends AstRule {
+object NoUnimplementedRules extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
-      case _: Ability => Success()
-      case _ => Failure(ValidationError("Not a valid passive, triggered, or activated ability."))
-    }
-  }
-}
-
-object MustBeAction extends AstRule {
-  override def validate(node: AstNode): Try[Unit] = {
-    node match {
-      case TriggeredAbility(_, _) => Failure(ValidationError("Events can't have triggered abilities."))
-      case ActivatedAbility(_) => Failure(ValidationError("Events can't have activated abilities."))
-      case _: PassiveAbility => Failure(ValidationError("Events can't have passive abilities."))
-      case _ => Success()
+      case FreezeAttribute(_, _) => Failure(ValidationError("FreezeAttribute is not implemented yet."))
+      case n: AstNode => validateChildren(this, n)
     }
   }
 }
@@ -82,6 +68,26 @@ object NoChooseInTriggeredAction extends AstRule {
       case TriggeredAbility(AfterPlayed(_), action) => Success()  // Choosing targets *is* allowed for AfterPlayed triggers.
       case TriggeredAbility(_, action) => validateChildren(NoChooseTarget, node)
       case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+object MustBeAbility extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case _: Ability => Success()
+      case _ => Failure(ValidationError("Not a valid passive, triggered, or activated ability."))
+    }
+  }
+}
+
+object MustBeAction extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case TriggeredAbility(_, _) => Failure(ValidationError("Events can't have triggered abilities."))
+      case ActivatedAbility(_) => Failure(ValidationError("Events can't have activated abilities."))
+      case _: PassiveAbility => Failure(ValidationError("Events can't have passive abilities."))
+      case _ => Success()
     }
   }
 }
