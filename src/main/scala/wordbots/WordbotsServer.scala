@@ -30,7 +30,7 @@ object WordbotsServer extends ServerApp {
             .flatMap(_.terminals)
             .flatMap(_.parseTokens)
             .map(_.tokenString)
-            .filter(lexiconTerms contains)
+            .filter(token => lexiconTerms.contains(token) && token != "\"")
             .mkString("\"", "\",\"", "\"")
         }
         val unrecognizedTokens = Parser.findUnrecognizedTokens(input).mkString("\"", "\",\"", "\"")
