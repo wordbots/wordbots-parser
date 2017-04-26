@@ -23,6 +23,7 @@ object WordbotsServer extends ServerApp {
         }
 
         val result = Parser.parse(input).bestParse
+        val parsedTokens = result.toSeq.flatMap(_.terminals).flatMap(_.parseTokens).map(_.tokenString).mkString("\"", "\",\"", "\"")
         val unrecognizedTokens = Parser.findUnrecognizedTokens(input).mkString("\"", "\",\"", "\"")
 
         format match {
@@ -31,7 +32,7 @@ object WordbotsServer extends ServerApp {
               case Some(error) => errorResponse(error, unrecognizedTokens)
               case None =>
                 result.map(_.semantic) match {
-                  case Some(Form(v: AstNode)) => successResponse(CodeGenerator.generateJS(v))
+                  case Some(Form(v: AstNode)) => successResponse(CodeGenerator.generateJS(v), parsedTokens)
                   case _ => errorResponse("Unspecified parser error", unrecognizedTokens)
                 }
             }
@@ -62,8 +63,8 @@ object WordbotsServer extends ServerApp {
     .map(_.toInt)
     .getOrElse(defaultPort)
 
-  def successResponse(js: String): Task[Response] = {
-    Ok("{\"js\": \"" + js + "\"}", headers())
+  def successResponse(js: String, parsedTokens: String = ""): Task[Response] = {
+    Ok("{\"js\": \"" + js + "\", \"tokens\": [" + parsedTokens +  "]}", headers())
   }
 
   def errorResponse(error: String, unrecognizedTokens: String = ""): Task[Response] = {
