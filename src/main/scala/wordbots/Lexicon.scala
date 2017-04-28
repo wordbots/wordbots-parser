@@ -41,6 +41,7 @@ object Lexicon {
     ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisObject, AllObjects), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
       (NP/N, λ {o: ObjectType => ObjectsInPlay(o)}),
+      (NP/N, λ {c: CardType => All(CardsInHand(AllPlayers, c))}),
       (NP/NP, λ {c: CardCollection => All(c)}),
       (NP/NP, λ {c: Collection => c}),
       (NP/PP, λ {c: Collection => c})
@@ -105,7 +106,9 @@ object Lexicon {
     )) +
     (Seq("doesn't deal damage when attacked", "only deals damage when attacking") -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotFightBack)})) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
+    ("draws" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: Cards => Draw(p, c.num)}})) +
     ("discard" -> (S/NP, λ {t: TargetObject => Discard(t)})) +
+    ("discards" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(Random(c.num, CardsInHand(p, c.cardType)))}})) +
     ("double" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
       (V/N, λ {a: Attribute => AttributeOperation(Multiply(Scalar(2)), a)})
@@ -123,7 +126,7 @@ object Lexicon {
       (S\S, λ {aa: AttributeAdjustment => AttributeAdjustment(aa.target, Cost, aa.operation)})  // "X costs Y more" == "X costs Y more energy"
     )) +
     ("equal" -> (Adj/PP, identity)) +
-    ("event".s -> Seq(
+    (("event".s ++ "event card".s) -> Seq(
       (N, Form(Event): SemanticState),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)})  // e.g. "All events in your hand"
     )) +
@@ -219,6 +222,7 @@ object Lexicon {
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Attack)})
     )) +
     ("random" -> Seq(
+      ((NP/N)\Num, λ {num: Number => λ {c: CardType => RandomCards(num, c)}}),
       ((NP/N)\Num, λ {num: Number => λ {o: ObjectType => Random(num, ObjectsInPlay(o))}}),  // e.g. "Destroy a random robot"
       ((NP/NP)\Num, λ {num: Number => λ {c: Collection => Random(num, c)}})  // e.g. "Discard 2 random cards"
     )) +

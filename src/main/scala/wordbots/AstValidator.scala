@@ -11,8 +11,9 @@ case object ValidateUnknownCard extends ValidationMode
 
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val baseRules: Seq[AstRule] = Seq(
+    NoUnimplementedRules,
     NoChooseInTriggeredAction,
-    NoUnimplementedRules
+    NoModifyingCostOfObjects
   )
 
   val rules: Seq[AstRule] = mode match {
@@ -67,6 +68,24 @@ object NoChooseInTriggeredAction extends AstRule {
     node match {
       case TriggeredAbility(AfterPlayed(_), action) => Success()  // Choosing targets *is* allowed for AfterPlayed triggers.
       case TriggeredAbility(_, action) => validateChildren(NoChooseTarget, node)
+      case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+object NoModifyingCostOfObjects extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case AttributeAdjustment(target, Cost, _) =>
+        target match {
+          case _: ObjectCollection => Failure(ValidationError("Can't modify the cost of objects on the board."))
+          case All(_: ObjectCollection) => Failure(ValidationError("Can't modify the cost of objects on the board."))
+          case Choose(_: ObjectCollection) => Failure(ValidationError("Can't modify the cost of objects on the board."))
+          case Random(_, _: ObjectCollection) => Failure(ValidationError("Can't modify the cost of objects on the board."))
+          case ThisObject => Failure(ValidationError("Can't modify the cost of objects on the board."))
+          case ItO => Failure(ValidationError("Can't modify the cost of objects on the board."))
+          case _ => validateChildren(this, node)
+        }
       case n: AstNode => validateChildren(this, n)
     }
   }

@@ -44,6 +44,9 @@ class ParserSpec extends FlatSpec with Matchers {
       SetAttribute(Choose(ObjectsInPlay(Robot)), Attack, Scalar(0))
     parse("Set a robot's attack to 0") shouldEqual
       SetAttribute(Choose(ObjectsInPlay(Robot)), Attack, Scalar(0))
+
+    parse("Your opponent draws a card") should equal (Draw(Opponent, Scalar(1)))
+    parse("Your opponent discards a random card") should equal (Discard(Random(Scalar(1), CardsInHand(Opponent, AnyCard))))
   }
 
   it should "parse more complex actions" in {
@@ -233,6 +236,8 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Adjacent robots' attributes can't be changed.") shouldEqual
       Failure(ValidationError("FreezeAttribute is not implemented yet."))
       // FreezeAttribute(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject))), AllAttributes)
+    parse("All events cost 1 energy") shouldEqual
+      AttributeAdjustment(All(CardsInHand(AllPlayers, Event)), Cost, Constant(Scalar(1)))
   }
 
   it should "parse activated abilities for robots" in {
