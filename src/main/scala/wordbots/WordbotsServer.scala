@@ -13,7 +13,34 @@ object WordbotsServer extends ServerApp {
   object FormatParamMatcher extends OptionalQueryParamDecoderMatcher[String]("format")
   object ModeParamMatcher extends OptionalQueryParamDecoderMatcher[String]("mode")
 
-  val lexiconTerms: List[String] = Lexicon.lexicon.map.keys.toList
+  lazy val lexicon: Map[String, Seq[(String, String)]] = {
+    Lexicon.lexicon.map
+      .mapValues(defs => defs.map { case (syn, sem) =>
+        (
+          syn.toString
+            .replaceAllLiterally("Noun", "N")
+            .replaceAllLiterally("\\", "\\\\"),
+          sem.toString
+            .replaceAllLiterally("Lambda", "λ ")
+            .replaceAllLiterally("\\", "\\\\")
+            .replaceAllLiterally("\"", "\\\"")
+            .replaceAllLiterally("\n", " ")
+        )
+      })
+  }
+
+  lazy val lexiconTerms: List[String] = lexicon.keys.toList.sorted
+
+  lazy val lexiconJson: String = {
+    lexicon
+      .filterKeys(term => term != "\"" && term != "'")
+      .map { case (term, defs) =>
+        "\"" + term + "\": " + defs.map {
+          case (syn, sem) => "{\"syntax\": \"" + syn + "\", \"semantics\": \"" + sem + "\"}"
+        }.mkString("[", ", ", "]")
+      }
+      .mkString("{", ", ", "}")
+  }
 
   val service = {
     HttpService {
@@ -56,8 +83,8 @@ object WordbotsServer extends ServerApp {
 
       case request @ GET -> Root / "lexicon" :? FormatParamMatcher(format) =>
         format match {
-          case Some("json") => Ok(lexiconTerms.sorted.mkString("[\"", "\", \"", "\"]"), headers())
-          case None => Ok(s"I can understand ${lexiconTerms.size.toString} terms:\n\n${lexiconTerms.sorted.mkString("\n")}", headers())
+          case Some("json") => Ok(lexiconJson, headers())
+          case None => Ok(s"I can understand ${lexicon.size.toString} terms:\n\n${lexiconTerms.mkString("\n")}", headers())
           case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
         }
     }

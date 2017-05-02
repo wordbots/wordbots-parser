@@ -110,7 +110,7 @@ class ParserSpec extends FlatSpec with Matchers {
       Destroy(Choose(ObjectsMatchingConditions(Robot, Seq(HasProperty(IsDamaged)))))
     parse("Draw cards equal to your energy") shouldEqual
       Draw(Self, EnergyAmount(Self))
-    parse("Give a robot \"Activate: Deal 1 damage to a random robot.\"") shouldEqual
+    parse("Give a robot \"Activate: Deal 1 damage to a random robot\"") shouldEqual
       GiveAbility(Choose(ObjectsInPlay(Robot)), parse("Activate: Deal 1 damage to a random robot").asInstanceOf[ActivatedAbility])
     parse("Give a robot +1 speed and \"This robot can move over other objects\"") shouldEqual // ("Give a robot +1 speed and Jump")
       MultipleActions(Seq(
@@ -264,7 +264,6 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("When this robot is played, destroy a robot.") should not equal
       Failure(ValidationError("Choosing targets not allowed for triggered actions."))
-
   }
 }
 // scalastyle:on line.size.limit
