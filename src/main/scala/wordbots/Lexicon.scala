@@ -186,6 +186,7 @@ object Lexicon {
     (("kernel".s ++ "core".s) -> (N, Form(Kernel): SemanticState)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
+    ("lose" -> (S/NP, λ {l: Life => DealDamage(Self, l.amount)})) +
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("moved last turn" -> (S, Form(HasProperty(MovedLastTurn)): SemanticState)) +

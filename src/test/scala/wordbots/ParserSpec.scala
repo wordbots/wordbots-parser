@@ -40,13 +40,12 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Give a robot +1 speed") should equal (ModifyAttribute(Choose(ObjectsInPlay(Robot)), Speed, Plus(Scalar(1))))
 
     // (From 4/10/17 playtest session:)
-    parse("Give a robot 0 attack") shouldEqual
-      SetAttribute(Choose(ObjectsInPlay(Robot)), Attack, Scalar(0))
-    parse("Set a robot's attack to 0") shouldEqual
-      SetAttribute(Choose(ObjectsInPlay(Robot)), Attack, Scalar(0))
+    parse("Give a robot 0 attack") shouldEqual SetAttribute(Choose(ObjectsInPlay(Robot)), Attack, Scalar(0))
+    parse("Set a robot's attack to 0") shouldEqual SetAttribute(Choose(ObjectsInPlay(Robot)), Attack, Scalar(0))
 
     parse("Your opponent draws a card") should equal (Draw(Opponent, Scalar(1)))
     parse("Your opponent discards a random card") should equal (Discard(Random(Scalar(1), CardsInHand(Opponent, AnyCard))))
+    parse("Lose 1 life") should equal (DealDamage(Self, Scalar(1)))
   }
 
   it should "parse more complex actions" in {
