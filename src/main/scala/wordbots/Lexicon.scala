@@ -240,7 +240,8 @@ object Lexicon {
     ("(rounded up)" -> (Adv, Form(RoundedUp): SemanticState)) +
     ("set" -> Seq(
       ((S/PP)/NP, λ {t: TargetAttribute => λ {num: Number => SetAttribute(t.target, t.attr, num)}}),
-      (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}})
+      (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}}),
+      (((S/PP)/PP)/N, λ {as: Seq[Attribute] => λ {t: TargetObject => λ {num: Number => MultipleActions(Seq(SaveTarget(t)) ++ as.map(a => SetAttribute(SavedTargetObject, a, num)))}}})
     )) +
     ("spaces" -> (NP\Num, λ {num: Number => Spaces(num)})) +
     ("speed" -> Seq(

@@ -119,6 +119,12 @@ class ParserSpec extends FlatSpec with Matchers {
       ))
     parse("Swap the health and attack of all robots in play") shouldEqual
       SwapAttributes(ObjectsInPlay(Robot), Health, Attack)
+    parse("Set the attack and speed of all robots in play to 0") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(ObjectsInPlay(Robot)),
+        SetAttribute(SavedTargetObject, Attack, Scalar(0)),
+        SetAttribute(SavedTargetObject, Speed, Scalar(0))
+      ))
   }
 
   it should "deal with ambiguous uses of 'all'" in {
