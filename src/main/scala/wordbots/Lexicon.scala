@@ -5,10 +5,6 @@ import com.workday.montague.parser.ParserDict
 import com.workday.montague.semantics._
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
-object Fail {
-  def apply(str: String): Unit = throw new ClassCastException(str)
-}
-
 /**
   * Created by alex on 2/28/17.
   */
