@@ -13,7 +13,8 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val baseRules: Seq[AstRule] = Seq(
     NoUnimplementedRules,
     NoChooseInTriggeredAction,
-    NoModifyingCostOfObjects
+    NoModifyingCostOfObjects,
+    OnlyRestoreHealth
   )
 
   val rules: Seq[AstRule] = mode match {
@@ -86,6 +87,16 @@ object NoModifyingCostOfObjects extends AstRule {
           case ItO => Failure(ValidationError("Can't modify the cost of objects on the board."))
           case _ => validateChildren(this, node)
         }
+      case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+object OnlyRestoreHealth extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case RestoreAttribute(_, Health, _) => Success()
+      case RestoreAttribute(_, a, _) => Failure(ValidationError(s"Only Health can be restored, not $a"))
       case n: AstNode => validateChildren(this, n)
     }
   }

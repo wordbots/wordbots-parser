@@ -36,7 +36,10 @@ object Lexicon {
     ("a player" -> (NP, Form(Choose(ObjectsInPlay(Kernel))): SemanticState)) +
     ("a tile" -> (NP, Form(Choose(AllTiles)): SemanticState)) +
     ("activate:" -> (S/S, λ {a: Action => ActivatedAbility(a)})) +
-    ("adjacent" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisObject)))})) +
+    ("adjacent" -> Seq(
+      (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisObject)))}),
+      (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
+    )) +
     ("adjacent to" -> ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}})) +
     ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisObject, AllObjects), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
@@ -125,7 +128,10 @@ object Lexicon {
       (NP/Adj, λ {amount: Number => Energy(amount)}),
       (S\S, λ {aa: AttributeAdjustment => AttributeAdjustment(aa.target, Cost, aa.operation)})  // "X costs Y more" == "X costs Y more energy"
     )) +
-    ("equal" -> (Adj/PP, identity)) +
+    ("equal" -> Seq(
+      (Adj/PP, identity),
+      (Adj/PP, λ {num: Number => EqualTo(num)})
+    )) +
     (("event".s ++ "event card".s) -> Seq(
       (N, Form(Event): SemanticState),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)})  // e.g. "All events in your hand"
@@ -133,7 +139,10 @@ object Lexicon {
     (Seq("for each", "for every") -> (Adj/NP, λ {c: Collection => Count(c)})) +
     ("everything" -> (N, Form(AllObjects): SemanticState)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => All(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
-    ("friendly" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))})) +
+    ("friendly" -> Seq(
+      (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
+      (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Self)) ++ c.conditions)})
+    )) +
     (Seq("gain", "gains") -> Seq(
       (S/NP, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))}),  // Gain X energy.
       (S/NP, λ {l: Life => ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(l.amount))}),  // Gain X life.
@@ -231,7 +240,11 @@ object Lexicon {
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}}),
       (((S/PP)/PP)/N, λ {a: Attribute => λ {c: CardsInHand => λ {num: Number => ModifyAttribute(All(c), a, Minus(num))}}})
     )) +
-    ("restore" -> (S/NP, λ {ta: TargetAttribute => ta.attr match { case Health => RestoreHealth(ta.target); case a => Fail(s"Expected Health, got $a")}})) +
+    ("restore" -> Seq(
+      ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => RestoreAttribute(t, a, None)}}),  // e.g. "Restore health to X"
+      (((S/PP)/N)/Num, λ {n: Number => λ {a: Attribute => λ {t: TargetObject => RestoreAttribute(t, a, Some(n))}}}),  // e.g. "Restore N health to X"
+      (S/NP, λ {ta: TargetAttribute => RestoreAttribute(ta.target, ta.attr, None)})  // e.g. "Restore X's health"
+    )) +
     (("robot".s :+ "robots '") -> Seq(
       (N, Form(Robot): SemanticState),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)})  // e.g. "all robots in your hand"
@@ -297,7 +310,10 @@ object Lexicon {
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Opponent))}),
       (Adj, Form(Opponent): SemanticState)
     )) +
-    (Seq("'", "'s") -> ((NP\NP)/N, λ {a: Attribute => λ {t: TargetObject => TargetAttribute(t, a)}})) +
+    (Seq("'", "'s") -> Seq(
+      ((NP\NP)/N, λ {a: Attribute => λ {t: TargetObject => TargetAttribute(t, a)}}),
+      ((NP\NP)/N, λ {a: Attribute => λ {t: TargetObject => AttributeValue(t, a)}})
+    )) +
     ("\"" -> Seq(
       (Quoted/S, identity),
       (S\Quoted, identity)

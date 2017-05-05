@@ -99,6 +99,8 @@ class ParserSpec extends FlatSpec with Matchers {
       ))
     parse("Reduce the cost of robot cards in your hand by 1") shouldEqual
       ModifyAttribute(All(CardsInHand(Self, Robot)), Cost, Minus(Scalar(1)))
+    parse("Destroy all robots with cost equal to this structure's health") shouldEqual
+      Destroy(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Cost, EqualTo(AttributeValue(ThisObject, Health))))))
 
     // New terms for alpha v0.4:
     parse("Draw 3 cards, then immediately end your turn") shouldEqual
@@ -125,6 +127,9 @@ class ParserSpec extends FlatSpec with Matchers {
         SetAttribute(SavedTargetObject, Attack, Scalar(0)),
         SetAttribute(SavedTargetObject, Speed, Scalar(0))
       ))
+    parse("Restore 1 health to all adjacent friendly robots") shouldEqual
+      RestoreAttribute(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Self))), Health, Some(Scalar(1)))
+
   }
 
   it should "deal with ambiguous uses of 'all'" in {
@@ -253,7 +258,7 @@ class ParserSpec extends FlatSpec with Matchers {
 
     // New terms for alpha v0.4:
     parse("Activate: Restore an adjacent object's health.") shouldEqual
-      ActivatedAbility(RestoreHealth(Choose(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(ThisObject))))))
+      ActivatedAbility(RestoreAttribute(Choose(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(ThisObject)))), Health))
   }
 
   it should "generate JS code for actions" in {

@@ -25,7 +25,7 @@ sealed trait Action extends AstNode
   case class GiveAbility(target: TargetObject, ability: Ability) extends Action
   case class ModifyAttribute(target: TargetObject, attribute: Attribute, operation: Operation) extends Action
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
-  case class RestoreHealth(target: TargetObject) extends Action
+  case class RestoreAttribute(target: TargetObject, attribute: Attribute, num: Option[Number] = None) extends Action
   case class SetAttribute(target: TargetObject, attribute: Attribute, num: Number) extends Action
   case class SwapAttributes(target: TargetObject, attr1: Attribute, attr2: Attribute) extends Action
   case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
