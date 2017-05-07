@@ -118,7 +118,10 @@ object Lexicon {
     )) +
     ("end" -> (NP/PP, λ {turn: Turn => EndOfTurn(turn.player)})) +
     ("immediately" /?/ Seq("end the turn", "end your turn") -> (S, Form(EndTurn): SemanticState)) +
-    ("enemy" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))})) +
+    ("enemy" -> Seq(
+      (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
+      (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Opponent)) ++ c.conditions)})
+    )) +
     ("energy" -> Seq(
       (NP|Num, λ {amount: Number => Energy(amount)}),
       (NP/Adj, λ {amount: Number => Energy(amount)}),
@@ -149,7 +152,10 @@ object Lexicon {
       (((S/N)/Num)\NP, λ {t: TargetObject => λ {i: Scalar => λ {a: Attribute => SetAttribute(t, a, i)}}}),  // "... X attack"
       (((S/N)/Adj)\NP, λ {t: TargetObject => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}}),  // "... +X attack"
       ((S/NP)\NP, λ {t: TargetObject => λ {ops: Seq[AttributeOperation] =>  // "... +X attack and +Y speed"
-        MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})
+        MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}),
+      ((S/S)\NP, λ {t: TargetObject => λ {a: Ability => HasAbility(t, a)}}),  // "... [ability]"
+      ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  //"... +X attack and [ability]"
+        MultipleAbilities(Seq(AttributeAdjustment(t, a._1.attr, a._1.op), HasAbility(t, a._2)))}})
     )) +
     ("give" -> Seq( // "Give [a robot] ..."
       (((S/N)/Num)/NP, λ {t: TargetObject => λ {i: Scalar => λ {a: Attribute => SetAttribute(t, a, i)}}}),  // "... X attack"

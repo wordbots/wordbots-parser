@@ -9,9 +9,10 @@ object CodeGenerator {
   // scalastyle:off cyclomatic.complexity
   private def g(node: AstNode): String = {
     node match {
-      // Actions: Meta
+      // Meta
       case If(condition, action) => s"(function () { if (${g(condition)}) { (${g(action)})(); } })"
       case MultipleActions(actions) => s"(function () { ${actions.map(action => s"${g(action)}();").mkString(" ")} })"
+      case MultipleAbilities(abilities) => s"(function () { ${abilities.map(ability => s"${g(ability)}();").mkString(" ")} })"
 
       // Actions: Normal
       case CanMoveAgain(target) => s"(function () { actions['canMoveAgain'](${g(target)}); })"
