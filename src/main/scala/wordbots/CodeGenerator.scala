@@ -16,6 +16,7 @@ object CodeGenerator {
 
       // Actions: Normal
       case CanMoveAgain(target) => s"(function () { actions['canMoveAgain'](${g(target)}); })"
+      case CanMoveAndAttackAgain(target) => s"(function () { actions['canMoveAndAttackAgain'](${g(target)}); })"
       case DealDamage(target, num) => s"(function () { actions['dealDamage'](${g(target)}, ${g(num)}); })"
       case Destroy(target) => s"(function () { actions['destroy'](${g(target)}); })"
       case Discard(target) => s"(function () { actions['discard'](${g(target)}); })"

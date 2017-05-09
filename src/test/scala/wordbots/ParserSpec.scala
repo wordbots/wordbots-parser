@@ -147,7 +147,7 @@ class ParserSpec extends FlatSpec with Matchers {
 
     // Haste
     parse("This robot can move and attack immediately after it is played") shouldEqual
-      TriggeredAbility(AfterPlayed(ItO), CanMoveAgain(ThisObject))
+      TriggeredAbility(AfterPlayed(ItO), CanMoveAndAttackAgain(ThisObject))
 
     // Jump
     parse("This robot can move over other objects") shouldEqual
