@@ -197,6 +197,8 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(AfterAttack(ThisObject, Kernel), Draw(Self, Scalar(1)))
     parse("When this robot is played, destroy all robots and gain 2 life") shouldEqual
       TriggeredAbility(AfterPlayed(ThisObject), And(Destroy(ObjectsInPlay(Robot)), ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(Scalar(2)))))
+    parse("When this robot is played, all of your other robots can move again") shouldEqual
+      TriggeredAbility(AfterPlayed(ThisObject), CanMoveAgain(Other(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))))))
 
     // New terms for alpha v0.4:
     parse("Whenever this robot moves, it takes 1 damage") shouldEqual

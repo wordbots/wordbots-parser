@@ -46,6 +46,7 @@ object Lexicon {
       (NP/PP, λ {c: Collection => c})
     )) +
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
+    (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
       (conj, λ {b: Any => λ {a: Any => Seq(a, b)}}),
       (conj, λ {b: Any => λ {a: Seq[Any] => a :+ b}}),
