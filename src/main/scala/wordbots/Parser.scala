@@ -97,6 +97,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   private def diagnoseSyntaxError(input: String): String = {
     val words = input.split(" ")
 
+    println(findValidEdits(input))
     findValidEdits(input).headOption match {
       case Some(Delete(idx)) =>
         s"syntax error - unexpected word '${words(idx)}'"
@@ -125,21 +126,37 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   }
 
   private def findValidEdits(input: String): Stream[Edit] = {
-    val words = input.split(" ")
+    def isValid(candidate: String): Boolean = {
+      candidate.nonEmpty && parseWithLexicon(candidate, syntaxOnlyLexicon).bestParse.isDefined
+    }
 
-    for {
+    val words = input.split(" ")
+    val categories = Map(
+      "n" -> "a noun", "np" -> "a noun phrase", "num" -> "a number",
+      "adj" -> "an adjective", "adv" -> "an adverb", "rel" -> "a relative clause", "s" -> "a sentence"
+    )
+
+    val insertions: Stream[Edit] = for {
       i <- (0 until words.length).toStream
-      (cat, pos) <- Map(
-        "n" -> "a noun", "np" -> "a noun phrase", "num" -> "a number",
-        "adj" -> "an adjective", "adv" -> "an adverb", "rel" -> "a relative clause", "s" -> "a sentence"
-      ).toStream
-      deleted = words.slice(0, i).mkString(" ") + words.slice(i + 1, words.length).mkString(" ")
-      replaced = words.slice(0, i).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
-      inserted = words.slice(0, i + 1).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
-      (candidate, edit) <- Seq((deleted, Delete(i)), (replaced, Replace(i, pos)), (inserted, Insert(i, pos)))
-      if candidate.nonEmpty
-      if parseWithLexicon(candidate, syntaxOnlyLexicon).bestParse.isDefined
-    } yield edit
+      (cat, pos) <- categories.toStream
+      candidate = words.slice(0, i + 1).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
+      if isValid(candidate)
+    } yield Insert(i, pos)
+
+    val deletions: Stream[Edit] = for {
+      i <- (0 until words.length).toStream
+      candidate = words.slice(0, i).mkString(" ") + words.slice(i + 1, words.length).mkString(" ")
+      if isValid(candidate)
+    } yield Delete(i)
+
+    val replacements: Stream[Edit] = for {
+      i <- (0 until words.length).toStream
+      (cat, pos) <- categories.toStream
+      candidate = words.slice(0, i).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
+      if isValid(candidate)
+    } yield Replace(i, pos)
+
+    insertions ++ deletions ++ replacements
   }
 
   private lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
