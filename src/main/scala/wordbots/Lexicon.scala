@@ -53,7 +53,7 @@ object Lexicon {
       ((S/S)\NP, λ {a: Any => λ {b: Any => (a, b)}})
     )) +
     (Seq("and", "then") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
-    ("at" -> ((S/S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
+    ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     ("attacks" -> Seq(
       (S\NP, λ {c: Choose => AfterAttack(All(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
