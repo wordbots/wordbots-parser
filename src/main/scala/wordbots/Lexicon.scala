@@ -103,7 +103,8 @@ object Lexicon {
     ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
     ("destroyed" -> Seq(
       (S\NP, λ {c: Choose => AfterDestroyed(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
-      (S\NP, λ {t: TargetObject => AfterDestroyed(t)})
+      (S\NP, λ {t: TargetObject => AfterDestroyed(t)}),
+      (S\NP, λ {o: TargetObject => TargetHasProperty(o, IsDestroyed)}) // Condition form (e.g. "If that robot is destroyed, [...]"
     )) +
     (Seq("doesn't deal damage when attacked", "only deals damage when attacking") -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotFightBack)})) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
@@ -199,7 +200,7 @@ object Lexicon {
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("is" -> (X|X, identity)) +
-    ("it" -> (NP, Form(ItO): SemanticState)) +
+    (("it" +: "that" / Seq("robot", "creature", "structure", "object")) -> (NP, Form(ItO): SemanticState)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ItO, a)})) +
     ("its controller" -> (NP, Form(ControllerOf(ItO)): SemanticState)) +
     (("kernel".s ++ "core".s) -> (N, Form(Kernel): SemanticState)) +

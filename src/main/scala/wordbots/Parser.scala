@@ -97,7 +97,6 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   private def diagnoseSyntaxError(input: String): String = {
     val words = input.split(" ")
 
-    println(findValidEdits(input))
     findValidEdits(input).headOption match {
       case Some(Delete(idx)) =>
         s"syntax error - unexpected word '${words(idx)}'"

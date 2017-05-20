@@ -80,6 +80,7 @@ sealed trait Condition extends AstNode
 
 sealed trait GlobalCondition extends AstNode
   case class CollectionExists(coll: Collection) extends GlobalCondition
+  case class TargetHasProperty(target: TargetObject, property: Property) extends GlobalCondition
 
 sealed trait Operation extends AstNode
   case class Constant(num: Number) extends Operation
@@ -138,6 +139,7 @@ sealed trait Property extends Label
   case object MovedLastTurn extends Property
   case object MovedThisTurn extends Property
   case object IsDamaged extends Property
+  case object IsDestroyed extends Property
 
 sealed trait Rounding extends Label
   case object RoundedUp extends Rounding

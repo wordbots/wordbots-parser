@@ -131,6 +131,8 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Restore 1 health to all adjacent friendly robots") shouldEqual
       RestoreAttribute(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Self))), Health, Some(Scalar(1)))
 
+    parse("If that robot is destroyed, deal 1 damage to all robots.") shouldEqual
+      If(TargetHasProperty(ItO, IsDestroyed), DealDamage(ObjectsMatchingConditions(Robot, Seq()), Scalar(1)))
   }
 
   it should "deal with ambiguous uses of 'all'" in {

@@ -87,6 +87,7 @@ object CodeGenerator {
 
       // Global conditions
       case CollectionExists(coll) => s"(${g(coll)}.length > 0)"
+      case TargetHasProperty(target, property) => s"globalConditions['targetHasProperty'](${g(target)}, ${g(property)})"
 
       // Arithmetic operations
       case Constant(num) => s"function (x) { return ${g(num)}; }"
