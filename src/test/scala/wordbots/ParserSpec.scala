@@ -46,6 +46,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Your opponent draws a card") should equal (Draw(Opponent, Scalar(1)))
     parse("Your opponent discards a random card") should equal (Discard(Random(Scalar(1), CardsInHand(Opponent, AnyCard))))
     parse("Lose 1 life") should equal (DealDamage(Self, Scalar(1)))
+    parse("A random robot loses 2 health") should equal (ModifyAttribute(Random(Scalar(1), ObjectsInPlay(Robot)), Health, Minus(Scalar(2))))
   }
 
   it should "parse more complex actions" in {

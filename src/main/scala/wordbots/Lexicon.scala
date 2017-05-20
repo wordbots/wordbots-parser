@@ -204,6 +204,7 @@ object Lexicon {
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
     ("lose" -> (S/NP, λ {l: Life => DealDamage(Self, l.amount)})) +
+    ("loses" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})) +  // Y loses X (attribute).
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("moved last turn" -> (S, Form(HasProperty(MovedLastTurn)): SemanticState)) +
