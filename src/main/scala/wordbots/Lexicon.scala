@@ -171,9 +171,11 @@ object Lexicon {
         MultipleActions(Seq(SaveTarget(t), ModifyAttribute(SavedTargetObject, a._1.attr, a._1.op), GiveAbility(SavedTargetObject, a._2)))}})
     )) +
     ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
-    ("halve" -> Seq(
+    ("halve" -> Seq(  // (Ordinarily takes Rounding, but defaults to RoundedDown.)
       (((S/PP)/Adv)/N, λ {a: Attribute => λ {r: Rounding => λ {t: TargetObject => ModifyAttribute(t, a, Divide(Scalar(2), r))}}}),
-      ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => AttributeOperation(Divide(Scalar(2), r), a)}})
+      ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Divide(Scalar(2), RoundedDown))}}),
+      ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => AttributeOperation(Divide(Scalar(2), r), a)}}),
+      (V/N, λ {a: Attribute => AttributeOperation(Divide(Scalar(2), RoundedDown), a)})
     )) +
     (Seq("has", "have") -> Seq(
       (S/NP, λ {ac: AttributeComparison => ac}),
@@ -258,8 +260,8 @@ object Lexicon {
       (N, Form(Robot): SemanticState),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)})  // e.g. "all robots in your hand"
     )) +
-    ("(rounded down)" -> (Adv, Form(RoundedDown): SemanticState)) +
-    ("(rounded up)" -> (Adv, Form(RoundedUp): SemanticState)) +
+    ("rounded down" -> (Adv, Form(RoundedDown): SemanticState)) +
+    ("rounded up" -> (Adv, Form(RoundedUp): SemanticState)) +
     ("set" -> Seq(
       ((S/PP)/NP, λ {t: TargetAttribute => λ {num: Number => SetAttribute(t.target, t.attr, num)}}),
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}}),

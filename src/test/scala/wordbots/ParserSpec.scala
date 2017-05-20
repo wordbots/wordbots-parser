@@ -33,6 +33,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Draw a card") should equal (Draw(Self, Scalar(1)))
     parse("Destroy a robot") should equal (Destroy(Choose(ObjectsInPlay(Robot))))
     parse("Destroy a random robot") should equal (Destroy(Random(Scalar(1), ObjectsInPlay(Robot))))
+    parse("Discard a robot card") shouldEqual Discard(Choose(CardsInHand(Self, Robot)))
     parse("Discard a random card") should equal (Discard(Random(Scalar(1), CardsInHand(Self, AnyCard))))
     parse("Gain two energy") should equal (ModifyEnergy(Self, Plus(Scalar(2))))
     parse("Deal 2 damage to a robot") should equal (DealDamage(Choose(ObjectsInPlay(Robot)), Scalar(2)))
@@ -47,6 +48,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Your opponent discards a random card") should equal (Discard(Random(Scalar(1), CardsInHand(Opponent, AnyCard))))
     parse("Lose 1 life") should equal (DealDamage(Self, Scalar(1)))
     parse("A random robot loses 2 health") should equal (ModifyAttribute(Random(Scalar(1), ObjectsInPlay(Robot)), Health, Minus(Scalar(2))))
+    parse("Halve the life of all robots") should equal (ModifyAttribute(ObjectsInPlay(Robot), Health, Divide(Scalar(2), RoundedDown)))
   }
 
   it should "parse more complex actions" in {
@@ -54,8 +56,6 @@ class ParserSpec extends FlatSpec with Matchers {
       DealDamage(Choose(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Speed, LessThanOrEqualTo(Scalar(3)))))), Scalar(2))
     parse ("Deal 1 damage to all robots adjacent to a tile") shouldEqual
       DealDamage(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(Choose(AllTiles)))), Scalar(1))
-    parse("Discard a robot card") shouldEqual
-      Discard(Choose(CardsInHand(Self, Robot)))
     parse("Gain life equal to its health") shouldEqual
       ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(AttributeValue(ItO, Health)))
     parse("Give all robots you control +2 attack") shouldEqual

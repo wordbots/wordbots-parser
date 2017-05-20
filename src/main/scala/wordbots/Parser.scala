@@ -90,7 +90,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
       .replaceAllLiterally("\' ", " \' ")
       .replaceAllLiterally("\'s", " \'s ")
       .replaceAllLiterally("\"", " \" ")
-      .split("\\s+|[.?!,]")
+      .split("\\s+|[.?!,\\(\\)]")
       .filter("" !=)
   }
 
