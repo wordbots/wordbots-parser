@@ -86,7 +86,7 @@ object CodeGenerator {
       case WithinDistanceOf(distance: Number, obj: TargetObject) => s"conditions['withinDistanceOf'](${g(distance)}, ${g(obj)})"
 
       // Global conditions
-      case CollectionExists(coll) => s"(${g(coll)}.length > 0)"
+      case CollectionExists(coll) => s"globalConditions['collectionExists'](${g(coll)})"
       case TargetHasProperty(target, property) => s"globalConditions['targetHasProperty'](${g(target)}, ${g(property)})"
 
       // Arithmetic operations
