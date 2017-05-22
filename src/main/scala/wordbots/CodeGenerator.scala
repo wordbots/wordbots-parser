@@ -3,7 +3,7 @@ package wordbots
 object CodeGenerator {
   def generateJS(node: AstNode): String = g(node)
 
-  def escape(str: String) = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\"
+  def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\"
 
   // scalastyle:off method.length
   // scalastyle:off cyclomatic.complexity

@@ -145,7 +145,8 @@ sealed trait Rounding extends Label
   case object RoundedUp extends Rounding
   case object RoundedDown extends Rounding
 
-// These container classes are used to store state mid-parse but not expressed in the final parsed AST.
+// The below container classes are used to store state mid-parse but not expressed in the final parsed AST.
+
 // Unary container classes:
 case class Cards(num: Number)
 case class Damage(amount: Number)
@@ -154,6 +155,7 @@ case class Life(amount: Number)
 case class Hand(player: TargetPlayer)
 case class Spaces(num: Number)
 case class Turn(player: TargetPlayer)
+
 // Binary container classes:
 case class TargetAttribute(target: TargetObject, attr: Attribute)
 case class AttributeAmount(amount: Number, attr: Attribute)
