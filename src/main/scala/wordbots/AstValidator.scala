@@ -19,7 +19,7 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
 
   val rules: Seq[AstRule] = mode match {
     case ValidateObject => baseRules :+ MustBeAbility
-    case ValidateEvent => baseRules :+ MustBeAction
+    case ValidateEvent => baseRules ++ Seq(MustBeAction, NoThis)
     case ValidateUnknownCard => baseRules
   }
 
@@ -31,16 +31,22 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
 sealed trait AstRule {
   def validate(node: AstNode): Try[Unit]
 
-  def validateChildren(rule: AstRule, node: AstNode): Try[Unit] = {
+  def validateChildren(rule: AstRule, parentNode: AstNode): Try[Unit] = {
+    def validateRecursively(node: Any): Unit = {
+      node match {
+        case childNode: AstNode =>
+          rule.validate(node.asInstanceOf[AstNode])
+            .flatMap(_ => validateChildren(rule, childNode))
+            .get
+        case childNodes: Seq[_] =>
+          childNodes.foreach(validateRecursively)
+        case _ => ()
+      }
+    }
+
     Try {
-      for (childNode <- node.productIterator) {
-        childNode match {
-          case childNode: AstNode =>
-            rule.validate(childNode.asInstanceOf[AstNode])
-              .flatMap(_ => validateChildren(rule, childNode))
-              .get
-          case _ => Success()
-        }
+      for (childNode <- parentNode.productIterator) {
+        validateRecursively(childNode)
       }
     }
   }
@@ -118,6 +124,15 @@ object MustBeAction extends AstRule {
       case ActivatedAbility(_) => Failure(ValidationError("Events can't have activated abilities."))
       case _: PassiveAbility => Failure(ValidationError("Events can't have passive abilities."))
       case _ => Success()
+    }
+  }
+}
+
+object NoThis extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case ThisObject => Failure(ValidationError(s"Events can't refer to the current object"))
+      case n: AstNode => validateChildren(this, n)
     }
   }
 }
