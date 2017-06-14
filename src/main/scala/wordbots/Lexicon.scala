@@ -22,12 +22,19 @@ object Lexicon {
   }
   // scalastyle:on method.name
 
+  lazy val categories: Set[CcgCat] = {
+    lexicon.map.flatMap(d => d._2.map(_._1)).toSet
+  }
+  lazy val categoriesMap: Map[String, Seq[(CcgCat, SemanticState)]] = {
+    categories.map(cat => (s"#${cat.category.toLowerCase.replaceAll("[\\(\\)]", "")}#" -> Seq(cat -> Ignored("")))).toMap
+  }
+
   lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
     ParserDict[CcgCat](
       Lexicon.lexicon.map.mapValues(_.map {case (syn, sem) => (syn, Ignored(""))}),
       Lexicon.lexicon.funcs.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}}),
       Lexicon.lexicon.fallbacks.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}})
-    ) + ("#n#" -> N) + ("#np#" -> NP) + ("#num#" -> Num) + ("#adj#" -> Adj) + ("#adv#" -> Adv) + ("#rel#" -> Rel) + ("#s#" -> S)
+    ).withTerms(categoriesMap)
   }
 
   def termsInCategory(category: CcgCat): Seq[String] = {

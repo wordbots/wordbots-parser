@@ -7,10 +7,10 @@ sealed trait Edit {
   def apply(words: Seq[String]): Seq[String]
   def description(words: Seq[String]): String
 
-  val categories = Map(
+  protected def describeCat(cat: CcgCat): String = Map(
     "Noun" -> "a noun", "NP" -> "a noun phrase", "Num" -> "a number",
     "Adj" -> "an adjective", "Adv" -> "an adverb", "Rel" -> "a relative clause", "S" -> "a sentence"
-  )
+  ).getOrElse(cat.category, cat.category)
 }
 
 case class Delete(idx: Int) extends Edit {
@@ -24,12 +24,18 @@ case class Replace(idx: Int, pos: CcgCat) extends Edit {
 
   def description(words: Seq[String]): String = {
     val context = if (idx > 0) s"after '${words(idx - 1)}'" else s"before '${words(idx + 1)}'"
-    s"syntax error - expected ${categories(pos.toString)} $context but got '${words(idx)}' instead"
+    s"syntax error - expected ${describeCat(pos)} $context but got '${words(idx)}' instead"
   }
 }
 
 case class Insert(idx: Int, pos: CcgCat) extends Edit {
   def apply(words: Seq[String]): Seq[String] = Lexicon.termsInCategory(pos).map(term => words.patch(idx, Seq(term), 0).mkString(" "))
 
-  def description(words: Seq[String]): String = s"syntax error - '${words(idx)}' should be followed by ${categories(pos.toString)}"
+  def description(words: Seq[String]): String = {
+    if (idx > 0) {
+      s"syntax error - '${words(idx - 1)}' should be followed by ${describeCat(pos)}"
+    } else {
+      s"syntax error - should start with ${describeCat(pos)}"
+    }
+  }
 }

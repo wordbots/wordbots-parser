@@ -33,6 +33,10 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
   def parse(input: String): SemanticParseResult[CcgCat] = parse(input, tokenizer)
 
+  def parseWithLexicon(input: String, lexicon: ParserDict[CcgCat]): SemanticParseResult[CcgCat] = {
+    new SemanticParser[CcgCat](lexicon).parse(input, tokenizer)
+  }
+
   def findUnrecognizedTokens(input: String): Seq[String] = {
     val tokens = tokenizer(input)
     val lexicon = Lexicon.lexicon
@@ -77,10 +81,6 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     }
   }
 
-  private def parseWithLexicon(input: String, lexicon: ParserDict[CcgCat]): SemanticParseResult[CcgCat] = {
-    new SemanticParser[CcgCat](lexicon).parse(input, tokenizer)
-  }
-
   private def tokenizer(str: String): IndexedSeq[String] = {
     str.trim
       .toLowerCase
@@ -92,7 +92,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   }
 
   private def diagnoseSyntaxError(input: String): ParserError = {
-    def isValid(candidate: String): Boolean = {
+    def isSemanticallyValid(candidate: String): Boolean = {
       val parseResult = parse(candidate).bestParse
       parseResult.map(_.semantic) match {
         // Is the semantic parse successful?
@@ -107,7 +107,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     val edits = findValidEdits(input)
 
     val error: Option[String] = edits.headOption.map(_.description(words))
-    val suggestions: Seq[String] = edits.flatMap(_(words)).filter(isValid)
+    val suggestions: Seq[String] = edits.flatMap(_(words)).toSet.filter(isSemanticallyValid).toSeq
 
     ParserError(s"Parse failed (${error.getOrElse("syntax error")})", suggestions)
   }
@@ -128,32 +128,32 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   }
 
   private def findValidEdits(input: String): Stream[Edit] = {
-    def isValid(candidate: String): Boolean = {
+    def isSyntacticallyValid(candidate: String): Boolean = {
       candidate.nonEmpty && parseWithLexicon(candidate, Lexicon.syntaxOnlyLexicon).bestParse.isDefined
     }
 
     val words = input.split(" ")
 
-    val categories = Map("#n#" -> N, "#np#" -> NP, "#num#" -> Num, "#adj#" -> Adj, "#adv#" -> Adv, "#rel#" -> Rel, "#s#" -> S)
+    val categories: Map[String, CcgCat] = Lexicon.categoriesMap.mapValues(_.head._1)
 
     val insertions: Stream[Edit] = for {
-      i <- (0 until words.length).toStream
+      i <- (0 until words.length + 1).toStream
       (cat, pos) <- categories.toStream
-      candidate = words.slice(0, i + 1).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
-      if isValid(candidate)
+      candidate = words.slice(0, i).mkString(" ") + s" $cat " + words.slice(i, words.length).mkString(" ")
+      if isSyntacticallyValid(candidate)
     } yield Insert(i, pos)
 
     val deletions: Stream[Edit] = for {
       i <- (0 until words.length).toStream
-      candidate = words.slice(0, i).mkString(" ") + words.slice(i + 1, words.length).mkString(" ")
-      if isValid(candidate)
+      candidate = words.slice(0, i).mkString(" ") + " " + words.slice(i + 1, words.length).mkString(" ")
+      if isSyntacticallyValid(candidate)
     } yield Delete(i)
 
     val replacements: Stream[Edit] = for {
       i <- (0 until words.length).toStream
       (cat, pos) <- categories.toStream
-      candidate = words.slice(0, i).mkString(" ") + " (" + cat + ") " + words.slice(i + 1, words.length).mkString(" ")
-      if isValid(candidate)
+      candidate = words.slice(0, i).mkString(" ") + s" $cat " + words.slice(i + 1, words.length).mkString(" ")
+      if isSyntacticallyValid(candidate)
     } yield Replace(i, pos)
 
     insertions ++ deletions ++ replacements

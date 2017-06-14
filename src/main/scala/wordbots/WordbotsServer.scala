@@ -103,7 +103,7 @@ object WordbotsServer extends ServerApp {
 
   def errorResponse(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: String = ""): Task[Response] = {
     Ok(
-      "{\"error\": \"" + error.description + "\", " +
+      "{\"error\": \"" + error.description.replaceAllLiterally("\\", "\\\\") + "\", " +
        "\"suggestions\": [" + error.suggestions.map(s => "\"" + s + "\"").mkString(", ") + "], " +
        "\"unrecognizedTokens\": [" + unrecognizedTokens +  "]}",
       headers()
