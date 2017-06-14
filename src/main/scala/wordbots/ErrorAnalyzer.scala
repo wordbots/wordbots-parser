@@ -33,7 +33,7 @@ object ErrorAnalyzer {
         Some(ParserError(s"Parse failed (missing $firstArgType)"))
       case Some(Nonsense(_)) =>
         // Handle successful syntactic parse but failed semantic parse.
-        Some(diagnoseSemanticsError(parseResult))
+        Some(diagnoseSemanticsError(input, parseResult))
       case _ =>
         // Handle failed parse.
         if (findUnrecognizedTokens(input).nonEmpty) {
@@ -63,21 +63,25 @@ object ErrorAnalyzer {
     ParserError(s"Parse failed (${error.getOrElse("syntax error")})", suggestions)
   }
 
-  private def diagnoseSemanticsError(parseResult: Option[SemanticParseNode[CcgCat]]): ParserError = {
-    val error = parseResult.map(_.exs.nonEmpty) match {
-      case Some(true) =>
-        val msgs = parseResult.get.exs.map (
-          _.getMessage
-            .replace("cannot be cast to", "is not a")
-            .replaceAllLiterally("$", "")
-            .replaceAllLiterally("wordbots.", "")
-        )
-
-        s"semantics mismatch - ${msgs.mkString(", ")}"
-      case _ => "semantics mismatch"
+  private def diagnoseSemanticsError(input: String, parseResult: Option[SemanticParseNode[CcgCat]]): ParserError = {
+    def semanticReplacements(terminal: SemanticParseNode[CcgCat]): Seq[String] = {
+      val token = terminal.parseTokenString
+      val alternatives = Lexicon.termsInCategory(terminal.syntactic)
+      alternatives.map(alternative => s" $input ".replaceFirst(s" $token ", s" $alternative ").trim)
     }
 
-    ParserError(s"Parse failed ($error)")
+    val exceptions: Set[String] = parseResult.map(_.exs).getOrElse(Set()).map(
+      _.getMessage
+        .replace("cannot be cast to", "is not a")
+        .replaceAllLiterally("$", "")
+        .replaceAllLiterally("wordbots.", "")
+    )
+    val errorMsg = if (exceptions.nonEmpty) exceptions.mkString(" - ", ", ", "") else ""
+
+    val terminalNodes: Seq[SemanticParseNode[CcgCat]] = syntacticParse(input).get.terminals
+    val suggestions: Set[String] = terminalNodes.flatMap(semanticReplacements).toSet.filter(isSemanticallyValid)
+
+    ParserError(s"Parse failed (semantics mismatch$errorMsg", suggestions)
   }
 
   private def findValidEdits(words: Seq[String]): Stream[Edit] = {
@@ -120,7 +124,7 @@ object ErrorAnalyzer {
   }
 
   private def isSyntacticallyValid(candidate: String): Boolean = {
-    candidate.nonEmpty && Parser.parseWithLexicon(candidate, Lexicon.syntaxOnlyLexicon).bestParse.isDefined
+    candidate.nonEmpty && syntacticParse(candidate).isDefined
   }
 
   private def isSemanticallyValid(candidate: String): Boolean = {
@@ -132,5 +136,9 @@ object ErrorAnalyzer {
         parseResult.map(_.syntactic.category) == Some("S")
       case _ => false
     }
+  }
+
+  private def syntacticParse(input: String): Option[SemanticParseNode[CcgCat]] = {
+    Parser.parseWithLexicon(input, Lexicon.syntaxOnlyLexicon).bestParse
   }
 }
