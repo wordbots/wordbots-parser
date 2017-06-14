@@ -69,14 +69,14 @@ object WordbotsServer extends ServerApp {
               case None =>
                 result.map(_.semantic) match {
                   case Some(Form(v: AstNode)) => successResponse(CodeGenerator.generateJS(v), parsedTokens)
-                  case _ => errorResponse("Unspecified parser error", unrecognizedTokens)
+                  case _ => errorResponse(ParserError("Unspecified parser error"), unrecognizedTokens)
                 }
             }
 
           case Some("svg") =>
             result
               .map(parse => Ok(parse.toSvg, headers(Some("image/svg+xml"))))
-              .getOrElse(errorResponse("Parse failed"))
+              .getOrElse(errorResponse())
 
           case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
         }
@@ -101,8 +101,13 @@ object WordbotsServer extends ServerApp {
     Ok("{\"js\": \"" + js + "\", \"tokens\": [" + parsedTokens +  "]}", headers())
   }
 
-  def errorResponse(error: String, unrecognizedTokens: String = ""): Task[Response] = {
-    Ok("{\"error\": \"" + error + "\", \"unrecognizedTokens\": [" + unrecognizedTokens +  "]}", headers())
+  def errorResponse(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: String = ""): Task[Response] = {
+    Ok(
+      "{\"error\": \"" + error.description + "\", " +
+       "\"suggestions\": [" + error.suggestions.map(s => "\"" + s + "\"").mkString(", ") + "], " +
+       "\"unrecognizedTokens\": [" + unrecognizedTokens +  "]}",
+      headers()
+    )
   }
 
   def headers(contentType: Option[String] = None): Headers = {

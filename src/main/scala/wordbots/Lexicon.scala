@@ -22,6 +22,20 @@ object Lexicon {
   }
   // scalastyle:on method.name
 
+  lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
+    ParserDict[CcgCat](
+      Lexicon.lexicon.map.mapValues(_.map {case (syn, sem) => (syn, Ignored(""))}),
+      Lexicon.lexicon.funcs.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}}),
+      Lexicon.lexicon.fallbacks.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}})
+    ) + ("#n#" -> N) + ("#np#" -> NP) + ("#num#" -> Num) + ("#adj#" -> Adj) + ("#adv#" -> Adv) + ("#rel#" -> Rel) + ("#s#" -> S)
+  }
+
+  def termsInCategory(category: CcgCat): Seq[String] = {
+    lexicon.map.filter { case (term, definition) =>
+      definition.exists(_._1 == category)
+    }.keys.toSeq
+  }
+
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
       (N/N, identity),
