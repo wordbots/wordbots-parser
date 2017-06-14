@@ -33,7 +33,7 @@ object ErrorAnalyzer {
         Some(ParserError(s"Parse failed (missing $firstArgType)"))
       case Some(Nonsense(_)) =>
         // Handle successful syntactic parse but failed semantic parse.
-        Some(ParserError(s"Parse failed (${diagnoseSemanticsError(parseResult)})"))
+        Some(diagnoseSemanticsError(parseResult))
       case _ =>
         // Handle failed parse.
         if (findUnrecognizedTokens(input).nonEmpty) {
