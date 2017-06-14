@@ -10,7 +10,7 @@ sealed trait Edit {
   protected def describeCat(cat: CcgCat): String = Map(
     "Noun" -> "a noun", "NP" -> "a noun phrase", "Num" -> "a number",
     "Adj" -> "an adjective", "Adv" -> "an adverb", "Rel" -> "a relative clause", "S" -> "a sentence"
-  ).getOrElse(cat.category, cat.category)
+  ).getOrElse(cat.category, s"a ${cat.category}")
 }
 
 case class Delete(idx: Int) extends Edit {
