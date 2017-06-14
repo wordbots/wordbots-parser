@@ -60,11 +60,11 @@ object WordbotsServer extends ServerApp {
             .filter(token => lexiconTerms.contains(token) && token != "\"")
             .mkString("\"", "\",\"", "\"")
         }
-        val unrecognizedTokens = Parser.findUnrecognizedTokens(input).mkString("\"", "\",\"", "\"")
+        val unrecognizedTokens = ErrorAnalyzer.findUnrecognizedTokens(input).mkString("\"", "\",\"", "\"")
 
         format match {
           case Some("js") =>
-            Parser.diagnoseError(input, result) match {
+            ErrorAnalyzer.diagnoseError(input, result) match {
               case Some(error) => errorResponse(error, unrecognizedTokens)
               case None =>
                 result.map(_.semantic) match {
