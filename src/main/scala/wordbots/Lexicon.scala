@@ -5,6 +5,8 @@ import com.workday.montague.parser.ParserDict
 import com.workday.montague.semantics._
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
+import scala.language.postfixOps
+
 /**
   * Created by alex on 2/28/17.
   */
@@ -21,27 +23,6 @@ object Lexicon {
     def /?/(nextWords: Seq[String]): Seq[String] = nextWords ++ nextWords.map(s"$str " +)
   }
   // scalastyle:on method.name
-
-  lazy val categories: Set[CcgCat] = {
-    lexicon.map.flatMap(d => d._2.map(_._1)).toSet
-  }
-  lazy val categoriesMap: Map[String, Seq[(CcgCat, SemanticState)]] = {
-    categories.map(cat => (s"#${cat.category.toLowerCase.replaceAll("[\\(\\)]", "")}#" -> Seq(cat -> Ignored("")))).toMap
-  }
-
-  lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
-    ParserDict[CcgCat](
-      Lexicon.lexicon.map.mapValues(_.map {case (syn, sem) => (syn, Ignored(""))}),
-      Lexicon.lexicon.funcs.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}}),
-      Lexicon.lexicon.fallbacks.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}})
-    ).withTerms(categoriesMap)
-  }
-
-  def termsInCategory(category: CcgCat): Seq[String] = {
-    lexicon.map.filter { case (term, definition) =>
-      definition.exists(_._1 == category)
-    }.keys.toSeq
-  }
 
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
@@ -358,4 +339,33 @@ object Lexicon {
     (NumberWordMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +
     (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(Scalar(i)))}))
+
+  lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
+    ParserDict[CcgCat](
+      Lexicon.lexicon.map.mapValues(_.map {case (syn, sem) => (syn, Ignored(""))}),
+      Lexicon.lexicon.funcs.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}}),
+      Lexicon.lexicon.fallbacks.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}})
+    ).withTerms(categoriesMap)
+  }
+
+  lazy val categories: Seq[CcgCat] = {
+    lexicon.map
+      .flatMap(d => d._2.map(_._1))
+      .toSeq
+      .distinct
+      .sortBy(cat => cat.category.count(raw"/|\\" contains _))  // Sort categories by increasing complexity.
+  }
+
+  lazy val categoriesMap: Map[String, Seq[(CcgCat, SemanticState)]] = {
+    categories.map(cat => s"#${cat.category.toLowerCase.replaceAll("[\\(\\)]", "")}#" -> Seq(cat -> Ignored(""))).toMap
+  }
+  lazy val terminalCategoriesMap: Map[String, Seq[(CcgCat, SemanticState)]] = {
+    categoriesMap.filterKeys(cat => cat.matches(raw"[^/|\\]*"))
+  }
+
+  def termsInCategory(category: CcgCat): Seq[String] = {
+    lexicon.map.filter { case (term, definition) =>
+      definition.exists(_._1 == category)
+    }.keys.toSeq
+  }
 }

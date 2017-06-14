@@ -54,19 +54,8 @@ object ErrorAnalyzer {
   }
 
   private def diagnoseSyntaxError(input: String): ParserError = {
-    def isSemanticallyValid(candidate: String): Boolean = {
-      val parseResult = Parser.parse(candidate).bestParse
-      parseResult.map(_.semantic) match {
-        // Is the semantic parse successful?
-        case Some(Form(v: AstNode)) =>
-          // Does the parse produce a sentence (CCG category S)?
-          parseResult.map(_.syntactic.category) == Some("S")
-        case _ => false
-      }
-    }
-
     val words = input.split(" ")
-    val edits = findValidEdits(input)
+    val edits = findValidEdits(words)
 
     val error: Option[String] = edits.headOption.map(_.description(words))
     val suggestions: Set[String] = edits.flatMap(_(words)).toSet.filter(isSemanticallyValid)
@@ -91,35 +80,57 @@ object ErrorAnalyzer {
     ParserError(s"Parse failed ($error)")
   }
 
-  private def findValidEdits(input: String): Stream[Edit] = {
-    def isSyntacticallyValid(candidate: String): Boolean = {
-      candidate.nonEmpty && Parser.parseWithLexicon(candidate, Lexicon.syntaxOnlyLexicon).bestParse.isDefined
+  private def findValidEdits(words: Seq[String]): Stream[Edit] = {
+    // The time complexity of findValidEdits() is O(W*C) where W is the # of words and C is the # of CCG categories to try.
+    // So ...
+    val categories: Map[String, CcgCat] = {
+      if (words.length <= 6) {
+        // ... for shorter inputs, try all categories.
+        Lexicon.categoriesMap.mapValues(_.head._1)
+      } else if (words.length <= 15) {
+        // ... for medium-length inputs, only try terminal categories.
+        Lexicon.terminalCategoriesMap.mapValues(_.head._1)
+      } else {
+        // ... for very long inputs, don't try any categories (only attempt deletions).
+        Map()
+      }
     }
 
-    val words = input.split(" ")
-
-    val categories: Map[String, CcgCat] = Lexicon.categoriesMap.mapValues(_.head._1)
-
     val insertions: Stream[Edit] = for {
-      i <- (0 until words.length + 1).toStream
+      i <- words.indices.inclusive.toStream
       (cat, pos) <- categories.toStream
       candidate = words.slice(0, i).mkString(" ") + s" $cat " + words.slice(i, words.length).mkString(" ")
       if isSyntacticallyValid(candidate)
     } yield Insert(i, pos)
 
     val deletions: Stream[Edit] = for {
-      i <- (0 until words.length).toStream
+      i <- words.indices.toStream
       candidate = words.slice(0, i).mkString(" ") + " " + words.slice(i + 1, words.length).mkString(" ")
       if isSyntacticallyValid(candidate)
     } yield Delete(i)
 
     val replacements: Stream[Edit] = for {
-      i <- (0 until words.length).toStream
+      i <- words.indices.toStream
       (cat, pos) <- categories.toStream
       candidate = words.slice(0, i).mkString(" ") + s" $cat " + words.slice(i + 1, words.length).mkString(" ")
       if isSyntacticallyValid(candidate)
     } yield Replace(i, pos)
 
     insertions ++ deletions ++ replacements
+  }
+
+  private def isSyntacticallyValid(candidate: String): Boolean = {
+    candidate.nonEmpty && Parser.parseWithLexicon(candidate, Lexicon.syntaxOnlyLexicon).bestParse.isDefined
+  }
+
+  private def isSemanticallyValid(candidate: String): Boolean = {
+    val parseResult = Parser.parse(candidate).bestParse
+    parseResult.map(_.semantic) match {
+      // Is the semantic parse successful?
+      case Some(Form(v: AstNode)) =>
+        // Does the parse produce a sentence (CCG category S)?
+        parseResult.map(_.syntactic.category) == Some("S")
+      case _ => false
+    }
   }
 }
