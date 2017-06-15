@@ -67,7 +67,7 @@ object ErrorAnalyzer {
     def semanticReplacements(terminal: SemanticParseNode[CcgCat]): Seq[String] = {
       val token = terminal.parseTokenString
       val alternatives = Lexicon.termsInCategory(terminal.syntactic)
-      alternatives.map(alternative => s" $input ".replaceFirst(s" $token ", s" $alternative ").trim)
+      alternatives.map(alternative => s" ${input.toLowerCase} ".replaceFirst(s" $token ", s" $alternative ").trim.capitalize)
     }
 
     val exceptions: Set[String] = parseResult.map(_.exs).getOrElse(Set()).map(
@@ -81,7 +81,7 @@ object ErrorAnalyzer {
     val terminalNodes: Seq[SemanticParseNode[CcgCat]] = syntacticParse(input).get.terminals
     val suggestions: Set[String] = terminalNodes.flatMap(semanticReplacements).toSet.filter(isSemanticallyValid)
 
-    ParserError(s"Parse failed (semantics mismatch$errorMsg", suggestions)
+    ParserError(s"Parse failed (semantics mismatch$errorMsg)", suggestions)
   }
 
   private def findValidEdits(words: Seq[String]): Stream[Edit] = {
