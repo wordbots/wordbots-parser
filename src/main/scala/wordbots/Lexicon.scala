@@ -91,17 +91,17 @@ object Lexicon {
     ) +
     (Seq("cost", "energy cost") -> Seq(
       (N, Form(Cost): SemanticState),
-      ((S\NP)/Num, λ {i: Scalar => λ {t: TargetEntity => AttributeAdjustment(t, Cost, Constant(i))}}),
-      ((S\NP)/Adv, λ {o: Operation => λ {t: TargetEntity => AttributeAdjustment(t, Cost, o)}}),
+      ((S\NP)/Num, λ {i: Scalar => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, Constant(i))}}),
+      ((S\NP)/Adv, λ {o: Operation => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, o)}}),
       ((S\NP)/Num, λ {i: Scalar => λ {cp: CardPlay => AttributeAdjustment(AllC(CardsInHand(cp.player, cp.cardType)), Cost, Constant(i))}}),
       ((S\NP)/Adv, λ {o: Operation => λ {cp: CardPlay => AttributeAdjustment(AllC(CardsInHand(cp.player, cp.cardType)), Cost, o)}})
     )) +
     ("damage" -> Seq(
-      ((S/PP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
-      ((S\NP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
-      ((S/Adj)/PP, λ {t: Target => λ {amount: Number => DealDamage(t, amount)}}),
-      ((S\NP)/Adj, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
-      (S/PP, λ {t: Target => DealDamage(t, AttributeValue(ThisObject, Attack))}),  // (by default, a robot deals damage equal to its power)
+      ((S/PP)\Num, λ {amount: Number => λ {t: TargetObjectOrPlayer => DealDamage(t, amount)}}),
+      ((S\NP)\Num, λ {amount: Number => λ {t: TargetObjectOrPlayer => DealDamage(t, amount)}}),
+      ((S/Adj)/PP, λ {t: TargetObjectOrPlayer => λ {amount: Number => DealDamage(t, amount)}}),
+      ((S\NP)/Adj, λ {amount: Number => λ {t: TargetObjectOrPlayer => DealDamage(t, amount)}}),
+      (S/PP, λ {t: TargetObjectOrPlayer => DealDamage(t, AttributeValue(ThisObject, Attack))}),  // (by default, a robot deals damage equal to its power)
       (S\Num, λ {amount: Number => DealDamage(ChooseO(ObjectsInPlay(AllObjects)), amount)})  // (if no target is given, any target can be chosen)
     )) +
     ("damaged" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(HasProperty(IsDamaged)))})) +

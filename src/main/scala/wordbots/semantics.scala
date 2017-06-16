@@ -14,13 +14,13 @@ sealed trait Action extends AstNode
 
   case class CanMoveAgain(target: TargetObject) extends Action
   case class CanMoveAndAttackAgain(target: TargetObject) extends Action
-  case class DealDamage(target: Target, num: Number) extends Action
+  case class DealDamage(target: TargetObjectOrPlayer, num: Number) extends Action
   case class Destroy(target: TargetObject) extends Action
   case class Discard(target: TargetCard) extends Action
   case class Draw(target: TargetPlayer, num: Number) extends Action
   case object EndTurn extends Action
   case class GiveAbility(target: TargetObject, ability: Ability) extends Action
-  case class ModifyAttribute(target: TargetEntity, attribute: Attribute, operation: Operation) extends Action
+  case class ModifyAttribute(target: TargetObjectOrCard, attribute: Attribute, operation: Operation) extends Action
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
   case class RestoreAttribute(target: TargetObject, attribute: Attribute, num: Option[Number] = None) extends Action
   case class SetAttribute(target: TargetObject, attribute: Attribute, num: Number) extends Action
@@ -34,10 +34,10 @@ sealed trait Ability extends AstNode
   case class TriggeredAbility(trigger: Trigger, action: Action) extends Ability
   case class ActivatedAbility(action: Action) extends Ability
   sealed trait PassiveAbility extends Ability
-    case class ApplyEffect(target: TargetEntity, effect: Effect) extends PassiveAbility
-    case class AttributeAdjustment(target: TargetEntity, attribute: Attribute, operation: Operation) extends PassiveAbility
-    case class FreezeAttribute(target: TargetEntity, attribute: Attribute) extends PassiveAbility
-    case class HasAbility(target: TargetEntity, ability: Ability) extends PassiveAbility
+    case class ApplyEffect(target: TargetObjectOrCard, effect: Effect) extends PassiveAbility
+    case class AttributeAdjustment(target: TargetObjectOrCard, attribute: Attribute, operation: Operation) extends PassiveAbility
+    case class FreezeAttribute(target: TargetObjectOrCard, attribute: Attribute) extends PassiveAbility
+    case class HasAbility(target: TargetObjectOrCard, ability: Ability) extends PassiveAbility
 
 sealed trait Effect extends AstNode
   case object CanMoveOverObjects extends Effect with Label
@@ -56,19 +56,21 @@ sealed trait Trigger extends AstNode
   case class EndOfTurn(player: TargetPlayer) extends Trigger
 
 sealed trait Target extends AstNode
-  sealed trait TargetEntity extends Target
-    sealed trait TargetObject extends TargetEntity
-      case class ChooseO(collection: ObjectCollection) extends TargetObject
-      case class AllO(collection: ObjectCollection) extends TargetObject
-      case class RandomO(num: Number, collection: ObjectCollection) extends TargetObject
-      case object ThisObject extends TargetObject
-      case object ItO extends TargetObject  // (Salient object)
-      case object SavedTargetObject extends TargetObject
-    sealed trait TargetCard extends TargetEntity
-      case class ChooseC(collection: CardCollection) extends TargetCard
-      case class AllC(collection: CardCollection) extends TargetCard
-      case class RandomC(num: Number, collection: CardCollection) extends TargetCard
-  sealed trait TargetPlayer extends Target
+  sealed trait TargetObjectOrCard extends Target
+  sealed trait TargetObjectOrPlayer extends Target
+
+  sealed trait TargetObject extends TargetObjectOrCard with TargetObjectOrPlayer
+    case class ChooseO(collection: ObjectCollection) extends TargetObject
+    case class AllO(collection: ObjectCollection) extends TargetObject
+    case class RandomO(num: Number, collection: ObjectCollection) extends TargetObject
+    case object ThisObject extends TargetObject
+    case object ItO extends TargetObject  // (Salient object)
+    case object SavedTargetObject extends TargetObject
+  sealed trait TargetCard extends TargetObjectOrCard
+    case class ChooseC(collection: CardCollection) extends TargetCard
+    case class AllC(collection: CardCollection) extends TargetCard
+    case class RandomC(num: Number, collection: CardCollection) extends TargetCard
+  sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
     case object Self extends TargetPlayer
     case object Opponent extends TargetPlayer
     case object AllPlayers extends TargetPlayer
