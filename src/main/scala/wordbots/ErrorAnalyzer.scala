@@ -12,18 +12,9 @@ object ErrorAnalyzer {
   def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]])
                    (implicit validationMode: ValidationMode = ValidateUnknownCard): Option[ParserError] = {
     parseResult.map(_.semantic) match {
-      case Some(Form(v: AstNode)) =>
+      case Some(Form(ast: AstNode)) =>
         // Handle successful semantic parse.
-        // Does the parse produce a sentence (CCG category S)?
-        parseResult.map(_.syntactic.category).getOrElse("None") match {
-          case "S" =>
-            // Does the parse produce a valid AST?
-            AstValidator(validationMode).validate(v) match {
-              case Success(_) => None
-              case Failure(ex: Throwable) => Some(ParserError(ex.getMessage))
-            }
-          case category => Some(ParserError(s"Parser did not produce a complete sentence - expected category: S, got: $category"))
-        }
+        handleSuccessfulParse(input, parseResult, ast)
       case Some(f: Form[_]) =>
         // Handle a semantic parse that finishes but produces an unexpected result.
         Some(ParserError(s"Parser did not produce a valid expression - expected an AstNode, got: $f"))
@@ -50,6 +41,25 @@ object ErrorAnalyzer {
 
     tokens.filter { token =>
       !lexicon.map.keys.exists(_.split(' ').contains(token)) && lexicon.funcs.forall(_(token).isEmpty)
+    }
+  }
+
+  private def handleSuccessfulParse(input: String, parseResult: Option[SemanticParseNode[CcgCat]], ast: AstNode)
+                                   (implicit validationMode: ValidationMode = ValidateUnknownCard): Option[ParserError] = {
+    // Does the parse produce a sentence (CCG category S)?
+    parseResult.map(_.syntactic.category).getOrElse("None") match {
+      case "S" =>
+        // Does the parse produce a valid AST?
+        AstValidator(validationMode).validate(ast) match {
+          case Success(_) => None
+          case Failure(ex: Throwable) =>
+            val suggestions: Set[String] = ex match {
+              case ValidationError("Not a valid passive, triggered, or activated ability.") => Set(s"Startup: $input")
+              case _ => Set()
+            }
+            Some(ParserError(ex.getMessage, suggestions))
+        }
+      case category => Some(ParserError(s"Parser did not produce a complete sentence - expected category: S, got: $category"))
     }
   }
 
