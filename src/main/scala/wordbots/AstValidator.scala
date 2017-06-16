@@ -65,7 +65,8 @@ object NoChooseInTriggeredAction extends AstRule {
   object NoChooseTarget extends AstRule {
     override def validate(node: AstNode): Try[Unit] = {
       node match {
-        case Choose(_) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
+        case ChooseC(_) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
+        case ChooseO(_) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
         case n: AstNode => validateChildren(this, n)
       }
     }
@@ -85,12 +86,7 @@ object NoModifyingCostOfObjects extends AstRule {
     node match {
       case AttributeAdjustment(target, Cost, _) =>
         target match {
-          case _: ObjectCollection => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case All(_: ObjectCollection) => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case Choose(_: ObjectCollection) => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case Random(_, _: ObjectCollection) => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case ThisObject => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case ItO => Failure(ValidationError("Can't modify the cost of objects on the board."))
+          case _: TargetObject => Failure(ValidationError("Can't modify the cost of objects on the board."))
           case _ => validateChildren(this, node)
         }
       case n: AstNode => validateChildren(this, n)

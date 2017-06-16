@@ -27,12 +27,13 @@ object Lexicon {
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
       (N/N, identity),
-      (NP/N, λ {o: ObjectType => Choose(ObjectsInPlay(o))}),  // e.g. "a robot"
-      (NP/NP, λ {c: Collection => Choose(c)}),  // e.g. "a robot you control"
+      (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o))}),  // e.g. "a robot"
+      (NP/NP, λ {c: ObjectCollection => ChooseO(c)}),  // e.g. "a robot you control"
+      (NP/NP, λ {c: CardCollection => ChooseC(c)}),  // e.g. "(discard) a card"
       (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
     )) +
-    ("a player" -> (NP, Form(Choose(ObjectsInPlay(Kernel))): SemanticState)) +
-    ("a tile" -> (NP, Form(Choose(AllTiles)): SemanticState)) +
+    ("a player" -> (NP, Form(ChooseO(ObjectsInPlay(Kernel))): SemanticState)) +
+    ("a tile" -> (NP, Form(ChooseO(AllTiles)): SemanticState)) +
     ("activate:" -> (S/S, λ {a: Action => ActivatedAbility(a)})) +
     ("adjacent" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisObject)))}),
@@ -45,8 +46,8 @@ object Lexicon {
     ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisObject, AllObjects), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
       (NP/N, λ {o: ObjectType => ObjectsInPlay(o)}),
-      (NP/N, λ {c: CardType => All(CardsInHand(AllPlayers, c))}),
-      (NP/NP, λ {c: CardCollection => All(c)}),
+      (NP/N, λ {c: CardType => AllC(CardsInHand(AllPlayers, c))}),
+      (NP/NP, λ {c: CardCollection => AllC(c)}),
       (NP/NP, λ {c: Collection => c}),
       (NP/PP, λ {c: Collection => c})
     )) +
@@ -60,7 +61,7 @@ object Lexicon {
     (Seq("and", "then") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     ("attacks" -> Seq(
-      (S\NP, λ {c: Choose => AfterAttack(All(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {c: ChooseO => AfterAttack(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
       ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterAttack(t, o)}})
     )) +
@@ -90,10 +91,10 @@ object Lexicon {
     ) +
     (Seq("cost", "energy cost") -> Seq(
       (N, Form(Cost): SemanticState),
-      ((S\NP)/Num, λ {i: Scalar => λ {t: Target => AttributeAdjustment(t, Cost, Constant(i))}}),
-      ((S\NP)/Adv, λ {o: Operation => λ {t: Target => AttributeAdjustment(t, Cost, o)}}),
-      ((S\NP)/Num, λ {i: Scalar => λ {cp: CardPlay => AttributeAdjustment(All(CardsInHand(cp.player, cp.cardType)), Cost, Constant(i))}}),
-      ((S\NP)/Adv, λ {o: Operation => λ {cp: CardPlay => AttributeAdjustment(All(CardsInHand(cp.player, cp.cardType)), Cost, o)}})
+      ((S\NP)/Num, λ {i: Scalar => λ {t: TargetEntity => AttributeAdjustment(t, Cost, Constant(i))}}),
+      ((S\NP)/Adv, λ {o: Operation => λ {t: TargetEntity => AttributeAdjustment(t, Cost, o)}}),
+      ((S\NP)/Num, λ {i: Scalar => λ {cp: CardPlay => AttributeAdjustment(AllC(CardsInHand(cp.player, cp.cardType)), Cost, Constant(i))}}),
+      ((S\NP)/Adv, λ {o: Operation => λ {cp: CardPlay => AttributeAdjustment(AllC(CardsInHand(cp.player, cp.cardType)), Cost, o)}})
     )) +
     ("damage" -> Seq(
       ((S/PP)\Num, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
@@ -101,21 +102,21 @@ object Lexicon {
       ((S/Adj)/PP, λ {t: Target => λ {amount: Number => DealDamage(t, amount)}}),
       ((S\NP)/Adj, λ {amount: Number => λ {t: Target => DealDamage(t, amount)}}),
       (S/PP, λ {t: Target => DealDamage(t, AttributeValue(ThisObject, Attack))}),  // (by default, a robot deals damage equal to its power)
-      (S\Num, λ {amount: Number => DealDamage(Choose(ObjectsInPlay(AllObjects)), amount)})  // (if no target is given, any target can be chosen)
+      (S\Num, λ {amount: Number => DealDamage(ChooseO(ObjectsInPlay(AllObjects)), amount)})  // (if no target is given, any target can be chosen)
     )) +
     ("damaged" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(HasProperty(IsDamaged)))})) +
     (Seq("deal", "it deals", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
     ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
     ("destroyed" -> Seq(
-      (S\NP, λ {c: Choose => AfterDestroyed(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {c: ChooseO => AfterDestroyed(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterDestroyed(t)}),
       (S\NP, λ {o: TargetObject => TargetHasProperty(o, IsDestroyed)}) // Condition form (e.g. "If that robot is destroyed, [...]"
     )) +
     (Seq("doesn't deal damage when attacked", "only deals damage when attacking") -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotFightBack)})) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
     ("draws" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: Cards => Draw(p, c.num)}})) +
-    ("discard" -> (S/NP, λ {t: TargetObject => Discard(t)})) +
-    ("discards" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(Random(c.num, CardsInHand(p, c.cardType)))}})) +
+    ("discard" -> (S/NP, λ {t: TargetCard => Discard(t)})) +
+    ("discards" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})) +
     ("double" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
       (V/N, λ {a: Attribute => AttributeOperation(Multiply(Scalar(2)), a)})
@@ -145,7 +146,7 @@ object Lexicon {
     )) +
     (Seq("for each", "for every") -> (Adj/NP, λ {c: Collection => Count(c)})) +
     ("everything" -> (N, Form(AllObjects): SemanticState)) +
-    ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => All(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
+    ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => AllO(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
     ("friendly" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Self)) ++ c.conditions)})
@@ -218,7 +219,7 @@ object Lexicon {
     ("moved last turn" -> (S, Form(HasProperty(MovedLastTurn)): SemanticState)) +
     ("moved this turn" -> (S, Form(HasProperty(MovedThisTurn)): SemanticState)) +
     ("moves" -> Seq(
-      (S\NP, λ {c: Choose => AfterMove(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {c: ChooseO => AfterMove(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterMove(t)})
     )) +
     ("must" -> (X/X, identity)) +
@@ -240,7 +241,7 @@ object Lexicon {
       ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})  // e.g. "robots you play [cost X less, etc]"
     )) +
     (Seq("played", "comes into play", "enters the board") -> Seq(
-      (S\NP, λ {c: Choose => AfterPlayed(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {c: ChooseO => AfterPlayed(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterPlayed(t)})
     )) +
     (Seq("power", "attack") -> Seq(
@@ -250,12 +251,14 @@ object Lexicon {
     )) +
     ("random" -> Seq(
       ((NP/N)\Num, λ {num: Number => λ {c: CardType => RandomCards(num, c)}}),
-      ((NP/N)\Num, λ {num: Number => λ {o: ObjectType => Random(num, ObjectsInPlay(o))}}),  // e.g. "Destroy a random robot"
-      ((NP/NP)\Num, λ {num: Number => λ {c: Collection => Random(num, c)}})  // e.g. "Discard 2 random cards"
+      ((NP/N)\Num, λ {num: Number => λ {o: ObjectType => RandomO(num, ObjectsInPlay(o))}}),  // e.g. "Destroy a random robot"
+      ((NP/NP)\Num, λ {num: Number => λ {c: CardCollection => RandomC(num, c)}}),  // e.g. "Discard 2 random cards"
+      ((NP/NP)\Num, λ {num: Number => λ {c: ObjectCollection => RandomO(num, c)}})
     )) +
     ("reduce" -> Seq(
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}}),
-      (((S/PP)/PP)/N, λ {a: Attribute => λ {c: CardsInHand => λ {num: Number => ModifyAttribute(All(c), a, Minus(num))}}})
+      (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetCard => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}}),
+      (((S/PP)/PP)/N, λ {a: Attribute => λ {c: CardsInHand => λ {num: Number => ModifyAttribute(AllC(c), a, Minus(num))}}})  // e.g. "Reduce the cost of robot cards in your hand by 1"
     )) +
     ("restore" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => RestoreAttribute(t, a, None)}}),  // e.g. "Restore health to X"
@@ -289,10 +292,10 @@ object Lexicon {
     )) +
     ("take control" -> (S/PP, λ {t: TargetObject => TakeControl(Self, t)})) +
     ("takes damage" -> Seq(
-      (S\NP, λ {c: Choose => AfterDamageReceived(All(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {c: ChooseO => AfterDamageReceived(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterDamageReceived(t)})
     )) +
-    (Seq("target", "a target") -> (NP/NP, λ {c: Collection => Choose(c)})) +
+    (Seq("target", "a target") -> (NP/NP, λ {c: ObjectCollection => ChooseO(c)})) +
     ("to" -> Seq(
       (PP/NP, identity),
       (PP/Num, identity)

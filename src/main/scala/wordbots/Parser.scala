@@ -19,7 +19,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
     // scalastyle:off regex
     println(s"Input: $input")
-    println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
+    // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
     println(s"Error diagnosis: ${ErrorAnalyzer.diagnoseError(input, result.bestParse)}")
     println(s"Generated JS code: $code")
