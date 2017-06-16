@@ -86,12 +86,7 @@ object NoModifyingCostOfObjects extends AstRule {
     node match {
       case AttributeAdjustment(target, Cost, _) =>
         target match {
-          case _: ObjectCollection => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case AllO(_: ObjectCollection) => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case ChooseO(_: ObjectCollection) => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case RandomO(_, _: ObjectCollection) => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case ThisObject => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case ItO => Failure(ValidationError("Can't modify the cost of objects on the board."))
+          case _: TargetObject => Failure(ValidationError("Can't modify the cost of objects on the board."))
           case _ => validateChildren(this, node)
         }
       case n: AstNode => validateChildren(this, n)
