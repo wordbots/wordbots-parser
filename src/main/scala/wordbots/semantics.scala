@@ -12,6 +12,7 @@ sealed trait Action extends AstNode
   case class If(condition: GlobalCondition, action: Action) extends Action
   case class Instead(action: Action) extends Action
 
+  case class CanAttackAgain(target: TargetObject) extends Action
   case class CanMoveAgain(target: TargetObject) extends Action
   case class CanMoveAndAttackAgain(target: TargetObject) extends Action
   case class DealDamage(target: TargetObjectOrPlayer, num: Number) extends Action

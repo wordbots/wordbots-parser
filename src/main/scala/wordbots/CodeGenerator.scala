@@ -15,6 +15,7 @@ object CodeGenerator {
       case MultipleAbilities(abilities) => s"(function () { ${abilities.map(ability => s"${g(ability)}();").mkString(" ")} })"
 
       // Actions: Normal
+      case CanAttackAgain(target) => s"(function () { actions['canAttackAgain'](${g(target)}); })"
       case CanMoveAgain(target) => s"(function () { actions['canMoveAgain'](${g(target)}); })"
       case CanMoveAndAttackAgain(target) => s"(function () { actions['canMoveAndAttackAgain'](${g(target)}); })"
       case DealDamage(target, num) => s"(function () { actions['dealDamage'](${g(target)}, ${g(num)}); })"
