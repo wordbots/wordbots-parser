@@ -52,6 +52,7 @@ object Lexicon {
       (NP/PP, λ {c: Collection => c})
     )) +
     ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
+    (Seq("all players", "each player", "every player", "both players") -> (NP, Form(AllPlayers): SemanticState)) +
     (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
       (conj, λ {b: Any => λ {a: Any => Seq(a, b)}}),
@@ -115,7 +116,7 @@ object Lexicon {
     )) +
     (Seq("doesn't deal damage when attacked", "only deals damage when attacking") -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotFightBack)})) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
-    ("draws" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: Cards => Draw(p, c.num)}})) +
+    ("draw".s -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: Cards => Draw(p, c.num)}})) +
     ("discard" -> (S/NP, λ {t: TargetCard => Discard(t)})) +
     ("discards" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})) +
     ("double" -> Seq(
