@@ -133,6 +133,8 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("If that robot is destroyed, deal 1 damage to all robots.") shouldEqual
       If(TargetHasProperty(ItO, IsDestroyed), DealDamage(ObjectsMatchingConditions(Robot, Seq()), Scalar(1)))
+    parse("Each of your robots gets +2 attack until end of turn") shouldEqual
+      Until(TurnsPassed(1), ModifyAttribute(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), Attack, Plus(Scalar(2))))
   }
 
   it should "deal with ambiguous uses of 'all'" in {

@@ -128,6 +128,7 @@ object Lexicon {
       (NP/PP, identity)  // e.g. "each of (your turns)"
     )) +
     ("end" -> (NP/PP, λ {turn: Turn => EndOfTurn(turn.player)})) +
+    (Seq("end of turn", "end of the turn") -> (NP, Form(TurnsPassed(1)): SemanticState)) +
     ("immediately" /?/ Seq("end the turn", "end your turn") -> (S, Form(EndTurn): SemanticState)) +
     ("enemy" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
@@ -308,6 +309,7 @@ object Lexicon {
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisObject): SemanticState)) +
     ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
+    ("until" -> ((S|S)|NP, λ {d: Duration => λ {a: Action => Until(d, a)}})) +
     (Seq("when", "whenever", "after", "immediately after", "each time", "every time") ->
       ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})
     ) +

@@ -11,6 +11,7 @@ sealed trait Action extends AstNode
 
   case class If(condition: GlobalCondition, action: Action) extends Action
   case class Instead(action: Action) extends Action
+  case class Until(duration: Duration, action: Action) extends Action
 
   case class CanAttackAgain(target: TargetObject) extends Action
   case class CanMoveAgain(target: TargetObject) extends Action
@@ -147,6 +148,9 @@ sealed trait Property extends Label
   case object MovedThisTurn extends Property
   case object IsDamaged extends Property
   case object IsDestroyed extends Property
+
+sealed trait Duration extends AstNode
+  case class TurnsPassed(turns: Int) extends Duration
 
 sealed trait Rounding extends Label
   case object RoundedUp extends Rounding
