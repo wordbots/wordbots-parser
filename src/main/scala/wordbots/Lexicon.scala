@@ -129,6 +129,7 @@ object Lexicon {
     )) +
     ("end" -> (NP/PP, λ {turn: Turn => EndOfTurn(turn.player)})) +
     (Seq("end of turn", "end of the turn") -> (NP, Form(TurnsPassed(1)): SemanticState)) +
+    (Seq("end of next turn", "end of the next turn") -> (NP, Form(TurnsPassed(2)): SemanticState)) +
     ("immediately" /?/ Seq("end the turn", "end your turn") -> (S, Form(EndTurn): SemanticState)) +
     ("enemy" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
