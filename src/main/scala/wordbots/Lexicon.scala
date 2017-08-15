@@ -55,11 +55,12 @@ object Lexicon {
     (Seq("all players", "each player", "every player", "both players") -> (NP, Form(AllPlayers): SemanticState)) +
     (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
-      (conj, λ {b: Any => λ {a: Any => Seq(a, b)}}),
+      ((N/N)\N, λ {a: Any => λ {b: Any => Seq(a, b)}}),
+      ((NP/NP)\NP, λ {a: Any => λ {b: Any => Seq(a, b)}}),
+      ((V/V)\V, λ {a: Any => λ {b: Any => Seq(a, b)}}),
       (conj, λ {b: Any => λ {a: Seq[Any] => a :+ b}}),
       ((S/S)\NP, λ {a: Any => λ {b: Any => (a, b)}})
     )) +
-    (Seq("and", "then") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     ("attacks" -> Seq(
       (S\NP, λ {c: ChooseO => AfterAttack(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
@@ -216,7 +217,7 @@ object Lexicon {
     (("kernel".s ++ "core".s) -> (N, Form(Kernel): SemanticState)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
-    ("lose" -> (S/NP, λ {l: Life => DealDamage(Self, l.amount)})) +
+    (Seq("lose", "pay") -> (S/NP, λ {l: Life => DealDamage(Self, l.amount)})) +
     ("loses" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})) +  // Y loses X (attribute).
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
@@ -240,6 +241,7 @@ object Lexicon {
       (Adj\Num, λ {num: Number => GreaterThanOrEqualTo(num)}),
       (NP\N, λ {aa: AttributeAmount => AttributeComparison(aa.attr, GreaterThanOrEqualTo(aa.amount))})
     )) +
+    ("pay" -> (S/NP, λ {e: Energy => PayEnergy(Self, e.amount)})) +
     ("play".s -> Seq(
       ((S/N)\NP, λ {t: TargetPlayer => λ {c: CardType => AfterCardPlay(t, c)}}),  // e.g. "[whenever] you play a robot, [do something]"
       ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})  // e.g. "robots you play [cost X less, etc]"
@@ -307,6 +309,7 @@ object Lexicon {
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}})) +
     (Seq("that player", "they") -> (NP, Form(ItP): SemanticState)) +
     ("the" -> (X/X, identity)) +
+    (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisObject): SemanticState)) +
     ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
