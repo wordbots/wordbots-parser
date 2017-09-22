@@ -73,6 +73,7 @@ object CodeGenerator {
       case ThisObject => "targets['thisRobot']()"
       case ItO => "targets['it']()"
       case ItP => "targets['itP']()"
+      case That => "targets['that']()"
       case SavedTargetObject => "load('target')"
 
       // Target cards

@@ -68,6 +68,7 @@ sealed trait Target extends AstNode
     case class RandomO(num: Number, collection: ObjectCollection) extends TargetObject
     case object ThisObject extends TargetObject
     case object ItO extends TargetObject  // (Salient object)
+    case object That extends TargetObject  // (Salient object, but preferring the undergoer of the action over the agent)
     case object SavedTargetObject extends TargetObject
   sealed trait TargetCard extends TargetObjectOrCard
     case class ChooseC(collection: CardCollection) extends TargetCard

@@ -211,7 +211,7 @@ object Lexicon {
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("is" -> (X|X, identity)) +
-    (("it" +: "that" / Seq("robot", "creature", "structure", "object")) -> (NP, Form(ItO): SemanticState)) +
+    ("it" -> (NP, Form(ItO): SemanticState)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ItO, a)})) +
     ("its controller" -> (NP, Form(ControllerOf(ItO)): SemanticState)) +
     (("kernel".s ++ "core".s) -> (N, Form(Kernel): SemanticState)) +
@@ -307,6 +307,7 @@ object Lexicon {
       (PP/Num, identity)
     )) +
     ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}})) +
+    ("that" / Seq("robot", "creature", "structure", "object") -> (NP, Form(That): SemanticState)) +
     (Seq("that player", "they") -> (NP, Form(ItP): SemanticState)) +
     ("the" -> (X/X, identity)) +
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
