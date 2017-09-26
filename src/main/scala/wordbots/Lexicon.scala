@@ -208,7 +208,7 @@ object Lexicon {
       (NP/Adj, λ {amount: Number => Life(amount)})
     )) +
     ("if" -> ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}})) +
-    (Seq("in", "of") -> (PP/NP, identity)) +
+    (Seq("in", "of", "from") -> (PP/NP, identity)) +
     ("instead" -> (S|S, λ {a: Action => Instead(a)})) +
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
@@ -269,6 +269,7 @@ object Lexicon {
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetCard => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}}),
       (((S/PP)/PP)/N, λ {a: Attribute => λ {c: CardsInHand => λ {num: Number => ModifyAttribute(AllC(c), a, Minus(num))}}})  // e.g. "Reduce the cost of robot cards in your hand by 1"
     )) +
+    ("remove all abilities" -> (S/PP, λ {t: TargetObject => RemoveAllAbilites(t)})) +
     ("restore" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => RestoreAttribute(t, a, None)}}),  // e.g. "Restore health to X"
       (((S/PP)/N)/Num, λ {n: Number => λ {a: Attribute => λ {t: TargetObject => RestoreAttribute(t, a, Some(n))}}}),  // e.g. "Restore N health to X"

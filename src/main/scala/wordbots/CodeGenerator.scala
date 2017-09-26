@@ -30,6 +30,7 @@ object CodeGenerator {
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case MoveObject(target, distance) => s"(function () { actions['moveObject'](${g(target)}, ${g(distance)}); })"
       case PayEnergy(target, amount) => s"(function () { actions['payEnergy'](${g(target)}, ${g(amount)}); })"
+      case RemoveAllAbilites(target) => s"(function () { actions['removeAllAbilities'](${g(target)}); })"
       case RestoreAttribute(target, Health, Some(num)) => s"(function () { actions['restoreHealth'](${g(target)}, ${g(num)}); })"
       case RestoreAttribute(target, Health, None) => s"(function () { actions['restoreHealth'](${g(target)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
