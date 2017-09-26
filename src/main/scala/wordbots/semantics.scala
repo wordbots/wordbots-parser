@@ -13,6 +13,7 @@ sealed trait Action extends AstNode
   case class Instead(action: Action) extends Action
   case class Until(duration: Duration, action: Action) extends Action
 
+  case class BecomeACopy(source: TargetObject, target: TargetObject) extends Action
   case class CanAttackAgain(target: TargetObject) extends Action
   case class CanMoveAgain(target: TargetObject) extends Action
   case class CanMoveAndAttackAgain(target: TargetObject) extends Action

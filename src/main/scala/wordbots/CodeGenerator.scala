@@ -13,9 +13,10 @@ object CodeGenerator {
       case If(condition, action) => s"(function () { if (${g(condition)}) { (${g(action)})(); } })"
       case MultipleActions(actions) => s"(function () { ${actions.map(action => s"${g(action)}();").mkString(" ")} })"
       case MultipleAbilities(abilities) => s"(function () { ${abilities.map(ability => s"${g(ability)}();").mkString(" ")} })"
-      case Until(TurnsPassed(num), action) => s"(function () { save('duration', ${num}); ${g(action)}(); save('duration', null); })"
+      case Until(TurnsPassed(num), action) => s"(function () { save('duration', $num); ${g(action)}(); save('duration', null); })"
 
       // Actions: Normal
+      case BecomeACopy(source, target) => s"(function () { actions['becomeACopy'](${g(source)}, ${g(target)}); })"
       case CanAttackAgain(target) => s"(function () { actions['canAttackAgain'](${g(target)}); })"
       case CanMoveAgain(target) => s"(function () { actions['canMoveAgain'](${g(target)}); })"
       case CanMoveAndAttackAgain(target) => s"(function () { actions['canMoveAndAttackAgain'](${g(target)}); })"
