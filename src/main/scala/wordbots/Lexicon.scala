@@ -62,6 +62,7 @@ object Lexicon {
       ((S/S)\NP, λ {a: Any => λ {b: Any => (a, b)}})
     )) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
+    (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     ("attacks" -> Seq(
       (S\NP, λ {c: ChooseO => AfterAttack(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
@@ -221,6 +222,7 @@ object Lexicon {
     (Seq("lose", "pay") -> (S/NP, λ {l: Life => DealDamage(Self, l.amount)})) +
     ("loses" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})) +  // Y loses X (attribute).
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
+    ("move" -> ((S/NP)/NP, λ {t: TargetObject => λ {d: Distance => MoveObject(t, d.spaces)}})) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("moved last turn" -> (S, Form(HasProperty(MovedLastTurn)): SemanticState)) +
     ("moved this turn" -> (S, Form(HasProperty(MovedThisTurn)): SemanticState)) +
@@ -283,7 +285,10 @@ object Lexicon {
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}}),
       (((S/PP)/PP)/N, λ {as: Seq[Attribute] => λ {t: TargetObject => λ {num: Number => MultipleActions(Seq(SaveTarget(t)) ++ as.map(a => SetAttribute(SavedTargetObject, a, num)))}}})
     )) +
-    ("spaces" -> (NP\Num, λ {num: Number => Spaces(num)})) +
+    ("spaces" -> Seq(
+      (NP\Num, λ {num: Number => Spaces(num)}),
+      (NP\Adj, λ {num: Comparison => Distance(num)})
+    )) +
     ("speed" -> Seq(
       (N, Form(Speed): SemanticState),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)}),

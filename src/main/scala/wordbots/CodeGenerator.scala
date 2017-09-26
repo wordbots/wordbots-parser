@@ -28,6 +28,7 @@ object CodeGenerator {
       case GiveAbility(target, ability) => s"""(function () { actions['giveAbility'](${g(target)}, \\"${escape(g(ability))}\\"); })"""
       case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
+      case MoveObject(target, distance) => s"(function () { actions['moveObject'](${g(target)}, ${g(distance)}); })"
       case PayEnergy(target, amount) => s"(function () { actions['payEnergy'](${g(target)}, ${g(amount)}); })"
       case RestoreAttribute(target, Health, Some(num)) => s"(function () { actions['restoreHealth'](${g(target)}, ${g(num)}); })"
       case RestoreAttribute(target, Health, None) => s"(function () { actions['restoreHealth'](${g(target)}); })"

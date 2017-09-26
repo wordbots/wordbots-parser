@@ -25,6 +25,7 @@ sealed trait Action extends AstNode
   case class GiveAbility(target: TargetObject, ability: Ability) extends Action
   case class ModifyAttribute(target: TargetObjectOrCard, attribute: Attribute, operation: Operation) extends Action
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
+  case class MoveObject(target: TargetObject, distance: Comparison) extends Action
   case class PayEnergy(target: TargetPlayer, amount: Number) extends Action
   case class RestoreAttribute(target: TargetObject, attribute: Attribute, num: Option[Number] = None) extends Action
   case class SetAttribute(target: TargetObject, attribute: Attribute, num: Number) extends Action
@@ -164,6 +165,7 @@ sealed trait Rounding extends Label
 // Unary container classes:
 case class Cards(num: Number)
 case class Damage(amount: Number)
+case class Distance(spaces: Comparison)
 case class Energy(amount: Number)
 case class Life(amount: Number)
 case class Hand(player: TargetPlayer)
