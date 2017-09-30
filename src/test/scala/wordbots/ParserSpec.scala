@@ -138,7 +138,10 @@ class ParserSpec extends FlatSpec with Matchers {
 
     // New terms for alpha v0.8:
     parse("Move a robot up to 2 spaces") shouldEqual
-      MoveObject(ChooseO(ObjectsInPlay(Robot)), LessThanOrEqualTo(Scalar(2)))
+      MultipleActions(Seq(
+        SaveTarget(ChooseO(ObjectsInPlay(Robot))),
+        MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(2), SavedTargetObject)))))
+      ))
     parse("Remove all abilities from all robots") shouldEqual
       RemoveAllAbilites(ObjectsInPlay(Robot))
   }

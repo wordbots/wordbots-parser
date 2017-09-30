@@ -25,7 +25,7 @@ sealed trait Action extends AstNode
   case class GiveAbility(target: TargetObject, ability: Ability) extends Action
   case class ModifyAttribute(target: TargetObjectOrCard, attribute: Attribute, operation: Operation) extends Action
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
-  case class MoveObject(target: TargetObject, distance: Comparison) extends Action
+  case class MoveObject(target: TargetObject, dest: TargetObject) extends Action
   case class PayEnergy(target: TargetPlayer, amount: Number) extends Action
   case class RemoveAllAbilites(target: TargetObject) extends Action
   case class RestoreAttribute(target: TargetObject, attribute: Attribute, num: Option[Number] = None) extends Action
@@ -124,6 +124,7 @@ sealed trait Collection extends AstNode
     object ObjectsInPlay { def apply(objectType: ObjectType): ObjectCollection = ObjectsMatchingConditions(objectType, Seq()) }
     case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends ObjectCollection
     case class Other(collection: Collection) extends ObjectCollection
+    case class TilesMatchingConditions(conditions: Seq[Condition]) extends ObjectCollection
 
 sealed trait CardType extends Label
   case object AnyCard extends CardType
@@ -166,12 +167,12 @@ sealed trait Rounding extends Label
 // Unary container classes:
 case class Cards(num: Number)
 case class Damage(amount: Number)
-case class Distance(spaces: Comparison)
 case class Energy(amount: Number)
 case class Life(amount: Number)
 case class Hand(player: TargetPlayer)
 case class Spaces(num: Number)
 case class Turn(player: TargetPlayer)
+case class WithinDistance(spaces: Number)
 
 // Binary container classes:
 case class TargetAttribute(target: TargetObject, attr: Attribute)

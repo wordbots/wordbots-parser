@@ -28,7 +28,7 @@ object CodeGenerator {
       case GiveAbility(target, ability) => s"""(function () { actions['giveAbility'](${g(target)}, \\"${escape(g(ability))}\\"); })"""
       case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
-      case MoveObject(target, distance) => s"(function () { actions['moveObject'](${g(target)}, ${g(distance)}); })"
+      case MoveObject(target, dest) => s"(function () { actions['moveObject'](${g(target)}, ${g(dest)}); })"
       case PayEnergy(target, amount) => s"(function () { actions['payEnergy'](${g(target)}, ${g(amount)}); })"
       case RemoveAllAbilites(target) => s"(function () { actions['removeAllAbilities'](${g(target)}); })"
       case RestoreAttribute(target, Health, Some(num)) => s"(function () { actions['restoreHealth'](${g(target)}, ${g(num)}); })"
@@ -95,7 +95,7 @@ object CodeGenerator {
       case AttributeComparison(attr, comp) => s"conditions['attributeComparison'](${g(attr)}, ${g(comp)})"
       case ControlledBy(player) => s"conditions['controlledBy'](${g(player)})"
       case HasProperty(property) => s"conditions['hasProperty'](${g(property)})"
-      case WithinDistanceOf(distance: Number, obj: TargetObject) => s"conditions['withinDistanceOf'](${g(distance)}, ${g(obj)})"
+      case WithinDistanceOf(distance, obj) => s"conditions['withinDistanceOf'](${g(distance)}, ${g(obj)})"
 
       // Global conditions
       case CollectionExists(coll) => s"globalConditions['collectionExists'](${g(coll)})"
@@ -128,6 +128,7 @@ object CodeGenerator {
       case CardsInHand(player, cardType) => s"cardsInHand(${g(player)}, ${g(cardType)})"
       case ObjectsMatchingConditions(objType, conditions) => s"objectsMatchingConditions(${g(objType)}, ${conditions.map(g).mkString("[", ", ", "]")})"
       case Other(collection) => s"other(${g(collection)})"
+      case TilesMatchingConditions(conditions) => s"tilesMatchingConditions(${conditions.map(g).mkString("[", ", ", "]")})"
 
       // Labels
       case m: MultiLabel => m.labels.map(g).mkString("[", ", ", "]")

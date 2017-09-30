@@ -222,7 +222,10 @@ object Lexicon {
     (Seq("lose", "pay") -> (S/NP, λ {l: Life => DealDamage(Self, l.amount)})) +
     ("loses" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})) +  // Y loses X (attribute).
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
-    ("move" -> ((S/NP)/NP, λ {t: TargetObject => λ {d: Distance => MoveObject(t, d.spaces)}})) +
+    ("move" -> ((S/NP)/NP, λ {t: TargetObject => λ {d: WithinDistance => MultipleActions(Seq(
+      SaveTarget(t),
+      MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(d.spaces, SavedTargetObject))))))
+    )}})) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("moved last turn" -> (S, Form(HasProperty(MovedLastTurn)): SemanticState)) +
     ("moved this turn" -> (S, Form(HasProperty(MovedThisTurn)): SemanticState)) +
@@ -288,7 +291,7 @@ object Lexicon {
     )) +
     ("spaces" -> Seq(
       (NP\Num, λ {num: Number => Spaces(num)}),
-      (NP\Adj, λ {num: Comparison => Distance(num)})
+      (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)})
     )) +
     ("speed" -> Seq(
       (N, Form(Speed): SemanticState),
