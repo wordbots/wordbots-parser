@@ -135,6 +135,12 @@ class ParserSpec extends FlatSpec with Matchers {
       If(TargetHasProperty(That, IsDestroyed), DealDamage(ObjectsMatchingConditions(Robot, Seq()), Scalar(1)))
     parse("Each of your robots gets +2 attack until end of turn") shouldEqual
       Until(TurnsPassed(1), ModifyAttribute(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), Attack, Plus(Scalar(2))))
+    parse("All robots gain 1 attack and 1 health") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(ObjectsInPlay(Robot)),
+        ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
+      ))
 
     // New terms for alpha v0.8:
     parse("Move a robot up to 2 spaces") shouldEqual
