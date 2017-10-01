@@ -316,7 +316,7 @@ object Lexicon {
       (S\NP, λ {t: TargetObject => AfterDamageReceived(t)})
     )) +
     (Seq("target", "a target") -> (NP/NP, λ {c: ObjectCollection => ChooseO(c)})) +
-    ("to" -> Seq(
+    (Seq("to", "equal to") -> Seq(
       (PP/NP, identity),
       (PP/Num, identity)
     )) +
@@ -324,6 +324,7 @@ object Lexicon {
     ("that" / Seq("robot", "creature", "structure", "object") -> (NP, Form(That): SemanticState)) +
     (Seq("that player", "they") -> (NP, Form(ItP): SemanticState)) +
     ("the" -> (X/X, identity)) +
+    ("their" -> (Num/N, λ {a: Attribute => AttributeValue(They, a)})) +
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisObject): SemanticState)) +
     ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +

@@ -150,6 +150,8 @@ class ParserSpec extends FlatSpec with Matchers {
       ))
     parse("Remove all abilities from all robots") shouldEqual
       RemoveAllAbilites(ObjectsInPlay(Robot))
+    parse("Set the attack of all robots equal to their health") shouldEqual
+      SetAttribute(ObjectsInPlay(Robot), Attack, AttributeValue(They, Health))
   }
 
   it should "deal with ambiguous uses of 'all'" in {
