@@ -41,7 +41,6 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Give a robot +1 speed") should equal (ModifyAttribute(ChooseO(ObjectsInPlay(Robot)), Speed, Plus(Scalar(1))))
 
     // (From 4/10/17 playtest session:)
-    parse("Give a robot 0 attack") shouldEqual SetAttribute(ChooseO(ObjectsInPlay(Robot)), Attack, Scalar(0))
     parse("Set a robot's attack to 0") shouldEqual SetAttribute(ChooseO(ObjectsInPlay(Robot)), Attack, Scalar(0))
 
     parse("Your opponent draws a card") should equal (Draw(Opponent, Scalar(1)))
@@ -152,6 +151,8 @@ class ParserSpec extends FlatSpec with Matchers {
       RemoveAllAbilites(ObjectsInPlay(Robot))
     parse("Set the attack of all robots equal to their health") shouldEqual
       SetAttribute(ObjectsInPlay(Robot), Attack, AttributeValue(They, Health))
+
+    parse("Give a friendly robot 2 attack") shouldEqual parse("Give a friendly robot +2 attack")
   }
 
   it should "deal with ambiguous uses of 'all'" in {
