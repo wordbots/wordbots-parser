@@ -24,7 +24,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
     println(s"Error diagnosis: ${ErrorAnalyzer.diagnoseError(input, result.bestParse)}")
-    println(s"Generated JS code: $code")
+    println(s"Generated JS code: ${code.getOrElse("None")}")
     // scalastyle:on regex
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.
