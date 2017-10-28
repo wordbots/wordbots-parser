@@ -1,7 +1,9 @@
 package wordbots
 
+import java.io.PrintWriter
+
 import com.workday.montague.ccg._
-import com.workday.montague.parser.{ParserDict, SemanticParser, SemanticParseResult}
+import com.workday.montague.parser.{ParserDict, SemanticParseResult, SemanticParser}
 import com.workday.montague.semantics._
 
 import scala.util.Try
@@ -26,7 +28,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     // scalastyle:on regex
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.
-    // result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
+    //result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
   }
 
   def parse(input: String): SemanticParseResult[CcgCat] = parse(input, tokenizer)

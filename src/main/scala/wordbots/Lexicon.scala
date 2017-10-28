@@ -123,6 +123,7 @@ object Lexicon {
     ("discard" -> (S/NP, λ {t: TargetCard => Discard(t)})) +
     ("discards" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})) +
     ("double" -> Seq(
+      (S/NP, λ {ta: TargetAttribute => ModifyAttribute(ta.target, ta.attr, Multiply(Scalar(2)))}),
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
       (V/N, λ {a: Attribute => AttributeOperation(Multiply(Scalar(2)), a)})
     )) +
@@ -190,6 +191,8 @@ object Lexicon {
     )) +
     ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
     ("halve" -> Seq(  // (Ordinarily takes Rounding, but defaults to RoundedDown.)
+      ((S/NP)/Adv, λ {r: Rounding => λ {ta: TargetAttribute => ModifyAttribute(ta.target, ta.attr, Divide(Scalar(2), r))}}),
+      (S/NP, λ {ta: TargetAttribute => ModifyAttribute(ta.target, ta.attr, Divide(Scalar(2), RoundedDown))}),
       (((S/PP)/Adv)/N, λ {a: Attribute => λ {r: Rounding => λ {t: TargetObject => ModifyAttribute(t, a, Divide(Scalar(2), r))}}}),
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Divide(Scalar(2), RoundedDown))}}),
       ((V/Adv)/N, λ {a: Attribute => λ {r: Rounding => AttributeOperation(Divide(Scalar(2), r), a)}}),
