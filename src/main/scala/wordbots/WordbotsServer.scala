@@ -58,6 +58,9 @@ object WordbotsServer extends ServerApp {
 
   val service = {
     HttpService {
+      case request @ OPTIONS -> Root / "parse" =>
+        Ok("", headers())
+
       case request @ GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) +& ModeParamMatcher(mode) =>
         parse(input, mode) match {
           case SuccessfulParse(parse, ast, parsedTokens) =>
@@ -78,7 +81,7 @@ object WordbotsServer extends ServerApp {
               case SuccessfulParse(_, ast, parsedTokens) => successResponseJson(CodeGenerator.generateJS(ast), parsedTokens)
               case FailedParse(error, unrecognizedTokens) => errorResponseJson(error, unrecognizedTokens)
             }
-            s""""${req.input}": $responseJson"""
+            s""""${req.input.replaceAllLiterally("\"", "\\\"")}": $responseJson"""
           }.mkString("{", ",", "}")
           Ok(responseBody, headers())
         }
@@ -125,7 +128,7 @@ object WordbotsServer extends ServerApp {
 
   def errorResponseJson(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): String = {
     "{\"error\": \"" + error.description.replaceAllLiterally("\\", "\\\\") + "\", " +
-      "\"suggestions\": [" + error.suggestions.map(s => "\"" + s + "\"").mkString(", ") + "], " +
+      "\"suggestions\": [" + error.suggestions.map(s => "\"" + s.replaceAllLiterally("\"", "\\\"") + "\"").mkString(", ") + "], " +
       "\"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") + "]}"
   }
 
@@ -138,9 +141,15 @@ object WordbotsServer extends ServerApp {
   }
 
   def headers(contentType: Option[String] = None): Headers = {
+    val baseHeaders: List[Header] = List(
+      Header("Access-Control-Allow-Origin", "*"),
+      Header("Access-Control-Allow-Methods", "GET, POST"),
+      Header("Access-Control-Allow-Headers", "Content-Type")
+    )
+
     contentType match {
-      case Some(ct) => Headers(Header("Access-Control-Allow-Origin", "*"), Header("Content-Type", ct))
-      case None => Headers(Header("Access-Control-Allow-Origin", "*"))
+      case Some(ct) => Headers(baseHeaders :+ Header("Content-Type", ct))
+      case None => Headers(baseHeaders)
     }
   }
 
