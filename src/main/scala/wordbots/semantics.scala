@@ -27,7 +27,8 @@ sealed trait Action extends AstNode
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
   case class MoveObject(target: TargetObject, dest: TargetObject) extends Action
   case class PayEnergy(target: TargetPlayer, amount: Number) extends Action
-  case class RemoveAllAbilites(target: TargetObject) extends Action
+  case class RemoveAllAbilities(target: TargetObject) extends Action
+  case class ReturnToHand(target: TargetObject) extends Action
   case class RestoreAttribute(target: TargetObject, attribute: Attribute, num: Option[Number] = None) extends Action
   case class SetAttribute(target: TargetObject, attribute: Attribute, num: Number) extends Action
   case class SwapAttributes(target: TargetObject, attr1: Attribute, attr2: Attribute) extends Action
@@ -165,7 +166,10 @@ sealed trait Rounding extends Label
 
 // The below container classes are used to store state mid-parse but not expressed in the final parsed AST.
 
-// Unary container classes:
+// Nullary containers:
+case object ItsOwnersHand
+
+// Unary containers:
 case class Cards(num: Number)
 case class Damage(amount: Number)
 case class Energy(amount: Number)
@@ -175,7 +179,7 @@ case class Spaces(num: Number)
 case class Turn(player: TargetPlayer)
 case class WithinDistance(spaces: Number)
 
-// Binary container classes:
+// Binary containers:
 case class TargetAttribute(target: TargetObject, attr: Attribute)
 case class AttributeAmount(amount: Number, attr: Attribute)
 case class AttributeOperation(op: Operation, attr: Attribute)

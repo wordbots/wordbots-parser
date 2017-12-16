@@ -223,6 +223,7 @@ object Lexicon {
     ("it" -> (NP, Form(ItO): SemanticState)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ItO, a)})) +
     ("its controller" -> (NP, Form(ControllerOf(ItO)): SemanticState)) +
+    (Seq("its owner 's hand", "its controller 's hand", "their owner 's hands", "their controller 's hands") -> (NP, Form(ItsOwnersHand): SemanticState)) +
     (("kernel".s ++ "core".s) -> (N, Form(Kernel): SemanticState)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
@@ -279,12 +280,13 @@ object Lexicon {
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetCard => λ {num: Number => ModifyAttribute(t, a, Minus(num))}}}),
       (((S/PP)/PP)/N, λ {a: Attribute => λ {c: CardsInHand => λ {num: Number => ModifyAttribute(AllC(c), a, Minus(num))}}})  // e.g. "Reduce the cost of robot cards in your hand by 1"
     )) +
-    ("remove all abilities" -> (S/PP, λ {t: TargetObject => RemoveAllAbilites(t)})) +
+    ("remove all abilities" -> (S/PP, λ {t: TargetObject => RemoveAllAbilities(t)})) +
     ("restore" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => RestoreAttribute(t, a, None)}}),  // e.g. "Restore health to X"
       (((S/PP)/N)/Num, λ {n: Number => λ {a: Attribute => λ {t: TargetObject => RestoreAttribute(t, a, Some(n))}}}),  // e.g. "Restore N health to X"
       (S/NP, λ {ta: TargetAttribute => RestoreAttribute(ta.target, ta.attr, None)})  // e.g. "Restore X's health"
     )) +
+    ("return" -> ((S/PP)/NP, λ {t: TargetObject => λ {_: ItsOwnersHand.type => ReturnToHand(t)}})) +
     (("robot".s :+ "robots '") -> Seq(
       (N, Form(Robot): SemanticState),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)})  // e.g. "all robots in your hand"

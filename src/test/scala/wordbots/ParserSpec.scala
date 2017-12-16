@@ -148,11 +148,16 @@ class ParserSpec extends FlatSpec with Matchers {
         MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(2), SavedTargetObject)))))
       ))
     parse("Remove all abilities from all robots") shouldEqual
-      RemoveAllAbilites(ObjectsInPlay(Robot))
+      RemoveAllAbilities(ObjectsInPlay(Robot))
     parse("Set the attack of all robots equal to their health") shouldEqual
       SetAttribute(ObjectsInPlay(Robot), Attack, AttributeValue(They, Health))
 
     parse("Give a friendly robot 2 attack") shouldEqual parse("Give a friendly robot +2 attack")
+
+    parse("Return a robot to its owner's hand") shouldEqual
+      ReturnToHand(ChooseO(ObjectsInPlay(Robot)))
+    parse("Return all structures to their owner's hands") shouldEqual
+      ReturnToHand(ObjectsInPlay(Structure))
   }
 
   it should "deal with ambiguous uses of 'all'" in {
