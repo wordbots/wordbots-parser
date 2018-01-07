@@ -91,6 +91,7 @@ sealed trait Condition extends AstNode
   case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends Condition
   case class ControlledBy(player: TargetPlayer) extends Condition
   case class HasProperty(property: Property) extends Condition
+  case object Unoccupied extends Condition
   case class WithinDistanceOf(distance: Number, obj: TargetObject) extends Condition
 
 sealed trait GlobalCondition extends AstNode

@@ -232,7 +232,7 @@ object Lexicon {
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     ("move" -> ((S/NP)/NP, λ {t: TargetObject => λ {d: WithinDistance => MultipleActions(Seq(
       SaveTarget(t),
-      MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(d.spaces, SavedTargetObject))))))
+      MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(d.spaces, SavedTargetObject), Unoccupied)))))
     )}})) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("moved last turn" -> (S, Form(HasProperty(MovedLastTurn)): SemanticState)) +

@@ -145,7 +145,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Move a robot up to 2 spaces") shouldEqual
       MultipleActions(Seq(
         SaveTarget(ChooseO(ObjectsInPlay(Robot))),
-        MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(2), SavedTargetObject)))))
+        MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(2), SavedTargetObject), Unoccupied))))
       ))
     parse("Remove all abilities from all robots") shouldEqual
       RemoveAllAbilities(ObjectsInPlay(Robot))
