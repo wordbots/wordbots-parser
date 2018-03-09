@@ -65,7 +65,7 @@ object WordbotsServer extends ServerApp {
         parse(input, mode) match {
           case SuccessfulParse(parse, ast, parsedTokens) =>
             format match {
-              case Some("js") => successResponse(CodeGenerator.generateJS(ast), parsedTokens)
+              case Some("js") => successResponse(CodeGenerator.generateJS(ast), parsedTokens, CostEstimator.estimateCost(ast,mode))
               case Some("svg") => Ok(parse.toSvg, headers(Some("image/svg+xml")))
               case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
             }
@@ -78,7 +78,7 @@ object WordbotsServer extends ServerApp {
         request.as(jsonOf[Seq[ParseRequest]]).flatMap { parseRequests: Seq[ParseRequest] =>
           val responseBody: String = parseRequests.map { req: ParseRequest =>
             val responseJson = parse(req.input, Option(req.mode)) match {
-              case SuccessfulParse(_, ast, parsedTokens) => successResponseJson(CodeGenerator.generateJS(ast), parsedTokens)
+              case SuccessfulParse(_, ast, parsedTokens) => successResponseJson(CodeGenerator.generateJS(ast), parsedTokens, CostEstimator.estimateCost(ast,Option(req.mode)))
               case FailedParse(error, unrecognizedTokens) => errorResponseJson(error, unrecognizedTokens)
             }
             s""""${req.input.replaceAllLiterally("\"", "\\\"")}": $responseJson"""
@@ -122,8 +122,8 @@ object WordbotsServer extends ServerApp {
     }
   }
 
-  def successResponseJson(js: String, parsedTokens: Seq[String] = Seq()): String = {
-    "{\"js\": \"" + js + "\", \"tokens\": [" + parsedTokens.mkString("\"", "\",\"", "\"") + "]}"
+  def successResponseJson(js: String, parsedTokens: Seq[String] = Seq(), estCost: String): String = {
+    "{\"js\": \"" + js + "\", \"tokens\": [" + parsedTokens.mkString("\"", "\",\"", "\"") + "], \"estCost\": \"" + estCost + "\"}"
   }
 
   def errorResponseJson(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): String = {
@@ -132,8 +132,8 @@ object WordbotsServer extends ServerApp {
       "\"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") + "]}"
   }
 
-  def successResponse(js: String, parsedTokens: Seq[String] = Seq()): Task[Response] = {
-    Ok(successResponseJson(js, parsedTokens), headers())
+  def successResponse(js: String, parsedTokens: Seq[String] = Seq(), estCost:String): Task[Response] = {
+    Ok(successResponseJson(js, parsedTokens,estCost), headers())
   }
 
   def errorResponse(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): Task[Response] = {

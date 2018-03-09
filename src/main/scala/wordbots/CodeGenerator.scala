@@ -24,7 +24,7 @@ object CodeGenerator {
       case Destroy(target) => s"(function () { actions['destroy'](${g(target)}); })"
       case Discard(target) => s"(function () { actions['discard'](${g(target)}); })"
       case Draw(target, num) => s"(function () { actions['draw'](${g(target)}, ${g(num)}); })"
-      case EndTurn => "(function () { actions['endTurn'](); })"
+      case EndTurn => s"(function () { actions['endTurn'](); })"
       case GiveAbility(target, ability) => s"""(function () { actions['giveAbility'](${g(target)}, \\"${escape(g(ability))}\\"); })"""
       case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
