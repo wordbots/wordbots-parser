@@ -5,7 +5,7 @@ package wordbots
 
 object CostEstimator {
   def estimateCost(node: AstNode, mode:Option[String]): String =
-    (baseCost(mode)(astEst(node))).toString
+    (baseCost(mode)(genericEstimate(node))).toString
 
   private def baseCost(mode:Option[String]) : Float=>Float ={
     mode match{
@@ -32,23 +32,23 @@ object CostEstimator {
       case CanAttackAgain(target)         => 1 * childCosts(node).sum
       case CanMoveAgain(target)           => 1 * childCosts(node).sum
       case CanMoveAndAttackAgain(target)  => 1 * childCosts(node).sum
-      case DealDamage(target, num)        => -1 * childCosts(node).sum
+      case DealDamage(target, num)        => -1 * childCosts(node).product
       case Destroy(target)                => -2 * childCosts(node).sum
       case Discard(target)                => -1 * childCosts(node).sum
-      case Draw(_,_)                      => 1 * childCosts(node).sum
+      case Draw(target,num)               => 1 * childCosts(node).product
       case EndTurn                        => 1
-      case GiveAbility(target, ability)   => 1 * childCosts(node).sum
-      case ModifyAttribute(target, attr, op)=>1 * childCosts(node).sum
-      case ModifyEnergy(target, op)       => 1 * childCosts(node).sum
+      case GiveAbility(target, ability)   => 1 * childCosts(node).product
+      case ModifyAttribute(target, attr, op)=>1 * childCosts(node).product
+      case ModifyEnergy(target, op)       => 1 * childCosts(node).product
       case MoveObject(target, dest)       => 1 * childCosts(node).sum
-      case PayEnergy(target, amount)      => -0.5f * childCosts(node).sum
+      case PayEnergy(target, amount)      => -0.5f * childCosts(node).product
       case RemoveAllAbilities(target)     => 1 * childCosts(node).sum
       case RestoreAttribute(target, Health, Some(num)) => 1 * childCosts(node).sum
       case RestoreAttribute(target, Health, None) => 1 * childCosts(node).sum
       case ReturnToHand(target)           => 1 * childCosts(node).sum
-      case SetAttribute(target, attr, num)=> 1 * childCosts(node).sum
-      case SwapAttributes(target, attr1, attr2) => 1 * childCosts(node).sum
-      case TakeControl(player, target)    => 2 * childCosts(node).sum
+      case SetAttribute(target, attr, num)=> 1 * childCosts(node).product
+      case SwapAttributes(target, attr1, attr2) => 1 * childCosts(node).sum//TODO FIX
+      case TakeControl(player, target)    => 2 * childCosts(node).product
 
       // Actions: Utility
       case SaveTarget(target)             => 1 * childCosts(node).sum
@@ -101,7 +101,7 @@ object CostEstimator {
 
       // Conditions
       case AdjacentTo(obj)                => 1 * childCosts(node).sum
-      case AttributeComparison(attr, comp)=> 1 * childCosts(node).sum
+      case AttributeComparison(attr, comp)=> 1 * childCosts(node).product
       case ControlledBy(player)           => 1 * childCosts(node).sum
       case HasProperty(property)          => 1 * childCosts(node).sum
       case Unoccupied                     => 1
@@ -114,13 +114,13 @@ object CostEstimator {
       // Arithmetic operations
       case Constant(num)                  => 1 * childCosts(node).sum
       case Plus(num)                      => 1 * childCosts(node).sum
-      case Minus(num)                     => 1 * childCosts(node).sum
-      case Multiply(num)                  => 1 * childCosts(node).sum
+      case Minus(num)                     => -1 * childCosts(node).sum
+      case Multiply(num)                  => 2 * childCosts(node).sum
       case Divide(num, RoundedDown)       => 1 * childCosts(node).sum
       case Divide(num, RoundedUp)         => 1 * childCosts(node).sum
 
       // Comparisons
-      case EqualTo(num)                   => 1 * childCosts(node).sum
+      case EqualTo(num)                   => 0.5f * childCosts(node).sum
       case GreaterThan(num)               => 1 * childCosts(node).sum
       case GreaterThanOrEqualTo(num)      => 1 * childCosts(node).sum
       case LessThan(num)                  => 1 * childCosts(node).sum
@@ -128,7 +128,7 @@ object CostEstimator {
 
 
       // Numbers
-      case Scalar(int)                    => childCosts(node).sum * childCosts(node).sum
+      case Scalar(int)                    => scala.math.pow(childCosts(node).sum,2).toFloat
       case AttributeSum(collection, attr) => 1 * childCosts(node).sum
       case AttributeValue(obj, attr)      => 1 * childCosts(node).sum
       case Count(collection)              => 1 * childCosts(node).sum
@@ -140,10 +140,10 @@ object CostEstimator {
       case ObjectsMatchingConditions(objType, conditions) => 1 * childCosts(node).product
       case Other(collection)              => 1 * childCosts(node).sum
       case TilesMatchingConditions(conditions) => 1 * childCosts(node).sum
-/*
+
       // Labels
-      case m: MultiLabel => m.labels.map(g).mkString("[", ", ", "]")
-      case l: Label => s"'${getLabelName(l)}'"*/
+      case m: MultiLabel                  => {println("multilabel. what is it?");1}
+      case l: Label                       => 1
 
       case _                              => 1 * childCosts(node).sum
     }
@@ -151,18 +151,24 @@ object CostEstimator {
 
 
   //try to calculate a cost for anything and everything
-  private def genericEstimate(a:Any): Float = a match{
+  private def genericEstimate(a:Any): Float ={
+  val v = genericEstimateZ(a);println(a.toString + " has estimate " + v);v
+  }
+
+  private def genericEstimateZ(a:Any): Float = a match{
     case n:AstNode => astEst(n)//AST node, complex.
     case n:Int => n
-    case c:Seq[Condition] => c.map(child=>genericEstimate(child)).product //conditional series are multiplied - maybe?
-    case c:Seq[Action] => c.map(child=>genericEstimate(child)).sum  //hmm. might want to mult instead of add sometimes - configurable?
-    // scalastyle:off regex
+    case c:Seq[Any] => c.map(child=>genericEstimate(child)).product //conditional series are multiplied - maybe?
+    //case c:Seq[Action] => c.map(child=>genericEstimate(child)).sum  //hmm. might want to mult instead of add sometimes - configurable?
+      // scalastyle:off regex
     case _=> println("error unknown type in generic estimate."); 0
     // scalastyle:on regex
     }
 
   //for each child of the node, run genericEstimate()
-  private def childCosts(node: AstNode) :Iterator[Float]=
-    node.productIterator.map[Float](child=>genericEstimate(child))
+  private def childCosts(node: AstNode) :Iterator[Float]= {
+    println("object " + node.toString + "has " + node.productArity + " children.");
+    node.productIterator.map[Float](child => genericEstimate(child))
+  }
 }
 
