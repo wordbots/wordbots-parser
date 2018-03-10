@@ -25,7 +25,7 @@ object CostEstimator {
       case If(condition, action)           => 1 * childCosts(node).product
       case MultipleActions(actions)        => 1 * childCosts(node).sum
       case MultipleAbilities(abilities)    => 1 * childCosts(node).sum
-      case Until(TurnsPassed(num), action) => 1 * childCosts(node).sum
+      case Until(TurnsPassed(num), action) => 1 * childCosts(node).product
 
       // Actions: Normal
       case BecomeACopy(source, target)    => 1 * childCosts(node).product
@@ -78,9 +78,9 @@ object CostEstimator {
       case EndOfTurn(targetPlayer)        => 2 * childCosts(node).product
 
       // Target objects
-      case ChooseO(collection)            => 2 * childCosts(node).sum
-      case AllO(collection)               => 3 * childCosts(node).sum
-      case RandomO(num, collection)       => 1 * childCosts(node).sum
+      case ChooseO(collection)            => 2 * childCosts(node).product
+      case AllO(collection)               => 3 * childCosts(node).product
+      case RandomO(num, collection)       => 1 * childCosts(node).product
       case ThisObject                     => 1
       case ItO                            => 1
       case ItP                            => 1
@@ -89,9 +89,9 @@ object CostEstimator {
       case SavedTargetObject              => 1
 
       // Target cards
-      case ChooseC(collection)            => 1 * childCosts(node).sum
-      case AllC(collection)               => 1 * childCosts(node).sum
-      case RandomC(num, collection)       => 0.5f * childCosts(node).sum
+      case ChooseC(collection)            => 1 * childCosts(node).product
+      case AllC(collection)               => 1 * childCosts(node).product
+      case RandomC(num, collection)       => 0.5f * childCosts(node).product
 
       // Target players
       case Self                           => 1
@@ -105,7 +105,7 @@ object CostEstimator {
       case ControlledBy(player)           => 1 * childCosts(node).product
       case HasProperty(property)          => 1 * childCosts(node).product
       case Unoccupied                     => 1
-      case WithinDistanceOf(distance, obj)=> 1 * childCosts(node).sum
+      case WithinDistanceOf(distance, obj)=> 1 * childCosts(node).product
 
       // Global conditions
       case CollectionExists(coll)         =>  1 * childCosts(node).product
@@ -131,14 +131,14 @@ object CostEstimator {
       case Scalar(int)                    => scala.math.pow(childCosts(node).product,2).toFloat
       case AttributeSum(collection, attr) => 1 * childCosts(node).sum
       case AttributeValue(obj, attr)      => 1 * childCosts(node).sum
-      case Count(collection)              => 1 * childCosts(node).sum
-      case EnergyAmount(player)           => 1 * childCosts(node).sum
+      case Count(collection)              => 1 * childCosts(node).product
+      case EnergyAmount(player)           => 1 * childCosts(node).product
 
       // Collections
       case AllTiles                       => 1
       case CardsInHand(player, cardType)  => 1 * childCosts(node).product
       case ObjectsMatchingConditions(objType, conditions) => 1 * childCosts(node).product
-      case Other(collection)              => 1 * childCosts(node).sum
+      case Other(collection)              => 1 * childCosts(node).product
       case TilesMatchingConditions(conditions) => 1 * childCosts(node).product
 
       // Labels
@@ -158,8 +158,7 @@ object CostEstimator {
   private def genericEstimateZ(a:Any): Float = a match{
     case n:AstNode => astEst(n)//AST node, complex.
     case n:Int => n
-    case c:Seq[Any] => c.map(child=>genericEstimate(child)).product //conditional series are multiplied - maybe?
-    //case c:Seq[Action] => c.map(child=>genericEstimate(child)).sum  //hmm. might want to mult instead of add sometimes - configurable?
+    case c:Seq[Any] => c.map(child=>genericEstimate(child)).product //multiply sequences?
       // scalastyle:off regex
     case _=> println("error unknown type in generic estimate."); 0
     // scalastyle:on regex
