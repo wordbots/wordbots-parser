@@ -23,8 +23,8 @@ object CostEstimator {
     node match{
       // Meta
       case If(condition, action)           => 1 * childCosts(node).product
-      case MultipleActions(actions)        => 1 * childCosts(node).sum
-      case MultipleAbilities(abilities)    => 1 * childCosts(node).sum
+      case MultipleActions(actions)        => 1 * actions.map(child=>genericEstimate(child)).sum
+      case MultipleAbilities(abilities)    => 1 * abilities.map(child=>genericEstimate(child)).sum
       case Until(TurnsPassed(num), action) => 1 * childCosts(node).product
 
       // Actions: Normal
@@ -100,16 +100,16 @@ object CostEstimator {
       case ControllerOf(targetObject)     => 1 * childCosts(node).product
 
       // Conditions
-      case AdjacentTo(obj)                => 1 * childCosts(node).product
-      case AttributeComparison(attr, comp)=> 1 * childCosts(node).product
-      case ControlledBy(player)           => 1 * childCosts(node).product
-      case HasProperty(property)          => 1 * childCosts(node).product
+      case AdjacentTo(obj)                => 0.7f * childCosts(node).product//todo: calibrate this with withinDistanceOf
+      case AttributeComparison(attr, comp)=> 0.8f * childCosts(node).product
+      case ControlledBy(player)           => 0.9f * childCosts(node).product
+      case HasProperty(property)          => 0.8f * childCosts(node).product
       case Unoccupied                     => 1
-      case WithinDistanceOf(distance, obj)=> 1 * childCosts(node).product
+      case WithinDistanceOf(distance, obj)=> 0.8f * childCosts(node).product//todo: scale properly
 
       // Global conditions
       case CollectionExists(coll)         =>  1 * childCosts(node).product
-      case TargetHasProperty(target, property) => 1 * childCosts(node).product
+      case TargetHasProperty(target, property) => 0.8f * childCosts(node).product
 
       // Arithmetic operations
       case Constant(num)                  => 1 * childCosts(node).product
@@ -121,14 +121,14 @@ object CostEstimator {
 
       // Comparisons
       case EqualTo(num)                   => 0.5f * childCosts(node).product
-      case GreaterThan(num)               => 1 * childCosts(node).product
-      case GreaterThanOrEqualTo(num)      => 1 * childCosts(node).product
-      case LessThan(num)                  => 1 * childCosts(node).product
-      case LessThanOrEqualTo(num)         => 1 * childCosts(node).product
+      case GreaterThan(num)               => 0.9f * childCosts(node).product
+      case GreaterThanOrEqualTo(num)      => 0.9f * childCosts(node).product
+      case LessThan(num)                  => 0.9f * childCosts(node).product
+      case LessThanOrEqualTo(num)         => 0.9f * childCosts(node).product
 
 
       // Numbers
-      case Scalar(int)                    => scala.math.pow(childCosts(node).product,2).toFloat
+      case Scalar(int)                    => scala.math.pow(childCosts(node).product,1.5f).toFloat //2.0 is too steep.
       case AttributeSum(collection, attr) => 1 * childCosts(node).sum
       case AttributeValue(obj, attr)      => 1 * childCosts(node).sum
       case Count(collection)              => 1 * childCosts(node).product
@@ -166,6 +166,7 @@ object CostEstimator {
 
   //for each child of the node, run genericEstimate()
   private def childCosts(node: AstNode) :Iterator[Float]= {
+    //if(only one child && that child is a seq) return seq?
     println("object " + node.toString + "has " + node.productArity + " children.");
     node.productIterator.map[Float](child => genericEstimate(child))
   }
