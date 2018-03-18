@@ -1,6 +1,5 @@
 name := "wordbots-parser"
 version := "0.0-SNAPSHOT"
-
 val http4sVersion = "0.15.3"
 val circeVersion = "0.6.1"
 

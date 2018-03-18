@@ -24,7 +24,7 @@ object WordbotsServer extends ServerApp {
   object ModeParamMatcher extends OptionalQueryParamDecoderMatcher[String]("mode")
 
   val host : String = "0.0.0.0"
-  val defaultPort : Int = 8080
+  val defaultPort : Int = 34197//i don't know how to set environment variables temporarily
   val port : Int = (Option(System.getenv("PORT")) orElse Option(System.getenv("HTTP_PORT"))).map(_.toInt).getOrElse(defaultPort)
 
   lazy val lexicon: Map[String, Seq[(String, String)]] = {

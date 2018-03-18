@@ -78,9 +78,9 @@ object CostEstimator {
       case EndOfTurn(targetPlayer)        => 2 * childCosts(node).product
 
       // Target objects
-      case ChooseO(collection)            => 2 * childCosts(node).product
-      case AllO(collection)               => 3 * childCosts(node).product
-      case RandomO(num, collection)       => 1 * childCosts(node).product
+      case ChooseO(collection)            => 1 * childCosts(node).product
+      case AllO(collection)               => 2 * childCosts(node).product
+      case RandomO(num, collection)       => 0.5f * childCosts(node).product
       case ThisObject                     => 1
       case ItO                            => 1
       case ItP                            => 1
@@ -90,13 +90,13 @@ object CostEstimator {
 
       // Target cards
       case ChooseC(collection)            => 1 * childCosts(node).product
-      case AllC(collection)               => 1 * childCosts(node).product
+      case AllC(collection)               => 2 * childCosts(node).product
       case RandomC(num, collection)       => 0.5f * childCosts(node).product
 
       // Target players
       case Self                           => 1
       case Opponent                       => -1
-      case AllPlayers                     => 1
+      case AllPlayers                     => 0.8f
       case ControllerOf(targetObject)     => 1 * childCosts(node).product
 
       // Conditions
@@ -167,7 +167,7 @@ object CostEstimator {
   //for each child of the node, run genericEstimate()
   private def childCosts(node: AstNode) :Iterator[Float]= {
     //if(only one child && that child is a seq) return seq?
-    println("object " + node.toString + "has " + node.productArity + " children.");
+    println("object " + node.toString + "has " + node.productArity + " children.")
     node.productIterator.map[Float](child => genericEstimate(child))
   }
 }
