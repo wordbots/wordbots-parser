@@ -14,7 +14,8 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
     NoUnimplementedRules,
     NoChooseInTriggeredAction,
     NoModifyingCostOfObjects,
-    OnlyRestoreHealth
+    OnlyRestoreHealth,
+    OnlyThisObjectPlayed
   )
 
   val rules: Seq[AstRule] = mode match {
@@ -99,6 +100,17 @@ object OnlyRestoreHealth extends AstRule {
     node match {
       case RestoreAttribute(_, Health, _) => Success()
       case RestoreAttribute(_, a, _) => Failure(ValidationError(s"Only Health can be restored, not $a"))
+      case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+object OnlyThisObjectPlayed extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case AfterPlayed(ThisObject) => Success()
+      case AfterPlayed(ItO) => Success()
+      case AfterPlayed(_) => Failure(ValidationError("AfterPlayed can only refer to ThisObject or ItO."))
       case n: AstNode => validateChildren(this, n)
     }
   }
