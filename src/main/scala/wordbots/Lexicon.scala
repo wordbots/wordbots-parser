@@ -261,6 +261,7 @@ object Lexicon {
       ((NP\N)\NP, λ {t: TargetPlayer => λ {c: CardType => CardPlay(t, c)}})  // e.g. "robots you play [cost X less, etc]"
     )) +
     (Seq("played", "comes into play", "enters the board") -> Seq(
+      (S\N, λ {t: CardType => AfterCardPlay(AllPlayers, t)}),
       (S\NP, λ {c: ChooseO => AfterPlayed(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterPlayed(t)})
     )) +
