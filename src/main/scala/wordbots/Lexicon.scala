@@ -9,7 +9,8 @@ import scala.language.postfixOps
 
 /**
   * Created by alex on 2/28/17.
-  */
+  * reminder: N = noun, NP = noun phrase, V = verb, S = sentence, PP = propositional phrase
+  **/
 object Lexicon {
   // scalastyle:off method.name
   implicit class StringImplicits(val str: String) extends AnyVal {
@@ -70,7 +71,8 @@ object Lexicon {
     )) +
     ("attacked last turn" -> (S, Form(HasProperty(AttackedLastTurn)): SemanticState)) +
     ("attacked this turn" -> (S, Form(HasProperty(AttackedThisTurn)): SemanticState)) +
-    ("becomes a copy of" -> ((S\NP)/NP, λ {target: TargetObject => λ {source: TargetObject => BecomeACopy(source, target) }})) +
+    ("becomes" -> ((S\NP)/NP, λ {target: TargetCard => λ {source: TargetObject => Become(source, target)}})) +
+    //("becomes a copy of" -> ((S\NP)/NP, λ {target: TargetObject => λ {source: TargetObject => BecomeACopy(source, target) }})) +
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
     (Seq("can move", "can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
@@ -94,6 +96,7 @@ object Lexicon {
       ((S/NP)\NP,
         λ {p: TargetPlayer => λ {c: ObjectsMatchingConditions => CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(p)))}})
     ) +
+    ("a copy of" -> (NP/NP, λ {t:TargetObject => CopyOfC(t)})) + //can this be decomposed further?
     (Seq("cost", "energy cost") -> Seq(
       (N, Form(Cost): SemanticState),
       ((S\NP)/Num, λ {i: Scalar => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, Constant(i))}}),
@@ -332,6 +335,7 @@ object Lexicon {
     ("their" -> (Num/N, λ {a: Attribute => AttributeValue(They, a)})) +
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisObject): SemanticState)) +
+    ("token" -> (NP, Form(SpecificC()): SemanticState)) +
     ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
     ("until" -> ((S|S)|NP, λ {d: Duration => λ {a: Action => Until(d, a)}})) +
