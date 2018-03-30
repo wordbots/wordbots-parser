@@ -1,5 +1,8 @@
 package wordbots
 
+import java.lang.ClassCastException
+import java.util.concurrent.locks.Condition
+
 object CodeGenerator {
   def generateJS(node: AstNode): String = g(node)
 
@@ -147,4 +150,53 @@ object CodeGenerator {
   private def getLabelName(label: Label): String = {
     label.getClass.getSimpleName.toLowerCase.split('$')(0)
   }
+
+  //is this a comparison like "{attribute} == {integer}"?
+  private def attributeEquivalencyComp (att: Attribute) : (Condition => Boolean) =
+    (cond => (cond.isInstanceOf[AttributeComparison]
+      && (cond.asInstanceOf[AttributeComparison].attribute == att)
+      && (cond.asInstanceOf[AttributeComparison].comparison.isInstanceOf[EqualTo])
+      && (cond.asInstanceOf[AttributeComparison].comparison.asInstanceOf[EqualTo].num.isInstanceOf[Scalar])
+
+      ))
+
+  private def validConditionsToCreateBot(conds : ObjectsMatchingConditions) : Boolean = {
+    //card properties: name, cost, type, [stats], text, [abilities],{command}.
+    //where [] = structure/bot only and {} = event only
+    //required: health, attack, speed, name.
+
+    (conds.conditions.exists(attributeEquivalencyComp(Attack))
+      && conds.conditions.exists(attributeEquivalencyComp(Speed))
+      && conds.conditions.exists(attributeEquivalencyComp(Health))
+      )
+  }
+
+  private def extractConditionsForBot(conds: ObjectsMatchingConditions) : String = {
+    //look for an object with a very specific set of skills.
+    //THIS THROWS. because its easier than safe navigation through like 4 classes.
+    def getAttribVal : (Condition => Int) =
+      (cond => cond.asInstanceOf[AttributeComparison].comparison.asInstanceOf[EqualTo].num.asInstanceOf[Scalar].num)
+    def getCond(att:Attribute, conds: ObjectsMatchingConditions) : Condition =
+      conds.conditions.find(attributeEquivalencyComp(att)).get
+
+    try {
+      val attack = (getAttribVal) (getCond(Attack, conds))
+      val speed = (getAttribVal) (getCond(Speed, conds))
+      val health = (getAttribVal) (getCond(Health, conds))
+      s"{abilities:[],baseCost:0,cost:0,id: \"builtin/token\",name:\"Token\",source:\"generated\",stats:{attack:${attack},health:${health},speed:${speed},type:0}"
+    }
+    catch{
+      case (cce: ClassCastException) => "error. bad conditions for bot."//TODO what is the proper response here?
+    }
+  }
+
+
+  /*(function () {
+    actions['modifyAttribute'](
+      targets['choose'](
+        objectsMatchingConditions(
+            'robot', [conditions['attributeComparison'](
+              'attack', (
+                function (x) { return x === 3; }))])), 'health', function (x) { return x + 2; });
+  })*/
 }

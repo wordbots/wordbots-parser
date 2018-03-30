@@ -24,7 +24,6 @@ object Lexicon {
     def /?/(nextWords: Seq[String]): Seq[String] = nextWords ++ nextWords.map(s"$str " +)
   }
   // scalastyle:on method.name
-
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
       (N/N, identity),
