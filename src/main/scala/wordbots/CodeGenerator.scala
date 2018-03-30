@@ -1,7 +1,6 @@
 package wordbots
 
 import java.lang.ClassCastException
-import java.util.concurrent.locks.Condition
 
 object CodeGenerator {
   def generateJS(node: AstNode): String = g(node)
@@ -183,7 +182,8 @@ object CodeGenerator {
       val attack = (getAttribVal) (getCond(Attack, conds))
       val speed = (getAttribVal) (getCond(Speed, conds))
       val health = (getAttribVal) (getCond(Health, conds))
-      s"{abilities:[],baseCost:0,cost:0,id: \"builtin/token\",name:\"Token\",source:\"generated\",stats:{attack:${attack},health:${health},speed:${speed},type:0}"
+      //due to bug in Scala re: escaped quotes, need to triple-quote this
+      s"""{abilities:[],baseCost:0,cost:0,id: "builtin/token",name:"Token",source:"generated",stats:{attack:${attack},health:${health},speed:${speed},type:0}"""
     }
     catch{
       case (cce: ClassCastException) => "error. bad conditions for bot."//TODO what is the proper response here?
