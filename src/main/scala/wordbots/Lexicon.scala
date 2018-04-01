@@ -100,6 +100,8 @@ object Lexicon {
     ("a copy of" -> (NP/NP, λ {t:TargetObject => CopyOfC(t)})) + //can this be decomposed further?
     (Seq("cost", "energy cost") -> Seq(
       (N, Form(Cost): SemanticState),
+      (NP/Adj, λ {comp : Comparison => AttributeComparison(Cost, comp)}),//needed for "cost > x "
+      (NP/Num, λ {n: Number => AttributeComparison(Cost, EqualTo(n))}),//"...with cost X"(implied "equal to" in there)
       ((S\NP)/Num, λ {i: Scalar => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, Constant(i))}}),
       ((S\NP)/Adv, λ {o: Operation => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, o)}}),
       ((S\NP)/Num, λ {i: Scalar => λ {cp: CardPlay => AttributeAdjustment(AllC(CardsInHand(cp.player, cp.cardType)), Cost, Constant(i))}}),
