@@ -257,6 +257,8 @@ class ParserSpec extends FlatSpec with Matchers {
     // New terms for alpha v0.8:
     parse("Whenever you play a robot, this structure becomes a copy of it") shouldEqual
       TriggeredAbility(AfterCardPlay(Self, Robot), Become(ThisObject, CopyOfC(ItO)))
+    parse("Whenever a card is played, this robot becomes a copy of it") shouldEqual
+      TriggeredAbility(AfterCardPlay(AllPlayers, AnyCard), Become(ThisObject, CopyOfC(ItO))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
