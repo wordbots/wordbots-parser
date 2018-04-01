@@ -205,8 +205,7 @@ object Lexicon {
     )) +
     (Seq("has", "have") -> Seq(
       (S/NP, λ {ac: AttributeComparison => ac}),
-      ((S/N)/Num, λ {i: Scalar => λ {a: Attribute => AttributeComparison(a, EqualTo(i))}}),
-      ((S/N)/Adj, λ {c: Comparison => λ {a: Attribute => AttributeComparison(a, c)}}),
+      (S/NP, λ {cs: Seq[AttributeComparison] => cs}),//multiple conditions
       ((S\NP)/S, λ {a: Ability => λ {t: TargetObject => HasAbility(t, a)}}),
       (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}}),
       ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  //"... +X attack and [ability]"
@@ -337,7 +336,10 @@ object Lexicon {
       (PP/NP, identity),
       (PP/Num, identity)
     )) +
-    ("that" -> ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}})) +
+    ("that" -> Seq(
+      ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}}),
+      ((NP\N)/S, λ {cs: Seq[Condition] => λ {o: ObjectType => ObjectsMatchingConditions(o, cs)}})
+    )) +
     ("that" / Seq("robot", "creature", "structure", "object") -> (NP, Form(That): SemanticState)) +
     (Seq("that player", "they") -> (NP, Form(ItP): SemanticState)) +
     ("the" -> (X/X, identity)) +
