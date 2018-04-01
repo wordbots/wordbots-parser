@@ -352,13 +352,8 @@ object Lexicon {
       ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})
     ) +
     ("with" -> Seq(  // "with" = "that" + "has"
-      //oh balls this is totally fucked. cant get this to work.
-      //requires Any because we can accept either AttributeComparison (ex: ">3 attack") or AttributeAmount(ex:"3 attack"), and they're completely different :/.
-      //haha i made "3 attack" return AttributeComparison! lets see if that works!
-      ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}}),
-      //(((NP\N)/N)/Num, λ {i: Scalar => λ {a: Attribute => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AttributeComparison(a, EqualTo(i))))}}}),
-      (((NP\N)/N)/Adj, λ {c: Comparison => λ {a: Attribute => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AttributeComparison(a, c)))}}}),
-      (((NP\N)/Adj)/N, λ {a: Attribute => λ {c: Comparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AttributeComparison(a, c)))}}})
+      ((NP\N)/NP, λ {s: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(s))}}),
+      ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}})
     )) +
     ("within" -> ((NP\NP)/NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ WithinDistanceOf(s.num, ThisObject))}})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
