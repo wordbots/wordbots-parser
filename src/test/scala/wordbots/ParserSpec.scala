@@ -7,6 +7,7 @@ import scala.util.{Success, Failure}
 
 // scalastyle:off line.size.limit
 class ParserSpec extends FlatSpec with Matchers {
+  //scalastyle:off regex
   def parse(input: String): Any = {
     println(s"Parsing $input...")
     Parser.parse(input).bestParse match {
@@ -24,6 +25,7 @@ class ParserSpec extends FlatSpec with Matchers {
       case _ => Nonsense
     }
   }
+  //scalastyle:on regex
 
   def generateJS(input: String): String = {
     CodeGenerator.generateJS(parse(input).asInstanceOf[AstNode])
@@ -50,16 +52,40 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Halve the life of all robots") should equal (ModifyAttribute(ObjectsInPlay(Robot), Health, Divide(Scalar(2), RoundedDown)))
   }
 
-  it should "parse more complex actions" in {
+  it should "parse simple conditions" in {
     parse("Deal 2 damage to a robot that has 3 or less speed") shouldEqual
       DealDamage(ChooseO(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Speed, LessThanOrEqualTo(Scalar(3)))))), Scalar(2))
     parse ("Deal 1 damage to all robots adjacent to a tile") shouldEqual
       DealDamage(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ChooseO(AllTiles)))), Scalar(1))
-    parse("Gain life equal to its health") shouldEqual
-      ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(AttributeValue(ItO, Health)))
     parse("Give all robots you control +2 attack") shouldEqual
       ModifyAttribute(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), Attack, Plus(Scalar(2)))
+    //scalastyle:off magic.number
+    parse("Destroy a robot with 4 attack or more") shouldEqual
+      Destroy(ChooseO(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Attack, GreaterThanOrEqualTo(Scalar(4)))))))
+    //scalastyle:on magic.number
+    parse("Destroy all robots with energy cost three or greater") shouldEqual
+      Destroy(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(3))))))
+  }
 
+  it should "parse multiple actions" in {
+    parse("Give a robot +1 attack and +1 health") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(ChooseO(ObjectsInPlay(Robot))),
+        ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
+      ))
+    parse("Give a robot -1 speed and -1 attack and +1 health") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(ChooseO(ObjectsInPlay(Robot))),
+        ModifyAttribute(SavedTargetObject, Speed, Minus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Attack, Minus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
+      ))
+  }
+
+  it should "parse more complex actions" in {
+    parse("Gain life equal to its health") shouldEqual
+      ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(AttributeValue(ItO, Health)))
     // (The following action texts were provided by James:)
     parse("Set all stats of all robots in play to 3") shouldEqual
       SetAttribute(ObjectsInPlay(Robot), AllAttributes, Scalar(3))
@@ -75,28 +101,9 @@ class ParserSpec extends FlatSpec with Matchers {
         ModifyAttribute(SavedTargetObject, Attack, Multiply(Scalar(2))),
         ModifyAttribute(SavedTargetObject, Health, Divide(Scalar(2), RoundedUp))
       ))
-    parse("Destroy all robots with energy cost three or greater") shouldEqual
-      Destroy(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(3))))))
-
     // (From 4/10/17 playtest session:)
-    parse("Destroy a robot with 4 attack or more") shouldEqual
-      Destroy(ChooseO(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Attack, GreaterThanOrEqualTo(Scalar(4)))))))
     parse("Double the health of a robot") shouldEqual
       ModifyAttribute(ChooseO(ObjectsInPlay(Robot)), Health, Multiply(Scalar(2)))
-
-    parse("Give a robot +1 attack and +1 health") shouldEqual
-      MultipleActions(Seq(
-        SaveTarget(ChooseO(ObjectsInPlay(Robot))),
-        ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
-        ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
-    ))
-    parse("Give a robot -1 speed and -1 attack and +1 health") shouldEqual
-      MultipleActions(Seq(
-        SaveTarget(ChooseO(ObjectsInPlay(Robot))),
-        ModifyAttribute(SavedTargetObject, Speed, Minus(Scalar(1))),
-        ModifyAttribute(SavedTargetObject, Attack, Minus(Scalar(1))),
-        ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
-      ))
     parse("Reduce the cost of robot cards in your hand by 1") shouldEqual
       ModifyAttribute(AllC(CardsInHand(Self, Robot)), Cost, Minus(Scalar(1)))
     parse("Destroy all robots with cost equal to this structure's health") shouldEqual
@@ -254,8 +261,10 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("When this robot is destroyed, deal 2 damage to all objects within 2 spaces.") shouldEqual
       TriggeredAbility(AfterDestroyed(ThisObject), DealDamage(ObjectsMatchingConditions(AllObjects, Seq(WithinDistanceOf(Scalar(2), ThisObject))), Scalar(2)))
 
+    //scalastyle:off magic.number
     parse("When this robot is played, if it is adjacent to an enemy robot, it gains 5 health.") shouldEqual
       TriggeredAbility(AfterPlayed(ThisObject), If(CollectionExists(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent), AdjacentTo(ItO)))), ModifyAttribute(ItO, Health, Plus(Scalar(5)))))
+    //scalastyle:on magic.number
     parse("When this robot attacks, it can attack again.") shouldEqual
       TriggeredAbility(AfterAttack(ThisObject), CanAttackAgain(ItO))
     parse("When this robot attacks a robot, destroy that robot instead") shouldEqual
