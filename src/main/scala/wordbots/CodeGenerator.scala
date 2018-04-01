@@ -189,14 +189,4 @@ object CodeGenerator {
       case (cce: ClassCastException) => "error. bad conditions for bot."//TODO what is the proper response here?
     }
   }
-
-
-  /*(function () {
-    actions['modifyAttribute'](
-      targets['choose'](
-        objectsMatchingConditions(
-            'robot', [conditions['attributeComparison'](
-              'attack', (
-                function (x) { return x === 3; }))])), 'health', function (x) { return x + 2; });
-  })*/
 }
