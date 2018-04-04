@@ -1,7 +1,5 @@
 package wordbots
 
-import java.lang.ClassCastException
-
 object CodeGenerator {
   def generateJS(node: AstNode): String = g(node)
 

@@ -64,12 +64,18 @@ object Lexicon {
     )) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +
+    (Seq("attack", "power") -> Seq(
+      (N, Form(Attack): SemanticState),
+      (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)}),
+      (NP\Adj, λ {op: Operation => AttributeOperation(op, Attack)}),
+      (NP\Adj, λ {comp : Comparison => AttributeComparison(Attack, comp)}), // needed for "> x health"
+      (NP\Num, λ {n: Number => AttributeComparison(Attack, EqualTo(n))}) // "...with X health"(implied "equal to" in there)
+    )) +
     ("attacks" -> Seq(
       (S\NP, λ {c: ChooseO => AfterAttack(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
       ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterAttack(t, o)}})
     )) +
- // ("attack" -> see "power")+
     ("attacked last turn" -> (S, Form(HasProperty(AttackedLastTurn)): SemanticState)) +
     ("attacked this turn" -> (S, Form(HasProperty(AttackedThisTurn)): SemanticState)) +
     ("becomes" -> ((S\NP)/NP, λ {target: TargetCard => λ {source: TargetObject => Become(source, target)}})) +
@@ -271,13 +277,6 @@ object Lexicon {
       (S\N, λ {t: CardType => AfterCardPlay(AllPlayers, t)}),
       (S\NP, λ {c: ChooseO => AfterPlayed(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterPlayed(t)})
-    )) +
-    (Seq("power", "attack") -> Seq(
-      (N, Form(Attack): SemanticState),
-      (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)}),
-      (NP\Adj, λ {op: Operation => AttributeOperation(op, Attack)}),
-      (NP\Adj, λ {comp : Comparison => AttributeComparison(Attack, comp)}), // needed for "> x health"
-      (NP\Num, λ {n: Number => AttributeComparison(Attack, EqualTo(n))}) // "...with X health"(implied "equal to" in there)
     )) +
     ("random" -> Seq(
       ((NP/N)\Num, λ {num: Number => λ {c: CardType => RandomCards(num, c)}}),
