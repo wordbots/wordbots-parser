@@ -158,6 +158,22 @@ class ParserSpec extends FlatSpec with Matchers {
       ReturnToHand(ChooseO(ObjectsInPlay(Robot)))
     parse("Return all structures to their owner's hands") shouldEqual
       ReturnToHand(ObjectsInPlay(Structure))
+
+  }
+
+  it should "treat 'with' as 'that has'" in {
+    parse("Deal 1 damage to a robot with 2 health") shouldEqual
+      parse("Deal 1 damage to a robot that has 2 health")
+    parse("Deal 1 damage to a robot with 2 health and 1 attack") shouldEqual
+      parse("Deal 1 damage to a robot that has 2 health and 1 attack")
+  }
+
+  it should "select objects satisfying multiple conditions" in {
+    parse("Deal 1 damage to a robot with 1 attack and 1 health") shouldEqual
+      DealDamage(ChooseO(ObjectsMatchingConditions(Robot,Seq(AttributeComparison(Attack,EqualTo(Scalar(1))),AttributeComparison(Health,EqualTo(Scalar(1)))))),Scalar(1))
+    // test mix of ">" and "="
+    parse("Deal 1 damage to a robot with greater than 1 attack and 1 health") shouldEqual
+      DealDamage(ChooseO(ObjectsMatchingConditions(Robot,Seq(AttributeComparison(Attack,GreaterThan(Scalar(1))),AttributeComparison(Health,EqualTo(Scalar(1)))))),Scalar(1))
   }
 
   it should "deal with ambiguous uses of 'all'" in {
@@ -247,9 +263,9 @@ class ParserSpec extends FlatSpec with Matchers {
 
     // New terms for alpha v0.8:
     parse("Whenever you play a robot, this structure becomes a copy of it") shouldEqual
-      TriggeredAbility(AfterCardPlay(Self, Robot), BecomeACopy(ThisObject, ItO))
+      TriggeredAbility(AfterCardPlay(Self, Robot), Become(ThisObject, CopyOfC(ItO)))
     parse("Whenever a card is played, this robot becomes a copy of it") shouldEqual
-      TriggeredAbility(AfterCardPlay(AllPlayers, AnyCard), BecomeACopy(ThisObject, ItO))
+      TriggeredAbility(AfterCardPlay(AllPlayers, AnyCard), Become(ThisObject, CopyOfC(ItO)))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

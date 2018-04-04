@@ -1,5 +1,7 @@
 package wordbots
 
+import java.lang.ClassCastException
+
 object CodeGenerator {
   def generateJS(node: AstNode): String = g(node)
 
@@ -16,7 +18,7 @@ object CodeGenerator {
       case Until(TurnsPassed(num), action) => s"(function () { save('duration', $num); ${g(action)}(); save('duration', null); })"
 
       // Actions: Normal
-      case BecomeACopy(source, target) => s"(function () { actions['becomeACopy'](${g(source)}, ${g(target)}); })"
+      case Become(source, target) => s"(function () {actions['become'](${g(source)},${g(target)});})"
       case CanAttackAgain(target) => s"(function () { actions['canAttackAgain'](${g(target)}); })"
       case CanMoveAgain(target) => s"(function () { actions['canMoveAgain'](${g(target)}); })"
       case CanMoveAndAttackAgain(target) => s"(function () { actions['canMoveAndAttackAgain'](${g(target)}); })"
@@ -85,6 +87,7 @@ object CodeGenerator {
       case ChooseC(collection) => s"targets['choose'](${g(collection)})"
       case AllC(collection) => s"targets['all'](${g(collection)})"
       case RandomC(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
+      case CopyOfC(objToCopy) => s"targets['copyOf'](${g(objToCopy)})"
 
       // Target players
       case Self => "targets['self']()"

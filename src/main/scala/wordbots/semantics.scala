@@ -13,7 +13,7 @@ sealed trait Action extends AstNode
   case class Instead(action: Action) extends Action
   case class Until(duration: Duration, action: Action) extends Action
 
-  case class BecomeACopy(source: TargetObject, target: TargetObject) extends Action
+  case class Become(source: TargetObject, target: TargetCard) extends Action
   case class CanAttackAgain(target: TargetObject) extends Action
   case class CanMoveAgain(target: TargetObject) extends Action
   case class CanMoveAndAttackAgain(target: TargetObject) extends Action
@@ -76,6 +76,7 @@ sealed trait Target extends AstNode
     case object They extends TargetObject  // (Salient object, but preferring the current object in an iteration over a collection)
     case object SavedTargetObject extends TargetObject
   sealed trait TargetCard extends TargetObjectOrCard
+    case class CopyOfC(objToCopy:TargetObject) extends TargetCard
     case class ChooseC(collection: CardCollection) extends TargetCard
     case class AllC(collection: CardCollection) extends TargetCard
     case class RandomC(num: Number, collection: CardCollection) extends TargetCard
