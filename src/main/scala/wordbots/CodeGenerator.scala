@@ -97,6 +97,7 @@ object CodeGenerator {
       case AdjacentTo(obj) => s"conditions['adjacentTo'](${g(obj)})"
       case AttributeComparison(attr, comp) => s"conditions['attributeComparison'](${g(attr)}, ${g(comp)})"
       case ControlledBy(player) => s"conditions['controlledBy'](${g(player)})"
+      case ExactDistanceFrom(distance, obj) => s"conditions['exactDistanceFrom'](${g(distance)}, ${g(obj)})"
       case HasProperty(property) => s"conditions['hasProperty'](${g(property)})"
       case Unoccupied => s"conditions['unoccupied']()"
       case WithinDistanceOf(distance, obj) => s"conditions['withinDistanceOf'](${g(distance)}, ${g(obj)})"

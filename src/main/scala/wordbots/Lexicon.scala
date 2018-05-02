@@ -78,6 +78,10 @@ object Lexicon {
     )) +
     ("attacked last turn" -> (S, Form(HasProperty(AttackedLastTurn)): SemanticState)) +
     ("attacked this turn" -> (S, Form(HasProperty(AttackedThisTurn)): SemanticState)) +
+    ("away" -> Seq(
+      ((NP\N)\NP, λ {s: Spaces => λ {t: ObjectType => ObjectsMatchingConditions(t, Seq(ExactDistanceFrom(s.num, ThisObject)))}}), // "a robot X spaces away"
+      ((NP\NP)\NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ExactDistanceFrom(s.num, ThisObject))}})
+    )) +
     ("becomes" -> ((S\NP)/NP, λ {target: TargetCard => λ {source: TargetObject => Become(source, target)}})) +
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
@@ -307,7 +311,7 @@ object Lexicon {
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}}),
       (((S/PP)/PP)/N, λ {as: Seq[Attribute] => λ {t: TargetObject => λ {num: Number => MultipleActions(Seq(SaveTarget(t)) ++ as.map(a => SetAttribute(SavedTargetObject, a, num)))}}})
     )) +
-    ("spaces" -> Seq(
+    (Seq("spaces", "tiles", "hexes") -> Seq(
       (NP\Num, λ {num: Number => Spaces(num)}),
       (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)})
     )) +
