@@ -60,7 +60,8 @@ object Lexicon {
       ((NP/NP)\NP, λ {a: Any => λ {b: Any => Seq(a, b)}}),
       ((V/V)\V, λ {a: Any => λ {b: Any => Seq(a, b)}}),
       (conj, λ {b: Any => λ {a: Seq[Any] => a :+ b}}),
-      ((S/S)\NP, λ {a: Any => λ {b: Any => (a, b)}})
+      ((S/S)\NP, λ {a: Any => λ {b: Any => (a, b)}}),
+      ((S/S)\S, λ {a: TriggeredAbility => λ {b: TriggeredAbility => MultipleAbilities(Seq(a, b))}})
     )) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +

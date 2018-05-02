@@ -266,6 +266,13 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(AfterCardPlay(Self, Robot), Become(ThisObject, CopyOfC(ItO)))
     parse("Whenever a card is played, this robot becomes a copy of it") shouldEqual
       TriggeredAbility(AfterCardPlay(AllPlayers, AnyCard), Become(ThisObject, CopyOfC(ItO)))
+
+    // Support for multiple triggered abilities in one sentence.
+    parse("Deal 21 damage to the enemy kernel at the end of your turn, and deal 21 damage to your kernel at the end of your turn") shouldEqual
+      MultipleAbilities(Seq(
+        parse("Deal 21 damage to the enemy kernel at the end of your turn").asInstanceOf[TriggeredAbility],
+        parse("deal 21 damage to your kernel at the end of your turn").asInstanceOf[TriggeredAbility]
+      ))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
