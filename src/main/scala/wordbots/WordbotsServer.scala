@@ -123,7 +123,7 @@ object WordbotsServer extends ServerApp {
   }
 
   def successResponseJson(js: String, parsedTokens: Seq[String] = Seq()): String = {
-    "{\"js\": \"" + js + "\", \"tokens\": [" + parsedTokens.mkString("\"", "\",\"", "\"") + "]}"
+    "{\"js\": \"" + js + "\", \"tokens\": [" + parsedTokens.mkString("\"", "\",\"", "\"") + "], \"version\": \"" + Parser.VERSION + "\"}"
   }
 
   def errorResponseJson(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): String = {
