@@ -56,10 +56,12 @@ object Lexicon {
     (Seq("all players", "each player", "every player", "both players") -> (NP, Form(AllPlayers): SemanticState)) +
     (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
+      // First handle the case when one of the arguments is a Seq, to ensure flat arrays when possible.
+      (conj, λ {b: Any => λ {a: Seq[Any] => a :+ b}}),
+      // Then fall through to the Any case.
       ((N/N)\N, λ {a: Any => λ {b: Any => Seq(a, b)}}),
       ((NP/NP)\NP, λ {a: Any => λ {b: Any => Seq(a, b)}}),
       ((V/V)\V, λ {a: Any => λ {b: Any => Seq(a, b)}}),
-      (conj, λ {b: Any => λ {a: Seq[Any] => a :+ b}}),
       ((S/S)\NP, λ {a: Any => λ {b: Any => (a, b)}})
     )) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
