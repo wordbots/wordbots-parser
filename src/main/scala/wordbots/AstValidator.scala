@@ -9,13 +9,15 @@ case object ValidateObject extends ValidationMode
 case object ValidateEvent extends ValidationMode
 case object ValidateUnknownCard extends ValidationMode
 
+
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val baseRules: Seq[AstRule] = Seq(
     NoUnimplementedRules,
     NoChooseInTriggeredAction,
     NoModifyingCostOfObjects,
     OnlyRestoreHealth,
-    OnlyThisObjectPlayed
+    OnlyThisObjectPlayed,
+    ValidGeneratedCard
   )
 
   val rules: Seq[AstRule] = mode match {
@@ -29,6 +31,14 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   }
 }
 
+/**
+  * So why do you have to stick validateChildren() in your validate()?
+  * why not just have a function that returns the success status for this node/, and apply it to all nodes in an outer loop?
+  * well, it's because
+  * 1) it's the same amount of code in the derived classes
+  * 2) there's no explicit .asInstanceOf or .isInstanceOf involved this way - it's all done through match
+  * 3) you end up writing the same code anyways, this way is more functional-y
+  */
 sealed trait AstRule {
   def validate(node: AstNode): Try[Unit]
 
@@ -143,4 +153,44 @@ object NoThis extends AstRule {
       case n: AstNode => validateChildren(this, n)
     }
   }
+}
+
+//does the ObjMatchCond in this have exactly the conditions needed to specify a card?
+object ValidGeneratedCard extends AstRule{
+
+  // a comparison like "{attribute} == {number}"?
+  val attributeEquivalencyComp :Attribute => Condition => Boolean =
+    att =>(c=>c match{
+      case AttributeComparison(a2,EqualTo(_)) if a2 == att=> true
+      case _ => false
+    })
+
+  // put targetConds in a seq so we can give an error specific to the condition that failed.
+  //list of (condition, ErrorMessageString)
+  val targetConds : Seq[(ObjectsMatchingConditions => Boolean, String)] = Seq(
+    (_.conditions.count(attributeEquivalencyComp(Attack)) == 1,"Attack must be specified exactly once"),
+    (_.conditions.count(attributeEquivalencyComp(Speed)) == 1, "Speed must be specified exactly once"),
+    (_.conditions.count(attributeEquivalencyComp(Health)) == 1, "Health must be specified exactly once"),
+    (_.objectType != Event,"Cannot transform into an event")
+    //((_.conditions.length <= 3), Failure(ValidationError("Too many conditions for card creation."))),
+    //((_.conditions.length >= 3), Failure(ValidationError("Not enough conditions in card creation.")))
+  )
+
+  override def validate (node: AstNode) : Try[Unit] =
+    node match {
+      case GenerateC(obj) => satisfiesAllTargetConditions(obj, targetConds) match {
+        case Success(_) => validateChildren(this, node)
+        case f => f
+      }
+      case _ => validateChildren(this, node)
+    }
+
+  val getIfFail : (((Boolean, String)) => Option[String]) =
+    {case(x,y) =>if(x){None}else{Some(y)}}
+
+  val satisfiesAllTargetConditions:(ObjectsMatchingConditions, Seq[(ObjectsMatchingConditions => Boolean, String)]) => Try[Unit] = (conds,targs)=>
+    targs.map(x=>(x._1(conds),x._2)).map(getIfFail(_)) match{
+      case Seq() => Success()
+      case s => Failure(ValidationError(s.mkString(", ")))
+    }
 }

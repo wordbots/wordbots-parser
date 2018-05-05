@@ -88,7 +88,7 @@ object CodeGenerator {
       case ChooseC(collection) => s"targets['choose'](${g(collection)})"
       case AllC(collection) => s"targets['all'](${g(collection)})"
       case RandomC(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
-      case SpecificC() => s"targets['token']()"
+      case GenerateC(conds) => extractConditionsForBot(conds)
       case CopyOfC(objToCopy) => s"(x=>x.entries[0].card)(${g(objToCopy)})"
 
       // Target players
@@ -150,43 +150,18 @@ object CodeGenerator {
     label.getClass.getSimpleName.toLowerCase.split('$')(0)
   }
 
-  //is this a comparison like "{attribute} == {integer}"?
-  private def attributeEquivalencyComp (att: Attribute) : (Condition => Boolean) =
-    (cond => (cond.isInstanceOf[AttributeComparison]
-      && (cond.asInstanceOf[AttributeComparison].attribute == att)
-      && (cond.asInstanceOf[AttributeComparison].comparison.isInstanceOf[EqualTo])
-      && (cond.asInstanceOf[AttributeComparison].comparison.asInstanceOf[EqualTo].num.isInstanceOf[Scalar])
-
-      ))
-
-  private def validConditionsToCreateBot(conds : ObjectsMatchingConditions) : Boolean = {
-    //card properties: name, cost, type, [stats], text, [abilities],{command}.
-    //where [] = structure/bot only and {} = event only
-    //required: health, attack, speed, name.
-
-    (conds.conditions.exists(attributeEquivalencyComp(Attack))
-      && conds.conditions.exists(attributeEquivalencyComp(Speed))
-      && conds.conditions.exists(attributeEquivalencyComp(Health))
-      )
-  }
-
   private def extractConditionsForBot(conds: ObjectsMatchingConditions) : String = {
-    //look for an object with a very specific set of skills.
-    //THIS THROWS. because its easier than safe navigation through like 4 classes.
-    def getAttribVal : (Condition => Int) =
-      (cond => cond.asInstanceOf[AttributeComparison].comparison.asInstanceOf[EqualTo].num.asInstanceOf[Scalar].num)
-    def getCond(att:Attribute, conds: ObjectsMatchingConditions) : Condition =
-      conds.conditions.find(attributeEquivalencyComp(att)).get
+    // partial function. will error if attribComp not found, which shouldn't happen as it should be checked in AstValidator.
+    def extractAttributeValue (att :Attribute) : (Seq[Condition] => Number) =
+      c => c match{
+        case AttributeComparison(a2, EqualTo(v))::tail  if a2 == att => v
+        case _::tail => extractAttributeValue(att) (tail)
+      }
 
-    try {
-      val attack = (getAttribVal) (getCond(Attack, conds))
-      val speed = (getAttribVal) (getCond(Speed, conds))
-      val health = (getAttribVal) (getCond(Health, conds))
-      //due to bug in Scala re: escaped quotes, need to triple-quote this
-      s"""{abilities:[],baseCost:0,cost:0,id: "builtin/token",name:"Token",source:"generated",stats:{attack:${attack},health:${health},speed:${speed},type:0}"""
-    }
-    catch{
-      case (cce: ClassCastException) => "error. bad conditions for bot."//TODO what is the proper response here?
-    }
+    val attack = extractAttributeValue (Attack) (conds.conditions)
+    val speed = extractAttributeValue (Speed) (conds.conditions)
+    val health = extractAttributeValue (Health) (conds.conditions)
+    //due to Scala not allowing escape characters in substitution strings, need to triple-quote this
+    s"""{abilities:[],baseCost:0,cost:0,id: "builtin/token",name:"Token",source:"generated",stats:{attack:${g(attack)},health:${g(health)},speed:${g(speed)},type:0}"""
   }
 }

@@ -78,7 +78,7 @@ sealed trait Target extends AstNode
     case object SavedTargetObject extends TargetObject
   sealed trait TargetCard extends TargetObjectOrCard
     case class CopyOfC(objToCopy:TargetObject) extends TargetCard
-    case class SpecificC() extends TargetCard //currently hardcoded to a 1/1/1 creature. will implement customization in a later patch.
+    case class GenerateC(obj: ObjectsMatchingConditions) extends TargetCard // create a card from conditions. conditions checked in AstValidator.
     case class ChooseC(collection: CardCollection) extends TargetCard
     case class AllC(collection: CardCollection) extends TargetCard
     case class RandomC(num: Number, collection: CardCollection) extends TargetCard

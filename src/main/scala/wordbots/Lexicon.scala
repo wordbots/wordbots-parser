@@ -72,7 +72,11 @@ object Lexicon {
   //("attack" -> see "power")+
     ("attacked last turn" -> (S, Form(HasProperty(AttackedLastTurn)): SemanticState)) +
     ("attacked this turn" -> (S, Form(HasProperty(AttackedThisTurn)): SemanticState)) +
-    ("becomes" -> ((S\NP)/NP, λ {target: TargetCard => λ {source: TargetObject => Become(source, target)}})) +
+    ("become".s -> Seq(
+      ((S\NP)/NP, λ {target: TargetCard => λ {source: TargetObject => Become(source, target)}}), // used with aCopyOf
+      ((S\NP)/NP, λ {target: ObjectsMatchingConditions => λ {source: TargetObject => Become(source,GenerateC(target))}}) // only used in such things as "becomes a robot with 1 attack and...".
+      // 2nd def. seems ugly, but don't know how to remove.
+      )) +
     //("becomes a copy of" -> ((S\NP)/NP, λ {target: TargetObject => λ {source: TargetObject => BecomeACopy(source, target) }})) +
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
@@ -348,7 +352,6 @@ object Lexicon {
     ("their" -> (Num/N, λ {a: Attribute => AttributeValue(They, a)})) +
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisObject): SemanticState)) +
-    ("token" -> (NP, Form(SpecificC()): SemanticState)) +
     ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
     ("until" -> ((S|S)|NP, λ {d: Duration => λ {a: Action => Until(d, a)}})) +
