@@ -158,7 +158,16 @@ class ParserSpec extends FlatSpec with Matchers {
       ReturnToHand(ChooseO(ObjectsInPlay(Robot)))
     parse("Return all structures to their owner's hands") shouldEqual
       ReturnToHand(ObjectsInPlay(Structure))
-
+    parse("Give a robot with 1 attack and 1 speed and 1 health 1 attack.") shouldEqual
+      ModifyAttribute(
+        ChooseO(ObjectsMatchingConditions(Robot, Seq(
+          AttributeComparison(Attack, EqualTo(Scalar(1))),
+          AttributeComparison(Speed, EqualTo(Scalar(1))),
+          AttributeComparison(Health, EqualTo(Scalar(1))))
+        )),
+        Attack,
+        Plus(Scalar(1))
+      )
   }
 
   it should "treat 'with' as 'that has'" in {
