@@ -56,8 +56,11 @@ object Lexicon {
     (Seq("all players", "each player", "every player", "both players") -> (NP, Form(AllPlayers): SemanticState)) +
     (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
-      (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
+      // Specific.
+      ((S/S)\S, λ {a: TriggeredAbility => λ {b: TriggeredAbility => MultipleAbilities(Seq(a, b))}}),
+      // General.
       (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
+      (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
       ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})
     )) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
