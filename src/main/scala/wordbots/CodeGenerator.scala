@@ -148,17 +148,17 @@ object CodeGenerator {
   }
 
   private def extractConditionsForBot(conds: ObjectsMatchingConditions) : String = {
+
     // partial function. will error if attribComp not found, which shouldn't happen as it should be checked in AstValidator.
-    def extractAttributeValue (att :Attribute) : (Seq[Condition] => Number) =
-      c => c match{
-        case AttributeComparison(a2, EqualTo(v))::tail  if a2 == att => v
-        case _::tail => extractAttributeValue(att) (tail)
+    def extractAttributeValue (att:Attribute) : Seq[Condition] => Number =
+      cs => cs match{
+        case AttributeComparison(a2, EqualTo(v))::tail if att == a2 => v
+        case _::tail => extractAttributeValue (att) (tail)
       }
 
     val attack = extractAttributeValue (Attack) (conds.conditions)
     val speed = extractAttributeValue (Speed) (conds.conditions)
     val health = extractAttributeValue (Health) (conds.conditions)
-    //due to Scala not allowing escape characters in substitution strings, need to triple-quote this
-    s"""{abilities:[],baseCost:0,cost:0,id: "builtin/token",name:"Token",source:"generated",stats:{attack:${g(attack)},health:${g(health)},speed:${g(speed)},type:0}"""
+    s"{entries:({abilities:[],baseCost:0,cost:0,id: 'builtin/token',name:'Token',source:'generated',stats:{attack:${g(attack)},health:${g(health)},speed:${g(speed)}},type:0})}"
   }
 }

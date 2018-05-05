@@ -200,7 +200,15 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   it should "correctly generate cards" in {
-    parse("A random robot becomes a robot with 1 attack and 1 health") shouldEqual ChooseO(ObjectsMatchingConditions(Robot,Seq()))
+    parse("A robot becomes a robot with 1 attack and 1 speed and 2 health") shouldEqual
+      Become(
+        ChooseO(ObjectsMatchingConditions(Robot,Seq())),
+        GenerateC(ObjectsMatchingConditions(Robot,Seq(
+          AttributeComparison(Attack,EqualTo(Scalar(1))),
+          AttributeComparison(Speed,EqualTo(Scalar(1))),
+          AttributeComparison(Health,EqualTo(Scalar(2)))
+        )))
+      )
   }
 
   it should "parse keyword abilities" in {

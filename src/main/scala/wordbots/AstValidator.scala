@@ -166,14 +166,13 @@ object ValidGeneratedCard extends AstRule{
     })
 
   // put targetConds in a seq so we can give an error specific to the condition that failed.
-  //list of (condition, ErrorMessageString)
+  //list of (ConditionToVerify, ErrorIfConditionIsFalse)
   val targetConds : Seq[(ObjectsMatchingConditions => Boolean, String)] = Seq(
     (_.conditions.count(attributeEquivalencyComp(Attack)) == 1,"Attack must be specified exactly once"),
     (_.conditions.count(attributeEquivalencyComp(Speed)) == 1, "Speed must be specified exactly once"),
     (_.conditions.count(attributeEquivalencyComp(Health)) == 1, "Health must be specified exactly once"),
-    (_.objectType != Event,"Cannot transform into an event")
-    //((_.conditions.length <= 3), Failure(ValidationError("Too many conditions for card creation."))),
-    //((_.conditions.length >= 3), Failure(ValidationError("Not enough conditions in card creation.")))
+    (_.objectType != Event,"Cannot transform into an event"),
+    ((_.conditions.length <= 3), "Too many conditions for inner card creation.")
   )
 
   override def validate (node: AstNode) : Try[Unit] =
@@ -189,7 +188,7 @@ object ValidGeneratedCard extends AstRule{
     {case(x,y) =>if(x){None}else{Some(y)}}
 
   val satisfiesAllTargetConditions:(ObjectsMatchingConditions, Seq[(ObjectsMatchingConditions => Boolean, String)]) => Try[Unit] = (conds,targs)=>
-    targs.map(x=>(x._1(conds),x._2)).map(getIfFail(_)) match{
+    targs.map(x=>(x._1(conds),x._2)).flatMap(getIfFail(_)) match{
       case Seq() => Success()
       case s => Failure(ValidationError(s.mkString(", ")))
     }
