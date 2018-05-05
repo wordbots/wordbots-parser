@@ -83,7 +83,6 @@ object Lexicon {
       ((S\NP)/NP, λ {target: ObjectsMatchingConditions => λ {source: TargetObject => Become(source,GenerateC(target))}}) // only used in such things as "becomes a robot with 1 attack and...".
       // 2nd def. seems ugly, but don't know how to remove.
       )) +
-    //("becomes a copy of" -> ((S\NP)/NP, λ {target: TargetObject => λ {source: TargetObject => BecomeACopy(source, target) }})) +
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
     (Seq("can move", "can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
