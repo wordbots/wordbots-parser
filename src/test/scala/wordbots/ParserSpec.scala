@@ -334,6 +334,9 @@ class ParserSpec extends FlatSpec with Matchers {
     // New terms for alpha v0.4:
     parse("Activate: Restore an adjacent object's health.") shouldEqual
       ActivatedAbility(RestoreAttribute(ChooseO(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(ThisObject)))), Health))
+
+    parse("Activate: Deal 1 damage to a robot 3 tiles away") shouldEqual
+      ActivatedAbility(DealDamage(ChooseO(ObjectsMatchingConditions(Robot, Seq(ExactDistanceFrom(Scalar(3), ThisObject)))), Scalar(1)))
   }
 
   it should "generate JS code for actions" in {
