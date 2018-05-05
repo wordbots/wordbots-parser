@@ -56,14 +56,19 @@ object Lexicon {
     (Seq("all players", "each player", "every player", "both players") -> (NP, Form(AllPlayers): SemanticState)) +
     (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
-      ((N/N)\N, λ {a: Any => λ {b: Any => Seq(a, b)}}),
-      ((NP/NP)\NP, λ {a: Any => λ {b: Any => Seq(a, b)}}),
-      ((V/V)\V, λ {a: Any => λ {b: Any => Seq(a, b)}}),
-      (conj, λ {b: Any => λ {a: Seq[Any] => a :+ b}}),
-      ((S/S)\NP, λ {a: Any => λ {b: Any => (a, b)}})
+      (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
+      (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
+      ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})
     )) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +
+    (Seq("attack", "power") -> Seq(
+      (N, Form(Attack): SemanticState),
+      (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)}),
+      (NP\Adj, λ {op: Operation => AttributeOperation(op, Attack)}),
+      (NP\Adj, λ {comp : Comparison => AttributeComparison(Attack, comp)}), // needed for "> x health"
+      (NP\Num, λ {n: Number => AttributeComparison(Attack, EqualTo(n))}) // "...with X health"(implied "equal to" in there)
+    )) +
     ("attacks" -> Seq(
       (S\NP, λ {c: ChooseO => AfterAttack(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
