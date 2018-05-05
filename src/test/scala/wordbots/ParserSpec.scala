@@ -80,6 +80,18 @@ class ParserSpec extends FlatSpec with Matchers {
         ModifyAttribute(SavedTargetObject, Attack, Minus(Scalar(1))),
         ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
       ))
+    parse("All robots gain 1 attack and 1 health") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(ObjectsInPlay(Robot)),
+        ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
+      ))
+    parse("Set the attack and speed of all robots in play to 0") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(ObjectsInPlay(Robot)),
+        SetAttribute(SavedTargetObject, Attack, Scalar(0)),
+        SetAttribute(SavedTargetObject, Speed, Scalar(0))
+      ))
   }
 
   it should "parse more complex actions" in {
@@ -127,12 +139,7 @@ class ParserSpec extends FlatSpec with Matchers {
       ))
     parse("Swap the health and attack of all robots in play") shouldEqual
       SwapAttributes(ObjectsInPlay(Robot), Health, Attack)
-    parse("Set the attack and speed of all robots in play to 0") shouldEqual
-      MultipleActions(Seq(
-        SaveTarget(ObjectsInPlay(Robot)),
-        SetAttribute(SavedTargetObject, Attack, Scalar(0)),
-        SetAttribute(SavedTargetObject, Speed, Scalar(0))
-      ))
+
     parse("Restore 1 health to all adjacent friendly robots") shouldEqual
       RestoreAttribute(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Self))), Health, Some(Scalar(1)))
 
@@ -140,12 +147,7 @@ class ParserSpec extends FlatSpec with Matchers {
       If(TargetHasProperty(That, IsDestroyed), DealDamage(ObjectsMatchingConditions(Robot, Seq()), Scalar(1)))
     parse("Each of your robots gets +2 attack until end of turn") shouldEqual
       Until(TurnsPassed(1), ModifyAttribute(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), Attack, Plus(Scalar(2))))
-    parse("All robots gain 1 attack and 1 health") shouldEqual
-      MultipleActions(Seq(
-        SaveTarget(ObjectsInPlay(Robot)),
-        ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
-        ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
-      ))
+
 
     // New terms for alpha v0.8:
     parse("Move a robot up to 2 spaces") shouldEqual
@@ -157,14 +159,11 @@ class ParserSpec extends FlatSpec with Matchers {
       RemoveAllAbilities(ObjectsInPlay(Robot))
     parse("Set the attack of all robots equal to their health") shouldEqual
       SetAttribute(ObjectsInPlay(Robot), Attack, AttributeValue(They, Health))
-
     parse("Give a friendly robot 2 attack") shouldEqual parse("Give a friendly robot +2 attack")
-
     parse("Return a robot to its owner's hand") shouldEqual
       ReturnToHand(ChooseO(ObjectsInPlay(Robot)))
     parse("Return all structures to their owner's hands") shouldEqual
       ReturnToHand(ObjectsInPlay(Structure))
-
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -177,9 +176,19 @@ class ParserSpec extends FlatSpec with Matchers {
   it should "select objects satisfying multiple conditions" in {
     parse("Deal 1 damage to a robot with 1 attack and 1 health") shouldEqual
       DealDamage(ChooseO(ObjectsMatchingConditions(Robot,Seq(AttributeComparison(Attack,EqualTo(Scalar(1))),AttributeComparison(Health,EqualTo(Scalar(1)))))),Scalar(1))
-    //test mix of ">" and "="
+    // test mix of ">" and "="
     parse("Deal 1 damage to a robot with greater than 1 attack and 1 health") shouldEqual
       DealDamage(ChooseO(ObjectsMatchingConditions(Robot,Seq(AttributeComparison(Attack,GreaterThan(Scalar(1))),AttributeComparison(Health,EqualTo(Scalar(1)))))),Scalar(1))
+    parse("Give a robot with 1 attack and 1 speed and 1 health 1 attack.") shouldEqual
+      ModifyAttribute(
+        ChooseO(ObjectsMatchingConditions(Robot, Seq(
+          AttributeComparison(Attack, EqualTo(Scalar(1))),
+          AttributeComparison(Speed, EqualTo(Scalar(1))),
+          AttributeComparison(Health, EqualTo(Scalar(1))))
+        )),
+        Attack,
+        Plus(Scalar(1))
+      )
   }
 
   it should "deal with ambiguous uses of 'all'" in {

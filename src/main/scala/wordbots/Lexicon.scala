@@ -56,25 +56,23 @@ object Lexicon {
     (Seq("all players", "each player", "every player", "both players") -> (NP, Form(AllPlayers): SemanticState)) +
     (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
-      ((N/N)\N, λ {a: Any => λ {b: Any => Seq(a, b)}}),
-      ((NP/NP)\NP, λ {a: Any => λ {b: Any => Seq(a, b)}}),
-      ((V/V)\V, λ {a: Any => λ {b: Any => Seq(a, b)}}),
-      (conj, λ {b: Any => λ {a: Seq[Any] => a :+ b}}),
-      ((S/S)\NP, λ {a: Any => λ {b: Any => (a, b)}})
+      (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
+      (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
+      ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})
     )) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +
-    ("attacks" -> Seq(
-      (S\NP, λ {c: ChooseO => AfterAttack(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
-      (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
-      ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterAttack(t, o)}})
-    )) +
     (Seq("attack", "power") -> Seq(
       (N, Form(Attack): SemanticState),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)}),
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Attack)}),
-      (NP\Adj, λ {comp : Comparison => AttributeComparison(Attack, comp)}),//needed for "> x health"
-      (NP\Num, λ {n: Number => AttributeComparison(Attack, EqualTo(n))})//"...with X health"(implied "equal to" in there)
+      (NP\Adj, λ {comp : Comparison => AttributeComparison(Attack, comp)}), // needed for "> x health"
+      (NP\Num, λ {n: Number => AttributeComparison(Attack, EqualTo(n))}) // "...with X health"(implied "equal to" in there)
+    )) +
+    ("attacks" -> Seq(
+      (S\NP, λ {c: ChooseO => AfterAttack(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
+      ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterAttack(t, o)}})
     )) +
     ("attacked last turn" -> (S, Form(HasProperty(AttackedLastTurn)): SemanticState)) +
     ("attacked this turn" -> (S, Form(HasProperty(AttackedThisTurn)): SemanticState)) +
@@ -106,11 +104,11 @@ object Lexicon {
       ((S/NP)\NP,
         λ {p: TargetPlayer => λ {c: ObjectsMatchingConditions => CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(p)))}})
     ) +
-    ("a copy of" -> (NP/NP, λ {t:TargetObject => CopyOfC(t)})) + //can this be decomposed further?
+    ("a copy of" -> (NP/NP, λ {t:TargetObject => CopyOfC(t)})) + // can this be decomposed further?
     (Seq("cost", "energy cost") -> Seq(
       (N, Form(Cost): SemanticState),
-      (NP/Adj, λ {comp : Comparison => AttributeComparison(Cost, comp)}),//needed for "cost > x "
-      (NP/Num, λ {n: Number => AttributeComparison(Cost, EqualTo(n))}),//"...with cost X"(implied "equal to" in there)
+      (NP/Adj, λ {comp : Comparison => AttributeComparison(Cost, comp)}), // needed for "cost > x "
+      (NP/Num, λ {n: Number => AttributeComparison(Cost, EqualTo(n))}), // "...with cost X"(implied "equal to" in there)
       ((S\NP)/Num, λ {i: Scalar => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, Constant(i))}}),
       ((S\NP)/Adv, λ {o: Operation => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, o)}}),
       ((S\NP)/Num, λ {i: Scalar => λ {cp: CardPlay => AttributeAdjustment(AllC(CardsInHand(cp.player, cp.cardType)), Cost, Constant(i))}}),
@@ -190,7 +188,7 @@ object Lexicon {
       ((S/NP)\NP, λ {t: TargetObject => λ {ops: Seq[AttributeOperation] =>  // "... +X attack and +Y speed"
         MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}),
       ((S/S)\NP, λ {t: TargetObject => λ {a: Ability => GiveAbility(t, a)}}),  // "... [ability]"
-      ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  //"... +X attack and [ability]"
+      ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  // "... +X attack and [ability]"
         MultipleActions(Seq(SaveTarget(t), ModifyAttribute(SavedTargetObject, a._1.attr, a._1.op), GiveAbility(SavedTargetObject, a._2)))}})
     )) +
     ("give" -> Seq( // "Give [a robot] ..."
@@ -201,10 +199,10 @@ object Lexicon {
       ((S/NP)/NP, λ {t: TargetObject => λ {ops: Seq[AttributeOperation] =>  // "... +X attack and +Y speed"
         MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}),
       ((S/S)/NP, λ {t: TargetObject => λ {a: Ability => GiveAbility(t, a)}}),  // "... [ability]"
-      ((S/S)/NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  //"... +X attack and [ability]"
+      ((S/S)/NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  // "... +X attack and [ability]"
         MultipleActions(Seq(SaveTarget(t), ModifyAttribute(SavedTargetObject, a._1.attr, a._1.op), GiveAbility(SavedTargetObject, a._2)))}})
     )) +
-    //("greater than" : see "more than")+
+ // ("greater than" : see "more than")+
     ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
     ("halve" -> Seq(  // (Ordinarily takes Rounding, but defaults to RoundedDown.)
       ((S/NP)/Adv, λ {r: Rounding => λ {ta: TargetAttribute => ModifyAttribute(ta.target, ta.attr, Divide(Scalar(2), r))}}),
@@ -216,18 +214,18 @@ object Lexicon {
     )) +
     (Seq("has", "have") -> Seq(
       (S/NP, λ {ac: AttributeComparison => ac}),
-      (S/NP, λ {cs: Seq[AttributeComparison] => cs}),//multiple conditions
+      (S/NP, λ {cs: Seq[AttributeComparison] => cs}), // multiple conditions
       ((S\NP)/S, λ {a: Ability => λ {t: TargetObject => HasAbility(t, a)}}),
       (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}}),
-      ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  //"... +X attack and [ability]"
+      ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  // "... +X attack and [ability]"
         MultipleAbilities(Seq(AttributeAdjustment(t, a._1.attr, a._1.op), HasAbility(t, a._2)))}})
     )) +
     (Seq("health", "life") -> Seq(
       (N, Form(Health): SemanticState),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Health)}),
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Health)}),
-      (NP\Num, λ {n: Number => AttributeComparison(Health, EqualTo(n))}),//"...with X health"(implied "equal to" in there)
-      (NP\Adj, λ {comp : Comparison => AttributeComparison(Health, comp)}),//"...greater than X health"
+      (NP\Num, λ {n: Number => AttributeComparison(Health, EqualTo(n))}), // "...with X health"(implied "equal to" in there)
+      (NP\Adj, λ {comp : Comparison => AttributeComparison(Health, comp)}), // "...greater than X health"
       (NP|Num, λ {amount: Number => Life(amount)}),
       (NP/Adj, λ {amount: Number => Life(amount)})
     )) +
@@ -319,8 +317,8 @@ object Lexicon {
       (N, Form(Speed): SemanticState),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)}),
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Speed)}),
-      (NP\Adj, λ {comp : Comparison => AttributeComparison(Speed, comp)}),//need for "> x speed"
-      (NP\Num, λ {n: Number => AttributeComparison(Speed, EqualTo(n))})//need for "...with X health"(implied "equal to" in there)
+      (NP\Adj, λ {comp : Comparison => AttributeComparison(Speed, comp)}), // need for "> x speed"
+      (NP\Num, λ {n: Number => AttributeComparison(Speed, EqualTo(n))}) // need for "...with X health"(implied "equal to" in there)
     )) +
     (("structure".s :+ "structures '") -> Seq(
       (N, Form(Structure): SemanticState),

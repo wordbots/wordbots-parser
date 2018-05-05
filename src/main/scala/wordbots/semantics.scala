@@ -1,6 +1,7 @@
 package wordbots
 
-sealed trait AstNode extends Product
+sealed trait ParseNode extends Product
+sealed trait AstNode extends ParseNode
 
 sealed trait Label extends AstNode
 trait MultiLabel extends Label { def labels: Seq[Label] }
@@ -14,7 +15,6 @@ sealed trait Action extends AstNode
   case class Until(duration: Duration, action: Action) extends Action
 
   case class Become(source: TargetObject, target: TargetCard) extends Action
-  case class BecomeACopy(source: TargetObject, target: TargetObject) extends Action
   case class CanAttackAgain(target: TargetObject) extends Action
   case class CanMoveAgain(target: TargetObject) extends Action
   case class CanMoveAndAttackAgain(target: TargetObject) extends Action
@@ -170,22 +170,24 @@ sealed trait Rounding extends Label
 
 // The below container classes are used to store state mid-parse but not expressed in the final parsed AST.
 
+sealed trait IntermediateNode extends ParseNode
+
 // Nullary containers:
-case object ItsOwnersHand
+case object ItsOwnersHand extends IntermediateNode
 
 // Unary containers:
-case class Cards(num: Number)
-case class Damage(amount: Number)
-case class Energy(amount: Number)
-case class Life(amount: Number)
-case class Hand(player: TargetPlayer)
-case class Spaces(num: Number)
-case class Turn(player: TargetPlayer)
-case class WithinDistance(spaces: Number)
+case class Cards(num: Number) extends IntermediateNode
+case class Damage(amount: Number) extends IntermediateNode
+case class Energy(amount: Number) extends IntermediateNode
+case class Life(amount: Number) extends IntermediateNode
+case class Hand(player: TargetPlayer) extends IntermediateNode
+case class Spaces(num: Number) extends IntermediateNode
+case class Turn(player: TargetPlayer) extends IntermediateNode
+case class WithinDistance(spaces: Number) extends IntermediateNode
 
 // Binary containers:
-case class TargetAttribute(target: TargetObject, attr: Attribute)
-case class AttributeAmount(amount: Number, attr: Attribute)
-case class AttributeOperation(op: Operation, attr: Attribute)
-case class CardPlay(player: TargetPlayer, cardType: CardType)
-case class RandomCards(num: Number, cardType: CardType)
+case class TargetAttribute(target: TargetObject, attr: Attribute) extends IntermediateNode
+case class AttributeAmount(amount: Number, attr: Attribute) extends IntermediateNode
+case class AttributeOperation(op: Operation, attr: Attribute) extends IntermediateNode
+case class CardPlay(player: TargetPlayer, cardType: CardType) extends IntermediateNode
+case class RandomCards(num: Number, cardType: CardType) extends IntermediateNode
