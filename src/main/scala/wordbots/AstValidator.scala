@@ -9,7 +9,6 @@ case object ValidateObject extends ValidationMode
 case object ValidateEvent extends ValidationMode
 case object ValidateUnknownCard extends ValidationMode
 
-
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val baseRules: Seq[AstRule] = Seq(
     NoUnimplementedRules,
