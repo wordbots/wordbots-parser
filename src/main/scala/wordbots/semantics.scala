@@ -3,7 +3,9 @@ package wordbots
 sealed trait ParseNode extends Product
 sealed trait AstNode extends ParseNode
 
-sealed trait Label extends AstNode
+sealed trait Label extends AstNode {
+  lazy val name: String = getClass.getSimpleName.toLowerCase.split('$')(0)
+}
 trait MultiLabel extends Label { def labels: Seq[Label] }
 
 sealed trait Action extends AstNode
@@ -77,11 +79,14 @@ sealed trait Target extends AstNode
     case object They extends TargetObject  // (Salient object, but preferring the current object in an iteration over a collection)
     case object SavedTargetObject extends TargetObject
   sealed trait TargetCard extends TargetObjectOrCard
-    case class CopyOfC(objToCopy:TargetObject) extends TargetCard
+    case class CopyOfC(objToCopy: TargetObject) extends TargetCard
     case class ChooseC(collection: CardCollection) extends TargetCard
     case class AllC(collection: CardCollection) extends TargetCard
     case class RandomC(num: Number, collection: CardCollection) extends TargetCard
-  sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
+    case class GeneratedCard(cardType: ObjectType, attributes: Seq[AttributeAmount] = Seq.empty) extends TargetCard {
+      def getAttributeAmount(attribute: Attribute): Seq[Number] = attributes.filter(_.attr == attribute).map(_.amount)
+    }
+sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
     case object Self extends TargetPlayer
     case object Opponent extends TargetPlayer
     case object AllPlayers extends TargetPlayer
@@ -167,6 +172,8 @@ sealed trait Rounding extends Label
   case object RoundedUp extends Rounding
   case object RoundedDown extends Rounding
 
+case class AttributeAmount(amount: Number, attr: Attribute) extends AstNode
+
 // The below container classes are used to store state mid-parse but not expressed in the final parsed AST.
 
 sealed trait IntermediateNode extends ParseNode
@@ -185,8 +192,7 @@ case class Turn(player: TargetPlayer) extends IntermediateNode
 case class WithinDistance(spaces: Number) extends IntermediateNode
 
 // Binary containers:
-case class TargetAttribute(target: TargetObject, attr: Attribute) extends IntermediateNode
-case class AttributeAmount(amount: Number, attr: Attribute) extends IntermediateNode
 case class AttributeOperation(op: Operation, attr: Attribute) extends IntermediateNode
 case class CardPlay(player: TargetPlayer, cardType: CardType) extends IntermediateNode
 case class RandomCards(num: Number, cardType: CardType) extends IntermediateNode
+case class TargetAttribute(target: TargetObject, attr: Attribute) extends IntermediateNode
