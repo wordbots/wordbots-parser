@@ -9,13 +9,15 @@ case object ValidateObject extends ValidationMode
 case object ValidateEvent extends ValidationMode
 case object ValidateUnknownCard extends ValidationMode
 
+
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val baseRules: Seq[AstRule] = Seq(
     NoUnimplementedRules,
     NoChooseInTriggeredAction,
     NoModifyingCostOfObjects,
     OnlyRestoreHealth,
-    OnlyThisObjectPlayed
+    OnlyThisObjectPlayed,
+    ValidGeneratedCard
   )
 
   val rules: Seq[AstRule] = mode match {
@@ -29,6 +31,14 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   }
 }
 
+/**
+  * So why do you have to stick validateChildren() in your validate()?
+  * why not just have a function that returns the success status for this node/, and apply it to all nodes in an outer loop?
+  * well, it's because
+  * 1) it's the same amount of code in the derived classes
+  * 2) there's no explicit .asInstanceOf or .isInstanceOf involved this way - it's all done through match
+  * 3) you end up writing the same code anyways, this way is more functional-y
+  */
 sealed trait AstRule {
   def validate(node: AstNode): Try[Unit]
 
@@ -140,6 +150,28 @@ object NoThis extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
       case ThisObject => Failure(ValidationError(s"Events can't refer to the current object"))
+      case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+/** Validates that generated cards have exactly one of each desired attribute. */
+object ValidGeneratedCard extends AstRule {
+  override def validate (node: AstNode) : Try[Unit] = {
+    node match {
+      case c@GeneratedCard(Robot, attributes) =>
+        if (c.getAttributeAmount(Health).size == 1 && c.getAttributeAmount(Attack).size == 1 && c.getAttributeAmount(Speed).size == 1) {
+          Success()
+        } else {
+          Failure(ValidationError(s"Unexpected generated card attributes for a robot: $attributes"))
+        }
+      case c@GeneratedCard(Structure, attributes) =>
+        if (c.getAttributeAmount(Health).size == 1 && c.getAttributeAmount(Attack).isEmpty && c.getAttributeAmount(Speed).isEmpty) {
+          Success()
+        } else {
+          Failure(ValidationError(s"Unexpected generated card attributes for a structure: $attributes"))
+        }
+      case GeneratedCard(cardType, _) => Failure(ValidationError(s"Invalid generated card type: $cardType"))
       case n: AstNode => validateChildren(this, n)
     }
   }

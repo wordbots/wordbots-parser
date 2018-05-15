@@ -12,14 +12,13 @@ class ParserSpec extends FlatSpec with Matchers {
     println(s"Parsing $input...")
     Parser.parse(input).bestParse match {
       case Some(parse) => parse.semantic match {
-        case Form(v: AstNode) => {
+        case Form(v: AstNode) =>
           println(s"    $v")
           CodeGenerator.generateJS(v.asInstanceOf[AstNode])  // Make sure that valid JS can be generated!
           AstValidator().validate(v) match {  // Make sure the AstValidator successfully validates the parsed ast!
             case Success(_) => v
             case f: Failure[_] => f
           }
-        }
         case _ => Nonsense
       }
       case _ => Nonsense
@@ -198,6 +197,20 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("Deal damage to a robot equal to the total power of robots you control") shouldEqual
       parse("Deal damage to a robot equal to the total power of all robots you control")
+  }
+
+  it should "correctly generate cards" in {
+    val generatedRobotCard = GeneratedCard(Robot, Seq(
+      AttributeAmount(Scalar(1), Attack),
+      AttributeAmount(Scalar(2), Health),
+      AttributeAmount(Scalar(1), Speed)
+    ))
+
+    parse("A robot becomes a robot with 1 attack, 2 health and 1 speed") shouldEqual
+      Become(ChooseO(ObjectsMatchingConditions(Robot, Seq())), generatedRobotCard)
+
+    parse("A robot becomes a 1/2/1 robot") shouldEqual
+      Become(ChooseO(ObjectsMatchingConditions(Robot, Seq())), generatedRobotCard)
   }
 
   it should "parse keyword abilities" in {
