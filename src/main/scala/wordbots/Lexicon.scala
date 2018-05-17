@@ -61,6 +61,7 @@ object Lexicon {
       // General.
       (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
       (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
+      (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => Seq(a, b, c)}}}),  // e.g. "1 attack, 2 health, and 3 speed"
       ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})
     )) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
@@ -83,7 +84,10 @@ object Lexicon {
       ((NP\N)\NP, λ {s: Spaces => λ {t: ObjectType => ObjectsMatchingConditions(t, Seq(ExactDistanceFrom(s.num, ThisObject)))}}), // "a robot X spaces away"
       ((NP\NP)\NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ExactDistanceFrom(s.num, ThisObject))}})
     )) +
-    ("becomes" -> ((S\NP)/NP, λ {target: TargetCard => λ {source: TargetObject => Become(source, target)}})) +
+    (("become".s :+ "becomes a") -> Seq(
+      ((S\NP)/NP, λ {target: TargetCard => λ {source: TargetObject => Become(source, target)}}), // used with aCopyOf
+      ((S\NP)/NP, λ {target: GeneratedCard => λ {source: TargetObject => Become(source, target)}}) // only used in such things as "becomes a robot with 1 attack and...".
+    )) +
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
     (Seq("can move", "can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
@@ -303,7 +307,8 @@ object Lexicon {
     ("return" -> ((S/PP)/NP, λ {t: TargetObject => λ {_: ItsOwnersHand.type => ReturnToHand(t)}})) +
     (("robot".s :+ "robots '") -> Seq(
       (N, Form(Robot): SemanticState),
-      (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)})  // e.g. "all robots in your hand"
+      (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)}),  // e.g. "all robots in your hand"
+      (NP\Adj, λ {attrs: Seq[AttributeAmount] => GeneratedCard(Robot, attrs)})  // e.g. "a 3/1/2 robot"
     )) +
     ("rounded down" -> (Adv, Form(RoundedDown): SemanticState)) +
     ("rounded up" -> (Adv, Form(RoundedUp): SemanticState)) +
@@ -359,7 +364,8 @@ object Lexicon {
     ) +
     ("with" -> Seq(  // "with" = "that" + "has"
       ((NP\N)/NP, λ {s: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(s))}}),
-      ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}})
+      ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}}),
+      ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => GeneratedCard(o, attrs)}})
     )) +
     ("within" -> ((NP\NP)/NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ WithinDistanceOf(s.num, ThisObject))}})) +
     (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
@@ -387,7 +393,10 @@ object Lexicon {
     (StrictIntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (NumberWordMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +
-    (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(Scalar(i)))}))
+    (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(Scalar(i)))})) +
+    (StatsTripleMatcher -> (Adj, {s: StatsTriple =>
+      Form(Seq(AttributeAmount(Scalar(s.attack), Attack), AttributeAmount(Scalar(s.health), Health), AttributeAmount(Scalar(s.speed), Speed)))
+    }))
 
   lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
     ParserDict[CcgCat](

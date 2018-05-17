@@ -86,6 +86,11 @@ object CodeGenerator {
       case AllC(collection) => s"targets['all'](${g(collection)})"
       case RandomC(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
       case CopyOfC(objToCopy) => s"targets['copyOf'](${g(objToCopy)})"
+      case card@GeneratedCard(cardType, _) =>
+        val attributesObjStr = Seq(Attack, Health, Speed).map { attr =>
+          s"'${attr.name}': ${card.getAttributeAmount(attr).headOption.map(g).getOrElse("null")}"
+        }.mkString("{", ", ", "}")
+        s"targets['generateCard'](${g(cardType)}, $attributesObjStr)"
 
       // Target players
       case Self => "targets['self']()"
@@ -137,13 +142,9 @@ object CodeGenerator {
 
       // Labels
       case m: MultiLabel => m.labels.map(g).mkString("[", ", ", "]")
-      case l: Label => s"'${getLabelName(l)}'"
+      case l: Label => s"'${l.name}'"
     }
   }
   // scalastyle:on method.length
   // scalastyle:on cyclomatic.complexity
-
-  private def getLabelName(label: Label): String = {
-    label.getClass.getSimpleName.toLowerCase.split('$')(0)
-  }
 }

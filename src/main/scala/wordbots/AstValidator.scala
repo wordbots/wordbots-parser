@@ -15,7 +15,8 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
     NoChooseInTriggeredAction,
     NoModifyingCostOfObjects,
     OnlyRestoreHealth,
-    OnlyThisObjectPlayed
+    OnlyThisObjectPlayed,
+    ValidGeneratedCard
   )
 
   val rules: Seq[AstRule] = mode match {
@@ -29,6 +30,14 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   }
 }
 
+/**
+  * So why do you have to stick validateChildren() in your validate()?
+  * why not just have a function that returns the success status for this node/, and apply it to all nodes in an outer loop?
+  * well, it's because
+  * 1) it's the same amount of code in the derived classes
+  * 2) there's no explicit .asInstanceOf or .isInstanceOf involved this way - it's all done through match
+  * 3) you end up writing the same code anyways, this way is more functional-y
+  */
 sealed trait AstRule {
   def validate(node: AstNode): Try[Unit]
 
@@ -140,6 +149,28 @@ object NoThis extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
       case ThisObject => Failure(ValidationError(s"Events can't refer to the current object"))
+      case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+/** Validates that generated cards have exactly one of each desired attribute. */
+object ValidGeneratedCard extends AstRule {
+  override def validate (node: AstNode) : Try[Unit] = {
+    node match {
+      case c@GeneratedCard(cardType, _) if cardType == Robot || cardType == Structure =>
+        val attributes = (c.getAttributeAmount(Attack).size, c.getAttributeAmount(Health).size, c.getAttributeAmount(Speed).size)
+        val expectedAttrs = cardType match {
+          case Robot => (1, 1, 1)
+          case Structure => (1, 0, 1)
+        }
+
+        if (attributes == expectedAttrs) {
+          validateChildren(this, c)
+        } else {
+          Failure(ValidationError(s"Wrong # of (Attack, Health, Speed) attributes for a generated $cardType card (expected $expectedAttrs, got $attributes)"))
+        }
+      case GeneratedCard(cardType, _) => Failure(ValidationError(s"Invalid generated card type: $cardType"))
       case n: AstNode => validateChildren(this, n)
     }
   }
