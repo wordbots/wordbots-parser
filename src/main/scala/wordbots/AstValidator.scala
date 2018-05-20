@@ -162,7 +162,7 @@ object ValidGeneratedCard extends AstRule {
         val attributes = (c.getAttributeAmount(Attack).size, c.getAttributeAmount(Health).size, c.getAttributeAmount(Speed).size)
         val expectedAttrs = cardType match {
           case Robot => (1, 1, 1)
-          case Structure => (1, 0, 1)
+          case Structure => (0, 1, 0)
         }
 
         if (attributes == expectedAttrs) {
