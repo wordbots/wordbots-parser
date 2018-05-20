@@ -8,7 +8,7 @@ import scala.language.postfixOps
 import scala.util.Try
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
-  val VERSION = "v0.9.3-alpha"  // wordbots-parser versions should correspond to the current wordbots-core release.
+  val VERSION = s"v${BuildInfo.version.split("-SNAPSHOT")(0)}"
 
   override def main(args: Array[String]): Unit = {
     val input = args.mkString(" ")

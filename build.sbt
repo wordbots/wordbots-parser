@@ -1,5 +1,5 @@
 name := "wordbots-parser"
-version := "0.0-SNAPSHOT"
+version := "0.10.0-alpha-SNAPSHOT" // wordbots-parser versions should correspond to the current wordbots-core release.
 
 val http4sVersion = "0.15.3"
 val circeVersion = "0.6.1"
@@ -17,5 +17,9 @@ libraryDependencies ++= Seq(
 )
 
 enablePlugins(JavaAppPackaging)
+enablePlugins(BuildInfoPlugin)
 
 mainClass in Compile := Some("wordbots.WordbotsServer")
+
+buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
+buildInfoPackage := "wordbots"

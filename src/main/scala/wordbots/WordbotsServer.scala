@@ -158,6 +158,8 @@ object WordbotsServer extends ServerApp {
     println(s"Starting server on '$host:$port' ...")
     // scalastyle:on regex
 
+    //println(s"v${getClass.getPackage.getImplementationVersion.split("-SNAPSHOT")(0)}")
+
     BlazeBuilder
       .bindHttp(port, host)
       .mountService(service)
