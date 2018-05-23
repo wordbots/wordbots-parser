@@ -38,8 +38,8 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     new SemanticParser[CcgCat](lexicon).parse(input, tokenizer)
   }
 
-  def tokenizer(str: String): IndexedSeq[String] = {
-    str.trim
+  override val tokenizer: String => IndexedSeq[String] = {
+    _.trim
       .toLowerCase
       .replaceAllLiterally("\' ", " \' ")
       .replaceAllLiterally("\'s", " \'s ")

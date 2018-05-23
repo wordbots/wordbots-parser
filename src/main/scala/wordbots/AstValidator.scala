@@ -158,19 +158,20 @@ object NoThis extends AstRule {
 object ValidGeneratedCard extends AstRule {
   override def validate (node: AstNode) : Try[Unit] = {
     node match {
-      case c@GeneratedCard(cardType, _) if cardType == Robot || cardType == Structure =>
+      case c@GeneratedCard(cardType, _) => Try {
         val attributes = (c.getAttributeAmount(Attack).size, c.getAttributeAmount(Health).size, c.getAttributeAmount(Speed).size)
         val expectedAttrs = cardType match {
           case Robot => (1, 1, 1)
           case Structure => (0, 1, 0)
+          case _ => throw ValidationError(s"Invalid generated card type: $cardType")
         }
 
         if (attributes == expectedAttrs) {
           validateChildren(this, c)
         } else {
-          Failure(ValidationError(s"Wrong # of (Attack, Health, Speed) attributes for a generated $cardType card (expected $expectedAttrs, got $attributes)"))
+          throw ValidationError(s"Wrong # of (Attack, Health, Speed) attributes for a generated $cardType card (expected $expectedAttrs, got $attributes)")
         }
-      case GeneratedCard(cardType, _) => Failure(ValidationError(s"Invalid generated card type: $cardType"))
+      }
       case n: AstNode => validateChildren(this, n)
     }
   }
