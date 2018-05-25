@@ -156,6 +156,7 @@ object Lexicon {
     (Seq("end of next turn", "end of the next turn") -> (NP, Form(TurnsPassed(2)): SemanticState)) +
     ("immediately" /?/ Seq("end the turn", "end your turn") -> (S, Form(EndTurn): SemanticState)) +
     ("enemy" -> Seq(
+      (NP, Form(ObjectsMatchingConditions(AllObjects, Seq(ControlledBy(Opponent)))): SemanticState),
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Opponent)) ++ c.conditions)})
     )) +
