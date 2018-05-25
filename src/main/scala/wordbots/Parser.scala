@@ -41,6 +41,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   override val tokenizer: String => IndexedSeq[String] = {
     _.trim
       .toLowerCase
+      .replaceAll("""[\u202F\u00A0]""", " ")
       .replaceAllLiterally("\' ", " \' ")
       .replaceAllLiterally("\'s", " \'s ")
       .replaceAllLiterally("\"", " \" ")
