@@ -267,7 +267,7 @@ object Lexicon {
     ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
     (("object".s :+ "objects '") -> (N, Form(AllObjects): SemanticState)) +
     ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
-    ("other" -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
+    (Seq("other", "another") -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
     (Seq("or", "and") -> ((N/N)\N, λ {o1: ObjectType => λ {o2: ObjectType => MultipleObjectTypes(Seq(o1, o2))}})) +
     ("or less" -> Seq(
       (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)}),
