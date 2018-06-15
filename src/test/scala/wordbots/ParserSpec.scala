@@ -64,6 +64,8 @@ class ParserSpec extends FlatSpec with Matchers {
     //scalastyle:on magic.number
     parse("Destroy all robots with energy cost three or greater") shouldEqual
       Destroy(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(3))))))
+    parse("Deal 2 damage to a random enemy") shouldEqual
+      DealDamage(RandomO(Scalar(1), ObjectsMatchingConditions(AllObjects, Seq(ControlledBy(Opponent)))), Scalar(2))
   }
 
   it should "parse multiple actions" in {
