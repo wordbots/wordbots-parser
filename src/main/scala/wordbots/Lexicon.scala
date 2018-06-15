@@ -29,6 +29,7 @@ object Lexicon {
     (Seq("a", "an") -> Seq(
       (N/N, identity),
       (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o))}),  // e.g. "a robot"
+      (NP/NP, λ {c: GeneratedCard => c}),  // e.g. "a 1/1/1 robot"
       (NP/NP, λ {c: ObjectCollection => ChooseO(c)}),  // e.g. "a robot you control"
       (NP/NP, λ {c: CardCollection => ChooseC(c)}),  // e.g. "(discard) a card"
       (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
@@ -238,7 +239,7 @@ object Lexicon {
       (NP/Adj, λ {amount: Number => Life(amount)})
     )) +
     ("if" -> ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}})) +
-    (Seq("in", "of", "from") -> (PP/NP, identity)) +
+    (Seq("in", "of", "from", "into") -> (PP/NP, identity)) +
     ("instead" -> (S|S, λ {a: Action => Instead(a)})) +
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
@@ -359,6 +360,10 @@ object Lexicon {
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisObject): SemanticState)) +
     ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +
+    ("transform" -> Seq(
+      ((S/PP)/NP, λ {source: TargetObject => λ {target: TargetCard => Become(source, target)}}), // used with aCopyOf
+      ((S/PP)/NP, λ {source: TargetObject => λ {target: GeneratedCard => Become(source, target)}}) // only used in such things as "becomes a robot with 1 attack and...".
+    )) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
     ("until" -> ((S|S)|NP, λ {d: Duration => λ {a: Action => Until(d, a)}})) +
     (Seq("when", "whenever", "after", "immediately after", "each time", "every time") ->
@@ -396,8 +401,9 @@ object Lexicon {
     (NumberWordMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +
     (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(Scalar(i)))})) +
-    (StatsTripleMatcher -> (Adj, {s: StatsTriple =>
-      Form(Seq(AttributeAmount(Scalar(s.attack), Attack), AttributeAmount(Scalar(s.health), Health), AttributeAmount(Scalar(s.speed), Speed)))
+    (StatsTripleMatcher -> (NP/N, {s: StatsTriple =>
+      λ {o: ObjectType =>
+        GeneratedCard(o, Seq(AttributeAmount(Scalar(s.attack), Attack), AttributeAmount(Scalar(s.health), Health), AttributeAmount(Scalar(s.speed), Speed)))}
     }))
 
   lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {

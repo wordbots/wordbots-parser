@@ -142,8 +142,8 @@ object ErrorAnalyzer {
     parseResult.map(_.semantic) match {
       // Is the semantic parse successful?
       case Some(Form(v: AstNode)) =>
-        // Does the parse produce a sentence (CCG category S)?
-        parseResult.map(_.syntactic.category) == Some("S")
+        // Does the parse produce a sentence (CCG category S), and are the semantics valid?
+        parseResult.get.syntactic.category == "S" && AstValidator().validate(v).isSuccess
       case _ => false
     }
   }
