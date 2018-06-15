@@ -306,6 +306,9 @@ class ParserSpec extends FlatSpec with Matchers {
         parse("Deal 21 damage to the enemy kernel at the end of your turn").asInstanceOf[TriggeredAbility],
         parse("deal 21 damage to your kernel at the end of your turn").asInstanceOf[TriggeredAbility]
       ))
+
+    parse("At the start of your turn, if you have a robot on the board with 3 or more health, draw 2 cards.") shouldEqual
+      TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AttributeComparison(Health, GreaterThanOrEqualTo(Scalar(3))), ControlledBy(Self)))), Draw(Self, Scalar(2))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

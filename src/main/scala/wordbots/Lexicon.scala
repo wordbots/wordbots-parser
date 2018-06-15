@@ -107,7 +107,7 @@ object Lexicon {
       ((NP/PP)\N, λ {cardType: CardType => λ {hand: Hand => CardsInHand(hand.player, cardType)}})
     )) +
     ("control".s -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(p)))}})) +
-    (Seq("control a", "control an") ->
+    (Seq("control a", "control an", "has a", "has an", "have a", "have an") ->
       ((S/NP)\NP,
         λ {p: TargetPlayer => λ {c: ObjectsMatchingConditions => CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(p)))}})
     ) +
@@ -311,6 +311,7 @@ object Lexicon {
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)}),  // e.g. "all robots in your hand"
       (NP\Adj, λ {attrs: Seq[AttributeAmount] => GeneratedCard(Robot, attrs)})  // e.g. "a 3/1/2 robot"
     )) +
+    ("robot on the board" -> (N, Form(Robot): SemanticState)) +  // e.g. "If you control a robot on the board with 3 or more health, ..."
     ("rounded down" -> (Adv, Form(RoundedDown): SemanticState)) +
     ("rounded up" -> (Adv, Form(RoundedUp): SemanticState)) +
     ("set" -> Seq(
