@@ -6,6 +6,8 @@ val circeVersion = "0.6.1"
 
 resolvers += Resolver.sonatypeRepo("releases")
 
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
   "org.http4s" %% "http4s-dsl" % http4sVersion,
@@ -19,7 +21,7 @@ libraryDependencies ++= Seq(
 enablePlugins(JavaAppPackaging)
 enablePlugins(BuildInfoPlugin)
 
-mainClass in Compile := Some("wordbots.WordbotsServer")
+mainClass in Compile := Some("wordbots.Server")
 
 buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
 buildInfoPackage := "wordbots"
