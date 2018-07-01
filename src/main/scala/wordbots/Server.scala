@@ -3,34 +3,46 @@ package wordbots
 import com.workday.montague.ccg.CcgCat
 import com.workday.montague.parser.SemanticParseNode
 import com.workday.montague.semantics.Form
-import org.http4s._
+import org.http4s.{Response => H4sResponse, _}
 import org.http4s.circe._
 import org.http4s.dsl._
-import org.http4s.server.{Server, ServerApp}
+import org.http4s.server.{Server => H4sServer, ServerApp}
 import org.http4s.server.blaze.BlazeBuilder
 import io.circe._
-
+import io.circe.generic.auto._
+import io.circe.syntax._
 import scalaz.concurrent.Task
 
 case class ParseRequest(input: String, mode: String)
 
-sealed trait ParserResponse
-case class SuccessfulParse(parse: SemanticParseNode[CcgCat], ast: AstNode, parsedTokens: Seq[String]) extends ParserResponse
-case class FailedParse(error: ParserError, unrecognizedTokens: Seq[String]) extends ParserResponse
+sealed trait ParserOutput
+case class SuccessfulParse(parse: SemanticParseNode[CcgCat], ast: AstNode, parsedTokens: Seq[String]) extends ParserOutput
+case class FailedParse(error: ParserError, unrecognizedTokens: Seq[String]) extends ParserOutput
 
-object WordbotsServer extends ServerApp {
+object Server extends ServerApp {
+  sealed trait Response
+  case class ErrorResponse(error: String) extends Response
+  case class SuccessfulParseResponse(js: String, tokens: Seq[String], version: String = Parser.VERSION) extends Response
+  case class FailedParseResponse(error: String, suggestions: Seq[String], unrecognizedTokens: Seq[String]) extends Response
+  object FailedParseResponse {
+    def apply(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): FailedParseResponse = {
+      FailedParseResponse(error.description, error.suggestions.toSeq, unrecognizedTokens)
+    }
+  }
+
   object InputParamMatcher extends QueryParamDecoderMatcher[String]("input")
   object FormatParamMatcher extends OptionalQueryParamDecoderMatcher[String]("format")
   object ModeParamMatcher extends OptionalQueryParamDecoderMatcher[String]("mode")
 
   val host = "0.0.0.0"
   val defaultPort = 8080
-  val port = (Option(System.getenv("PORT")) orElse Option(System.getenv("HTTP_PORT"))).map(_.toInt).getOrElse(defaultPort)
+  val port: Int = (Option(System.getenv("PORT")) orElse Option(System.getenv("HTTP_PORT"))).map(_.toInt).getOrElse(defaultPort)
 
-  lazy val lexicon: Map[String, Seq[(String, String)]] = {
+  case class LexiconDefinition(syntax: String, semantics: String)
+  lazy val lexicon: Map[String, Seq[LexiconDefinition]] = {
     Lexicon.lexicon.map
       .mapValues(defs => defs.map { case (syn, sem) =>
-        (
+        LexiconDefinition(
           syn.toString
             .replaceAllLiterally("Noun", "N")
             .replaceAllLiterally("\\", "\\\\"),
@@ -42,21 +54,9 @@ object WordbotsServer extends ServerApp {
         )
       })
   }
-
   lazy val lexiconTerms: List[String] = lexicon.keys.toList.sorted
 
-  lazy val lexiconJson: String = {
-    lexicon
-      .filterKeys(term => term != "\"" && term != "'")
-      .map { case (term, defs) =>
-        "\"" + term + "\": " + defs.map {
-          case (syn, sem) => "{\"syntax\": \"" + syn + "\", \"semantics\": \"" + sem + "\"}"
-        }.mkString("[", ", ", "]")
-      }
-      .mkString("{", ", ", "}")
-  }
-
-  val service = {
+  val service: HttpService = {
     HttpService {
       case request @ OPTIONS -> Root / "parse" =>
         Ok("", headers())
@@ -67,7 +67,7 @@ object WordbotsServer extends ServerApp {
             format match {
               case Some("js") => successResponse(CodeGenerator.generateJS(ast), parsedTokens)
               case Some("svg") => Ok(parse.toSvg, headers(Some("image/svg+xml")))
-              case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
+              case _ => BadRequest(ErrorResponse("Invalid format").asJson, headers())
             }
           case FailedParse(error, unrecognizedTokens) => errorResponse(error, unrecognizedTokens)
         }
@@ -76,27 +76,27 @@ object WordbotsServer extends ServerApp {
         implicit val parseRequestDecoder: Decoder[ParseRequest] = Decoder.forProduct2("input", "mode")(ParseRequest.apply)
 
         request.as(jsonOf[Seq[ParseRequest]]).flatMap { parseRequests: Seq[ParseRequest] =>
-          val responseBody: String = parseRequests.map { req: ParseRequest =>
-            val responseJson = parse(req.input, Option(req.mode)) match {
-              case SuccessfulParse(_, ast, parsedTokens) => successResponseJson(CodeGenerator.generateJS(ast), parsedTokens)
-              case FailedParse(error, unrecognizedTokens) => errorResponseJson(error, unrecognizedTokens)
+          val responseBody: Json = parseRequests.map { req: ParseRequest =>
+            val parseResponse: Response = parse(req.input, Option(req.mode)) match {
+              case SuccessfulParse(_, ast, parsedTokens) => SuccessfulParseResponse(CodeGenerator.generateJS(ast), parsedTokens)
+              case FailedParse(error, unrecognizedTokens) => FailedParseResponse(error, unrecognizedTokens)
             }
-            s""""${req.input.replaceAllLiterally("\"", "\\\"")}": $responseJson"""
-          }.mkString("{", ",", "}")
+            req.input -> parseResponse
+          }.asJson
           Ok(responseBody, headers())
         }
 
       case request @ GET -> Root / "lexicon" :? FormatParamMatcher(format) =>
         format match {
-          case Some("json") => Ok(lexiconJson, headers())
+          case Some("json") => Ok(lexicon.asJson, headers())
           case None => Ok(s"I can understand ${lexicon.size.toString} terms:\n\n${lexiconTerms.mkString("\n")}", headers())
-          case _ => BadRequest("{\"error\": \"Invalid format\"}", headers())
+          case _ => BadRequest(ErrorResponse("Invalid format").asJson, headers())
         }
     }
   }
 
-  def parse(input: String, mode: Option[String]): ParserResponse = {
-    implicit val validationMode = mode match {
+  def parse(input: String, mode: Option[String]): ParserOutput = {
+    implicit val validationMode: ValidationMode = mode match {
       case Some("object") => ValidateObject
       case Some("event") => ValidateEvent
       case _ => ValidateUnknownCard
@@ -122,22 +122,12 @@ object WordbotsServer extends ServerApp {
     }
   }
 
-  def successResponseJson(js: String, parsedTokens: Seq[String] = Seq()): String = {
-    "{\"js\": \"" + js + "\", \"tokens\": [" + parsedTokens.mkString("\"", "\",\"", "\"") + "], \"version\": \"" + Parser.VERSION + "\"}"
+  def successResponse(js: String, parsedTokens: Seq[String] = Seq()): Task[H4sResponse] = {
+    Ok(SuccessfulParseResponse(js, parsedTokens).asJson, headers())
   }
 
-  def errorResponseJson(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): String = {
-    "{\"error\": \"" + error.description.replaceAllLiterally("\\", "\\\\") + "\", " +
-      "\"suggestions\": [" + error.suggestions.map(s => "\"" + s.replaceAllLiterally("\"", "\\\"") + "\"").mkString(", ") + "], " +
-      "\"unrecognizedTokens\": [" + unrecognizedTokens.mkString("\"", "\",\"", "\"") + "]}"
-  }
-
-  def successResponse(js: String, parsedTokens: Seq[String] = Seq()): Task[Response] = {
-    Ok(successResponseJson(js, parsedTokens), headers())
-  }
-
-  def errorResponse(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): Task[Response] = {
-    Ok(errorResponseJson(error, unrecognizedTokens), headers())
+  def errorResponse(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): Task[H4sResponse] = {
+    Ok(FailedParseResponse(error, unrecognizedTokens).asJson, headers())
   }
 
   def headers(contentType: Option[String] = None): Headers = {
@@ -153,7 +143,7 @@ object WordbotsServer extends ServerApp {
     }
   }
 
-  override def server(args: List[String]): Task[Server] = {
+  override def server(args: List[String]): Task[H4sServer] = {
     // scalastyle:off regex
     println(s"Starting server on '$host:$port' ...")
     // scalastyle:on regex
