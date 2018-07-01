@@ -66,20 +66,12 @@ object ErrorAnalyzer {
   private def diagnoseSyntaxError(input: String): ParserError = {
     val words = input.split(" ")
     val edits = findValidEdits(words)
-
     val error: Option[String] = edits.headOption.map(_.description(words))
-    val suggestions: Set[String] = edits.flatMap(_(words)).toSet.filter(isSemanticallyValid)
 
-    ParserError(s"Parse failed (${error.getOrElse("syntax error")})", suggestions)
+    ParserError(s"Parse failed (${error.getOrElse("syntax error")})", getSyntacticSuggestions(input))
   }
 
   private def diagnoseSemanticsError(input: String, parseResult: Option[SemanticParseNode[CcgCat]]): ParserError = {
-    def semanticReplacements(terminal: SemanticParseNode[CcgCat]): Seq[String] = {
-      val token = terminal.parseTokenString
-      val alternatives = Lexicon.termsInCategory(terminal.syntactic)
-      alternatives.map(alternative => s" ${input.toLowerCase} ".replaceFirst(s" $token ", s" $alternative ").trim.capitalize)
-    }
-
     val exceptions: Set[String] = parseResult.map(_.exs).getOrElse(Set()).map(
       _.getMessage
         .replace("cannot be cast to", "is not a")
@@ -88,10 +80,27 @@ object ErrorAnalyzer {
     )
     val errorMsg = if (exceptions.nonEmpty) exceptions.mkString(" - ", ", ", "") else ""
 
-    val terminalNodes: Seq[SemanticParseNode[CcgCat]] = syntacticParse(input).get.terminals
-    val suggestions: Set[String] = terminalNodes.flatMap(semanticReplacements).toSet.filter(isSemanticallyValid)
+    val semanticSuggestions = getSemanticSuggestions(input)
+    val suggestions = if (semanticSuggestions.isEmpty) getSyntacticSuggestions(input) else semanticSuggestions
 
     ParserError(s"Parse failed (semantics mismatch$errorMsg)", suggestions)
+  }
+
+  private def getSyntacticSuggestions(input: String): Set[String] = {
+    val words = input.split(" ")
+    val edits = findValidEdits(words)
+    edits.flatMap(_(words)).toSet.filter(isSemanticallyValid)
+  }
+
+  private def getSemanticSuggestions(input: String): Set[String] = {
+    def semanticReplacements(terminal: SemanticParseNode[CcgCat]): Seq[String] = {
+      val token = terminal.parseTokenString
+      val alternatives = Lexicon.termsInCategory(terminal.syntactic)
+      alternatives.map(alternative => s" ${input.toLowerCase} ".replaceFirst(s" $token ", s" $alternative ").trim.capitalize)
+    }
+
+    val terminalNodes: Seq[SemanticParseNode[CcgCat]] = syntacticParse(input).get.terminals
+    terminalNodes.flatMap(semanticReplacements).toSet.filter(isSemanticallyValid)
   }
 
   private def findValidEdits(words: Seq[String]): Stream[Edit] = {
