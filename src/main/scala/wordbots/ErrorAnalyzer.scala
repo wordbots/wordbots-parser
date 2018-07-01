@@ -68,7 +68,7 @@ object ErrorAnalyzer {
     val edits = findValidEdits(words)
     val error: Option[String] = edits.headOption.map(_.description(words))
 
-    ParserError(s"Parse failed (${error.getOrElse("syntax error")})", syntacticSuggestions(input))
+    ParserError(s"Parse failed (${error.getOrElse("syntax error")})", getSyntacticSuggestions(input))
   }
 
   private def diagnoseSemanticsError(input: String, parseResult: Option[SemanticParseNode[CcgCat]]): ParserError = {
@@ -80,19 +80,19 @@ object ErrorAnalyzer {
     )
     val errorMsg = if (exceptions.nonEmpty) exceptions.mkString(" - ", ", ", "") else ""
 
-    val semSuggestions = semanticSuggestions(input)
-    val suggestions = if (semSuggestions.isEmpty) syntacticSuggestions(input) else semSuggestions
+    val semanticSuggestions = getSemanticSuggestions(input)
+    val suggestions = if (semanticSuggestions.isEmpty) getSyntacticSuggestions(input) else semanticSuggestions
 
     ParserError(s"Parse failed (semantics mismatch$errorMsg)", suggestions)
   }
 
-  private def syntacticSuggestions(input: String): Set[String] = {
+  private def getSyntacticSuggestions(input: String): Set[String] = {
     val words = input.split(" ")
     val edits = findValidEdits(words)
     edits.flatMap(_(words)).toSet.filter(isSemanticallyValid)
   }
 
-  private def semanticSuggestions(input: String): Set[String] = {
+  private def getSemanticSuggestions(input: String): Set[String] = {
     def semanticReplacements(terminal: SemanticParseNode[CcgCat]): Seq[String] = {
       val token = terminal.parseTokenString
       val alternatives = Lexicon.termsInCategory(terminal.syntactic)
