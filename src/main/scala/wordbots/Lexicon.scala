@@ -133,7 +133,7 @@ object Lexicon {
     ("damaged" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(HasProperty(IsDamaged)))})) +
     (Seq("deal", "deals", "it deals", "take", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
     ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
-    ("destroyed" -> Seq(
+    (Seq("destroyed", "dies") -> Seq(
       (S\NP, λ {c: ChooseO => AfterDestroyed(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterDestroyed(t)}),
       (S\NP, λ {o: TargetObject => TargetHasProperty(o, IsDestroyed)}) // Condition form (e.g. "If that robot is destroyed, [...]"
