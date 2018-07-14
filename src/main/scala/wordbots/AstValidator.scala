@@ -104,19 +104,6 @@ object NoModifyingCostOfObjects extends AstRule {
   }
 }
 
-object OnlyHealthAttributeForPlayers extends AstRule {
-  override def validate(node: AstNode): Try[Unit] = {
-    node match {
-      case AttributeAdjustment(target, Cost, _) =>
-        target match {
-          case _: TargetObject => Failure(ValidationError("Can't modify the cost of objects on the board."))
-          case _ => validateChildren(this, node)
-        }
-      case n: AstNode => validateChildren(this, n)
-    }
-  }
-}
-
 object OnlyRestoreHealth extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
