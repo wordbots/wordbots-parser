@@ -26,14 +26,14 @@ sealed trait Action extends AstNode
   case class Draw(target: TargetPlayer, num: Number) extends Action
   case object EndTurn extends Action
   case class GiveAbility(target: TargetObject, ability: Ability) extends Action
-  case class ModifyAttribute(target: TargetObjectOrCard, attribute: Attribute, operation: Operation) extends Action
+  case class ModifyAttribute(target: Target, attribute: Attribute, operation: Operation) extends Action
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
   case class MoveObject(target: TargetObject, dest: TargetObject) extends Action
   case class PayEnergy(target: TargetPlayer, amount: Number) extends Action
   case class RemoveAllAbilities(target: TargetObject) extends Action
   case class ReturnToHand(target: TargetObject) extends Action
-  case class RestoreAttribute(target: TargetObject, attribute: Attribute, num: Option[Number] = None) extends Action
-  case class SetAttribute(target: TargetObject, attribute: Attribute, num: Number) extends Action
+  case class RestoreAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Option[Number] = None) extends Action
+  case class SetAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Number) extends Action
   case class SwapAttributes(target: TargetObject, attr1: Attribute, attr2: Attribute) extends Action
   case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
 
@@ -46,7 +46,7 @@ sealed trait Ability extends AstNode
   sealed trait PassiveAbility extends Ability
     case class ApplyEffect(target: TargetObjectOrCard, effect: Effect) extends PassiveAbility
     case class AttributeAdjustment(target: TargetObjectOrCard, attribute: Attribute, operation: Operation) extends PassiveAbility
-    case class FreezeAttribute(target: TargetObjectOrCard, attribute: Attribute) extends PassiveAbility
+    case class FreezeAttribute(target: Target, attribute: Attribute) extends PassiveAbility
     case class HasAbility(target: TargetObjectOrCard, ability: Ability) extends PassiveAbility
 
 sealed trait Effect extends AstNode
@@ -196,4 +196,8 @@ case class WithinDistance(spaces: Number) extends IntermediateNode
 case class AttributeOperation(op: Operation, attr: Attribute) extends IntermediateNode
 case class CardPlay(player: TargetPlayer, cardType: CardType) extends IntermediateNode
 case class RandomCards(num: Number, cardType: CardType) extends IntermediateNode
-case class TargetAttribute(target: TargetObject, attr: Attribute) extends IntermediateNode
+case class TargetAttribute(target: TargetObjectOrPlayer, attr: Attribute) extends IntermediateNode {
+  if (target.isInstanceOf[TargetPlayer] && attr != Health) {
+    throw new ClassCastException(s"expected Health, got $attr")
+  }
+}

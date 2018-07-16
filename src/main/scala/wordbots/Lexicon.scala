@@ -302,8 +302,8 @@ object Lexicon {
     )) +
     ("remove all abilities" -> (S/PP, λ {t: TargetObject => RemoveAllAbilities(t)})) +
     ("restore" -> Seq(
-      ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => RestoreAttribute(t, a, None)}}),  // e.g. "Restore health to X"
-      (((S/PP)/N)/Num, λ {n: Number => λ {a: Attribute => λ {t: TargetObject => RestoreAttribute(t, a, Some(n))}}}),  // e.g. "Restore N health to X"
+      ((S/PP)/N, λ {a: Attribute => λ {t: TargetObjectOrPlayer => RestoreAttribute(t, a, None)}}),  // e.g. "Restore health to X"
+      (((S/PP)/N)/Num, λ {n: Number => λ {a: Attribute => λ {t: TargetObjectOrPlayer => RestoreAttribute(t, a, Some(n))}}}),  // e.g. "Restore N health to X"
       (S/NP, λ {ta: TargetAttribute => RestoreAttribute(ta.target, ta.attr, None)})  // e.g. "Restore X's health"
     )) +
     ("return" -> ((S/PP)/NP, λ {t: TargetObject => λ {_: ItsOwnersHand.type => ReturnToHand(t)}})) +
@@ -390,7 +390,7 @@ object Lexicon {
       (Adj, Form(Opponent): SemanticState)
     )) +
     (Seq("'", "'s") -> Seq(
-      ((NP\NP)/N, λ {a: Attribute => λ {t: TargetObject => TargetAttribute(t, a)}}),
+      ((NP\NP)/N, λ {a: Attribute => λ {t: TargetObjectOrPlayer => TargetAttribute(t, a)}}),
       ((NP\NP)/N, λ {a: Attribute => λ {t: TargetObject => AttributeValue(t, a)}})
     )) +
     ("\"" -> Seq(
