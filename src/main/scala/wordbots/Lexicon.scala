@@ -1,7 +1,7 @@
 package wordbots
 
 import com.workday.montague.ccg._
-import com.workday.montague.parser.ParserDict
+import com.workday.montague.parser.{AnythingMatcher, ParserDict}
 import com.workday.montague.semantics._
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 
@@ -41,7 +41,10 @@ object Lexicon {
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisObject)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
-    ("adjacent to" -> ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}})) +
+    ("adjacent to" -> Seq(
+      ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}}),
+      (PP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
+    )) +
     (Seq("adjacent to a", "adjacent to an") ->
       ((S/NP)\NP, λ {o: TargetObject => λ {c: ObjectsMatchingConditions => CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ AdjacentTo(o)))}})
     ) +
@@ -266,6 +269,7 @@ object Lexicon {
       (S\NP, λ {t: TargetObject => AfterMove(t)})
     )) +
     ("must" -> (X/X, identity)) +
+    ("named" -> ((NP/NP)\NP, λ {c: GeneratedCard => λ {n: Name => GeneratedCard(c.cardType, c.attributes, Some(n.name))}})) +
     ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
     (("object".s :+ "objects '") -> (N, Form(AllObjects): SemanticState)) +
     ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
@@ -324,6 +328,7 @@ object Lexicon {
       (NP\Num, λ {num: Number => Spaces(num)}),
       (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)})
     )) +
+    ("spawn" -> ((S/PP)/NP, λ {c: GeneratedCard => λ {t: TargetObject => SpawnObject(c, t)}})) +
     ("speed" -> Seq(
       (N, Form(Speed): SemanticState),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)}),
@@ -404,7 +409,8 @@ object Lexicon {
     (StatsTripleMatcher -> (NP/N, {s: StatsTriple =>
       λ {o: ObjectType =>
         GeneratedCard(o, Seq(AttributeAmount(Scalar(s.attack), Attack), AttributeAmount(Scalar(s.health), Health), AttributeAmount(Scalar(s.speed), Speed)))}
-    }))
+    })) +
+    (NameMatcher -> (NP, {str: String => Form(Name(str))}))
 
   lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
     ParserDict[CcgCat](

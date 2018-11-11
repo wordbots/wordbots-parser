@@ -166,6 +166,17 @@ class ParserSpec extends FlatSpec with Matchers {
       ReturnToHand(ChooseO(ObjectsInPlay(Robot)))
     parse("Return all structures to their owner's hands") shouldEqual
       ReturnToHand(ObjectsInPlay(Structure))
+
+    // New terms for alpha v0.11:
+    parse("Spawn a 1/1/1 robot named \"Test Bot\" adjacent to your kernel") shouldEqual
+      SpawnObject(
+        GeneratedCard(
+          Robot,
+          Seq(AttributeAmount(Scalar(1), Attack), AttributeAmount(Scalar(1), Health), AttributeAmount(Scalar(1), Speed)),
+          Some("Test Bot")
+        ),
+        ObjectsMatchingConditions(Kernel, List(AdjacentTo(ThisObject), ControlledBy(Self)))
+      )
   }
 
   it should "treat 'with' as 'that has'" in {
