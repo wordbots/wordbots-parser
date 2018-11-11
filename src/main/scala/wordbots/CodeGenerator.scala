@@ -91,7 +91,7 @@ object CodeGenerator {
         val attributesObjStr = Seq(Attack, Health, Speed).map { attr =>
           s"'${attr.name}': ${card.getAttributeAmount(attr).headOption.map(g).getOrElse("null")}"
         }.mkString("{", ", ", "}")
-        s"targets['generateCard'](${g(cardType)}, $attributesObjStr, ${name.getOrElse("")})"
+        s"targets['generateCard'](${g(cardType)}, $attributesObjStr, ${name.map(n => s"'${n}'")getOrElse("null")})"
 
       // Target players
       case Self => "targets['self']()"
