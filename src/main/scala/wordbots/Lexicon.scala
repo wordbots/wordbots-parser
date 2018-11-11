@@ -328,7 +328,7 @@ object Lexicon {
       (NP\Num, λ {num: Number => Spaces(num)}),
       (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)})
     )) +
-    ("spawn" -> ((S/PP)/NP, λ {c: GeneratedCard => λ {t: TargetObject => SpawnObject(c, t)}})) +
+    (Seq("spawn", "create") -> ((S/PP)/NP, λ {c: GeneratedCard => λ {t: TargetObject => SpawnObject(c, t)}})) +
     ("speed" -> Seq(
       (N, Form(Speed): SemanticState),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)}),
