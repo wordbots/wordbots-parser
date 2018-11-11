@@ -1,7 +1,7 @@
 package wordbots
 
 import com.workday.montague.ccg._
-import com.workday.montague.parser.{AnythingMatcher, ParserDict}
+import com.workday.montague.parser.ParserDict
 import com.workday.montague.semantics._
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 

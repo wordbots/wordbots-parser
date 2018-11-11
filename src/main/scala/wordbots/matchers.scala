@@ -58,13 +58,15 @@ object StatsTripleMatcher extends TokenMatcher[StatsTriple] {
   * Names are encoded in base-36 so their case and spaces are preserved in tokenization.
   */
 object NameConverters {
+  val radix = 36
+
   def encodeBase36(str: String): String = {
     val bytes: Array[Byte] = str.getBytes(StandardCharsets.UTF_8)
-    new BigInteger(1, bytes).toString(36)
+    new BigInteger(1, bytes).toString(radix)
   }
 
   def decodeBase36(base36: String): String = {
-    val bytes: Array[Byte] = new BigInteger(base36, 36).toByteArray
+    val bytes: Array[Byte] = new BigInteger(base36, radix).toByteArray
     new String(bytes, StandardCharsets.UTF_8)
   }
 }
