@@ -35,6 +35,7 @@ object Lexicon {
       (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
     )) +
     ("a player" -> (NP, Form(ChooseO(ObjectsInPlay(Kernel))): SemanticState)) +
+    ("a random tile" -> (NP, Form(RandomO(Scalar(1), AllTiles)): SemanticState)) +
     ("a tile" -> (NP, Form(ChooseO(AllTiles)): SemanticState)) +
     ("activate:" -> (S/S, λ {a: Action => ActivatedAbility(a)})) +
     ("adjacent" -> Seq(
@@ -242,7 +243,7 @@ object Lexicon {
       (NP/Adj, λ {amount: Number => Life(amount)})
     )) +
     ("if" -> ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}})) +
-    (Seq("in", "of", "from", "into") -> (PP/NP, identity)) +
+    (Seq("in", "on", "of", "from", "into") -> (PP/NP, identity)) +
     ("instead" -> (S|S, λ {a: Action => Instead(a)})) +
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
