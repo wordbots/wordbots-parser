@@ -34,6 +34,7 @@ sealed trait Action extends AstNode
   case class ReturnToHand(target: TargetObject) extends Action
   case class RestoreAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Option[Number] = None) extends Action
   case class SetAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Number) extends Action
+  case class SpawnObject(target: GeneratedCard, dest: TargetObject) extends Action
   case class SwapAttributes(target: TargetObject, attr1: Attribute, attr2: Attribute) extends Action
   case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
 
@@ -83,8 +84,17 @@ sealed trait Target extends AstNode
     case class ChooseC(collection: CardCollection) extends TargetCard
     case class AllC(collection: CardCollection) extends TargetCard
     case class RandomC(num: Number, collection: CardCollection) extends TargetCard
-    case class GeneratedCard(cardType: ObjectType, attributes: Seq[AttributeAmount] = Seq.empty) extends TargetCard {
-      def getAttributeAmount(attribute: Attribute): Seq[Number] = attributes.filter(_.attr == attribute).map(_.amount)
+    case class GeneratedCard(
+      cardType: ObjectType,
+      attributes: Seq[AttributeAmount] = Seq.empty,
+      name: Option[String] = None
+    ) extends TargetCard {
+      def getAttributeAmount(attribute: Attribute): Seq[Number] = {
+        // This returns a Seq[Number] rather than Option[Number] because it's possible to, e.g.
+        // write something like "a robot with 2 attack and 3 attack".
+        // This kind of situation should pass parsing and fail validation, so we must be able to represent it.
+        attributes.filter(_.attr == attribute).map(_.amount)
+      }
     }
 sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
     case object Self extends TargetPlayer
@@ -186,8 +196,9 @@ case object ItsOwnersHand extends IntermediateNode
 case class Cards(num: Number) extends IntermediateNode
 case class Damage(amount: Number) extends IntermediateNode
 case class Energy(amount: Number) extends IntermediateNode
-case class Life(amount: Number) extends IntermediateNode
 case class Hand(player: TargetPlayer) extends IntermediateNode
+case class Life(amount: Number) extends IntermediateNode
+case class Name(name: String) extends IntermediateNode
 case class Spaces(num: Number) extends IntermediateNode
 case class Turn(player: TargetPlayer) extends IntermediateNode
 case class WithinDistance(spaces: Number) extends IntermediateNode

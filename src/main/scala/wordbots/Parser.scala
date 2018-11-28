@@ -10,6 +10,8 @@ import scala.util.Try
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   val VERSION = s"v${BuildInfo.version.split("-SNAPSHOT")(0)}"
 
+  val nameRegex = """named \"(.*)\"""".r
+
   override def main(args: Array[String]): Unit = {
     val input = args.mkString(" ")
     val result: SemanticParseResult[CcgCat] = parse(input)
@@ -22,7 +24,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
     // scalastyle:off regex
     println(s"Input: $input")
-    // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
+    println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
     println(s"Error diagnosis: ${ErrorAnalyzer.diagnoseError(input, result.bestParse)}")
     println(s"Generated JS code: ${code.getOrElse("None")}")
@@ -38,8 +40,9 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     new SemanticParser[CcgCat](lexicon).parse(input, tokenizer)
   }
 
-  override val tokenizer: String => IndexedSeq[String] = {
-    _.trim
+  override val tokenizer: String => IndexedSeq[String] = { (str: String) =>
+    nameRegex.replaceAllIn(str, m => s"named name:${NameConverters.encodeBase36(m.group(1))}")
+      .trim
       .toLowerCase
       .replaceAll("""[\u202F\u00A0]""", " ")
       .replaceAllLiterally("\' ", " \' ")

@@ -1,5 +1,8 @@
 package wordbots
 
+import java.math.BigInteger
+import java.nio.charset.StandardCharsets
+
 import com.workday.montague.parser.TokenMatcher
 
 import scala.util.Try
@@ -47,6 +50,32 @@ object StatsTripleMatcher extends TokenMatcher[StatsTriple] {
     str.split("/").map(stringToOptInt) match {
       case Array(Some(attack), Some(health), Some(speed)) => Seq(StatsTriple(attack, health, speed))
       case _ => Nil
+    }
+  }
+}
+
+/**
+  * Names are encoded in base-36 so their case and spaces are preserved in tokenization.
+  */
+object NameConverters {
+  val radix = 36
+
+  def encodeBase36(str: String): String = {
+    val bytes: Array[Byte] = str.getBytes(StandardCharsets.UTF_8)
+    new BigInteger(1, bytes).toString(radix)
+  }
+
+  def decodeBase36(base36: String): String = {
+    val bytes: Array[Byte] = new BigInteger(base36, radix).toByteArray
+    new String(bytes, StandardCharsets.UTF_8)
+  }
+}
+object NameMatcher extends TokenMatcher[String] {
+  def apply(str: String): Seq[String] = {
+    if (str.startsWith("name:") && !str.contains(' ')) {
+      Seq(NameConverters.decodeBase36(str.replace("name:", "")))
+    } else {
+      Nil
     }
   }
 }

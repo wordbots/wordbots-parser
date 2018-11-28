@@ -158,7 +158,7 @@ object NoThis extends AstRule {
 object ValidGeneratedCard extends AstRule {
   override def validate (node: AstNode) : Try[Unit] = {
     node match {
-      case c@GeneratedCard(cardType, _) => Try {
+      case c@GeneratedCard(cardType, _, _) => Try {
         val attributes = (c.getAttributeAmount(Attack).size, c.getAttributeAmount(Health).size, c.getAttributeAmount(Speed).size)
         val expectedAttrs = cardType match {
           case Robot => (1, 1, 1)

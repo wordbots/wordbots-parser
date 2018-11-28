@@ -23,5 +23,7 @@ enablePlugins(BuildInfoPlugin)
 
 mainClass in Compile := Some("wordbots.Server")
 
+initialCommands in console := "import wordbots._"
+
 buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
 buildInfoPackage := "wordbots"

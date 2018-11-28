@@ -166,6 +166,17 @@ class ParserSpec extends FlatSpec with Matchers {
       ReturnToHand(ChooseO(ObjectsInPlay(Robot)))
     parse("Return all structures to their owner's hands") shouldEqual
       ReturnToHand(ObjectsInPlay(Structure))
+
+    // New terms for alpha v0.11:
+    parse("Spawn a 1/1/1 robot named \"Test Bot\" adjacent to your kernel") shouldEqual
+      SpawnObject(
+        GeneratedCard(
+          Robot,
+          Seq(AttributeAmount(Scalar(1), Attack), AttributeAmount(Scalar(1), Health), AttributeAmount(Scalar(1), Speed)),
+          Some("Test Bot")
+        ),
+        ObjectsMatchingConditions(Kernel, List(AdjacentTo(ThisObject), ControlledBy(Self)))
+      )
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -309,6 +320,20 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("At the start of your turn, if you have a robot on the board with 3 or more health, draw 2 cards.") shouldEqual
       TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AttributeComparison(Health, GreaterThanOrEqualTo(Scalar(3))), ControlledBy(Self)))), Draw(Self, Scalar(2))))
+
+    // New terms for alpha v0.11:
+    parse("Whenever a robot is destroyed, spawn a 2/1/1 robot named \"Zombie Bot\" on a random tile") shouldEqual
+      TriggeredAbility(
+        AfterDestroyed(AllO(ObjectsMatchingConditions(Robot, Seq())), AnyEvent),
+        SpawnObject(
+          GeneratedCard(
+            Robot,
+            Seq(AttributeAmount(Scalar(2), Attack), AttributeAmount(Scalar(1), Health), AttributeAmount(Scalar(1), Speed)),
+            Some("Zombie Bot")
+          ),
+          RandomO(Scalar(1), AllTiles)
+        )
+      )
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
