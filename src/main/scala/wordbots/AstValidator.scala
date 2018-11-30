@@ -156,7 +156,7 @@ object NoThis extends AstRule {
 
 /** Validates that generated cards have exactly one of each desired attribute. */
 object ValidGeneratedCard extends AstRule {
-  override def validate (node: AstNode) : Try[Unit] = {
+  override def validate(node: AstNode): Try[Unit] = {
     node match {
       case c@GeneratedCard(cardType, _, _) => Try {
         val attributes = (c.getAttributeAmount(Attack).size, c.getAttributeAmount(Health).size, c.getAttributeAmount(Speed).size)
@@ -180,15 +180,17 @@ object ValidGeneratedCard extends AstRule {
 /** Validates that the destination of a SpawnObject action is something that *could* be an empty tile. */
 object ValidDestForSpawnObject extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
-    case SpawnObject(_, dest) =>
-      dest match {
-        case ChooseO(c) => validateCollectionCouldBeAnEmptyTile(c)
-        case AllO(c) => validateCollectionCouldBeAnEmptyTile(c)
-        case RandomO(_, c) => validateCollectionCouldBeAnEmptyTile(c)
-        case SavedTargetObject => Success()
-        case _ => Failure(ValidationError(s"Not a valid destination for SpawnObject: $dest"))
-      }
-    case n: AstNode => validateChildren(this, n)
+    node match {
+      case SpawnObject(_, dest) =>
+        dest match {
+          case ChooseO(c) => validateCollectionCouldBeAnEmptyTile(c)
+          case AllO(c) => validateCollectionCouldBeAnEmptyTile(c)
+          case RandomO(_, c) => validateCollectionCouldBeAnEmptyTile(c)
+          case SavedTargetObject => Success()
+          case _ => Failure(ValidationError(s"Not a valid destination for SpawnObject: $dest"))
+        }
+      case n: AstNode => validateChildren(this, n)
+    }
   }
 
   def validateCollectionCouldBeAnEmptyTile(collection: ObjectCollection): Try[Unit] = collection match {
