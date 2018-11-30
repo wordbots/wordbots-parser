@@ -43,6 +43,7 @@ object Lexicon {
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
     ("adjacent to" -> Seq(
+      (PP/NP, λ {t: TargetObject => AdjacentTo(t)}),
       ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}}),
       (PP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
@@ -325,6 +326,7 @@ object Lexicon {
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}}),
       (((S/PP)/PP)/N, λ {as: Seq[Attribute] => λ {t: TargetObject => λ {num: Number => MultipleActions(Seq(SaveTarget(t)) ++ as.map(a => SetAttribute(SavedTargetObject, a, num)))}}})
     )) +
+    (Seq("space", "tile", "hex") -> (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})) +
     (Seq("spaces", "tiles", "hexes") -> Seq(
       (NP\Num, λ {num: Number => Spaces(num)}),
       (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)})
