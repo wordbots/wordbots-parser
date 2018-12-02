@@ -320,20 +320,6 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("At the start of your turn, if you have a robot on the board with 3 or more health, draw 2 cards.") shouldEqual
       TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AttributeComparison(Health, GreaterThanOrEqualTo(Scalar(3))), ControlledBy(Self)))), Draw(Self, Scalar(2))))
-
-    // New terms for alpha v0.11:
-    parse("Whenever a robot is destroyed, spawn a 2/1/1 robot named \"Zombie Bot\" on a random tile") shouldEqual
-      TriggeredAbility(
-        AfterDestroyed(AllO(ObjectsMatchingConditions(Robot, Seq())), AnyEvent),
-        SpawnObject(
-          GeneratedCard(
-            Robot,
-            Seq(AttributeAmount(Scalar(2), Attack), AttributeAmount(Scalar(1), Health), AttributeAmount(Scalar(1), Speed)),
-            Some("Zombie Bot")
-          ),
-          RandomO(Scalar(1), AllTiles)
-        )
-      )
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -389,6 +375,27 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("Activate: Deal 1 damage to a robot 3 tiles away") shouldEqual
       ActivatedAbility(DealDamage(ChooseO(ObjectsMatchingConditions(Robot, Seq(ExactDistanceFrom(Scalar(3), ThisObject)))), Scalar(1)))
+  }
+
+  it should "parse actions and abilities involving spawning new objects (v0.11)" in {
+    def attrs(attack: Int, health: Int, speed: Int): Seq[AttributeAmount] = {
+      Seq(AttributeAmount(Scalar(attack), Attack), AttributeAmount(Scalar(health), Health), AttributeAmount(Scalar(speed), Speed))
+    }
+
+    parse("Whenever a robot is destroyed, spawn a 2/1/1 robot named \"Zombie Bot\" on a random tile") shouldEqual
+      TriggeredAbility(
+        AfterDestroyed(AllO(ObjectsMatchingConditions(Robot, Seq())), AnyEvent),
+        SpawnObject(
+          GeneratedCard(Robot, attrs(2, 1, 1), Some("Zombie Bot")),
+          RandomO(Scalar(1), AllTiles)
+        )
+      )
+
+    parse("Spawn a 1/2/1 robot named \"Reinforcements\" on each tile adjacent to your kernel") shouldEqual
+      SpawnObject(
+        GeneratedCard(Robot, attrs(1, 2, 1), Some("Reinforcements")),
+        TilesMatchingConditions(Seq(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))))))
+      )
   }
 
   it should "generate JS code for actions" in {
