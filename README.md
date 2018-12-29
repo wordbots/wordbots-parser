@@ -3,7 +3,7 @@
 
 [![](http://imgur.com/q7lBCUn.png)](https://www.patreon.com/wordbots)
 
-A game-semantics CCG parser for a card game that doesn't exist yet.
+A game-semantics CCG parser for [Wordbots](http://wordbots.io). (See also the [`wordbots-core` repo](https://github.com/wordbots/wordbots-core) that contains the core game code.)
 
 ## Running as console
 ```
