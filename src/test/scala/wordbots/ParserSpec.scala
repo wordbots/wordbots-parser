@@ -375,6 +375,8 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("Activate: Deal 1 damage to a robot 3 tiles away") shouldEqual
       ActivatedAbility(DealDamage(ChooseO(ObjectsMatchingConditions(Robot, Seq(ExactDistanceFrom(Scalar(3), ThisObject)))), Scalar(1)))
+    parse("Activate: All adjacent robots gain 1 health") shouldEqual  // #109
+      ActivatedAbility(ModifyAttribute(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject))), Health, Plus(Scalar(1))))
   }
 
   it should "parse actions and abilities involving spawning new objects (v0.11)" in {
