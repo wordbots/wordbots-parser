@@ -361,6 +361,12 @@ class ParserSpec extends FlatSpec with Matchers {
       // FreezeAttribute(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject))), AllAttributes)
     parse("All events cost 1 energy") shouldEqual
       AttributeAdjustment(AllC(CardsInHand(AllPlayers, Event)), Cost, Constant(Scalar(1)))
+
+    // Alpha v0.12 playtesting:
+    parse("Your robots have 4 speed") shouldEqual
+      AttributeAdjustment(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), Speed, Constant(Scalar(4)))
+    parse("Robots your opponent controls have \"This robot can move and attack immediately after it is played\" and +1 speed") shouldEqual  // ("Haste and +1 speed")
+      parse("Robots your opponent controls have +1 speed and \"This robot can move and attack immediately after it is played\"")
   }
 
   it should "parse activated abilities for robots" in {

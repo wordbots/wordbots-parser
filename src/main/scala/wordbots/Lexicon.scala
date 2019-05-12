@@ -68,7 +68,8 @@ object Lexicon {
       (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
       (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
       (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => Seq(a, b, c)}}}),  // e.g. "1 attack, 2 health, and 3 speed"
-      ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})
+      ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}}),  // e.g. "+1 attack and Haste"
+      ((S/NP)\S, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})  // e.g. "Haste and +1 attack"
     )) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +
@@ -231,9 +232,12 @@ object Lexicon {
       (S/NP, λ {ac: AttributeComparison => ac}),
       (S/NP, λ {cs: Seq[AttributeComparison] => cs}), // multiple conditions
       ((S\NP)/S, λ {a: Ability => λ {t: TargetObject => HasAbility(t, a)}}),
-      (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}}),
+      ((S\NP)/N, λ {a: AttributeAmount => λ {t: TargetObject => AttributeAdjustment(t, a.attr, Constant(a.amount))}}),  // "... X attack"
+      (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}}),  // "... +X attack"
       ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  // "... +X attack and [ability]"
-        MultipleAbilities(Seq(AttributeAdjustment(t, a._1.attr, a._1.op), HasAbility(t, a._2)))}})
+        MultipleAbilities(Seq(AttributeAdjustment(t, a._1.attr, a._1.op), HasAbility(t, a._2)))}}),
+      ((S/S)\NP, λ {t: TargetObject => λ {a: (Ability, AttributeOperation) =>  // "... [ability] and +X attack"
+        MultipleAbilities(Seq(AttributeAdjustment(t, a._2.attr, a._2.op), HasAbility(t, a._1)))}})
     )) +
     (Seq("health", "life") -> Seq(
       (N, Form(Health): SemanticState),
