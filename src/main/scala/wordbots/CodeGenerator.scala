@@ -1,9 +1,25 @@
 package wordbots
 
-object CodeGenerator {
-  def generateJS(node: AstNode): String = g(node)
+import org.mozilla.javascript._
 
-  def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\"
+import scala.util.Try
+
+object CodeGenerator {
+  val compilerEnv = new CompilerEnvirons
+
+  def generateJS(node: AstNode): Option[String] = {
+    val js: String = g(node)
+    Some(js).filter(isValidJS)
+  }
+
+  def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\
+
+  def isValidJS(jsString: String): Boolean = {
+    Try {
+      val parser = new Parser(compilerEnv)
+      parser.parse(jsString, "", 1)
+    }.isSuccess
+  }
 
   // scalastyle:off method.length
   // scalastyle:off cyclomatic.complexity

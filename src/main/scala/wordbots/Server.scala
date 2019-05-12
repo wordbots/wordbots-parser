@@ -65,7 +65,10 @@ object Server extends ServerApp {
         parse(input, mode) match {
           case SuccessfulParse(parse, ast, parsedTokens) =>
             format match {
-              case Some("js") => successResponse(CodeGenerator.generateJS(ast), parsedTokens)
+              case Some("js") =>
+                CodeGenerator.generateJS(ast)
+                    .map(successResponse(_, parsedTokens))
+                    .getOrElse(errorResponse(ParserError("Invalid JavaScript produced")))
               case Some("svg") => Ok(parse.toSvg, headers(Some("image/svg+xml")))
               case _ => BadRequest(ErrorResponse("Invalid format").asJson, headers())
             }
@@ -78,7 +81,10 @@ object Server extends ServerApp {
         request.as(jsonOf[Seq[ParseRequest]]).flatMap { parseRequests: Seq[ParseRequest] =>
           val responseBody: Json = parseRequests.map { req: ParseRequest =>
             val parseResponse: Response = parse(req.input, Option(req.mode)) match {
-              case SuccessfulParse(_, ast, parsedTokens) => SuccessfulParseResponse(CodeGenerator.generateJS(ast), parsedTokens)
+              case SuccessfulParse(_, ast, parsedTokens) =>
+                CodeGenerator.generateJS(ast)
+                  .map(SuccessfulParseResponse(_, parsedTokens))
+                  .getOrElse(FailedParseResponse(ParserError("Invalid JavaScript produced")))
               case FailedParse(error, unrecognizedTokens) => FailedParseResponse(error, unrecognizedTokens)
             }
             req.input -> parseResponse

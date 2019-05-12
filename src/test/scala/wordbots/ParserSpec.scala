@@ -27,7 +27,7 @@ class ParserSpec extends FlatSpec with Matchers {
   //scalastyle:on regex
 
   def generateJS(input: String): String = {
-    CodeGenerator.generateJS(parse(input).asInstanceOf[AstNode])
+    CodeGenerator.generateJS(parse(input).asInstanceOf[AstNode]).get
   }
 
   it should "parse simple actions" in {
