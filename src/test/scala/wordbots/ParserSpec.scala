@@ -177,6 +177,13 @@ class ParserSpec extends FlatSpec with Matchers {
         ),
         ObjectsMatchingConditions(Kernel, List(AdjacentTo(ThisObject), ControlledBy(Self)))
       )
+
+    // Alpha v0.12 playtesting:
+    parse("All robots get \"When this robot is destroyed, it deals damage equal to its power to the opponent's kernel\"") shouldEqual
+      GiveAbility(
+        ObjectsMatchingConditions(Robot, Seq()),
+        parse("When this robot is destroyed, it deals damage equal to its power to the opponent's kernel").asInstanceOf[Ability]
+      )
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -320,6 +327,10 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("At the start of your turn, if you have a robot on the board with 3 or more health, draw 2 cards.") shouldEqual
       TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AttributeComparison(Health, GreaterThanOrEqualTo(Scalar(3))), ControlledBy(Self)))), Draw(Self, Scalar(2))))
+
+    // Alpha v0.12 playtesting:
+    parse("When this robot is destroyed, it deals damage equal to its power to your opponent's kernel") shouldEqual
+      TriggeredAbility(AfterDestroyed(ThisObject, AnyEvent), DealDamage(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Opponent))), AttributeValue(ItO, Attack)))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

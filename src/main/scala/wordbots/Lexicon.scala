@@ -133,6 +133,7 @@ object Lexicon {
       ((S\NP)\Num, λ {amount: Number => λ {t: TargetObjectOrPlayer => DealDamage(t, amount)}}),
       ((S/Adj)/PP, λ {t: TargetObjectOrPlayer => λ {amount: Number => DealDamage(t, amount)}}),
       ((S\NP)/Adj, λ {amount: Number => λ {t: TargetObjectOrPlayer => DealDamage(t, amount)}}),
+      ((S/PP)/Adj, λ {amount: Number => λ {t: TargetObjectOrPlayer => DealDamage(t, amount)}}),
       (S/PP, λ {t: TargetObjectOrPlayer => DealDamage(t, AttributeValue(ThisObject, Attack))}),  // (by default, a robot deals damage equal to its power)
       (S\Num, λ {amount: Number => DealDamage(ChooseO(ObjectsInPlay(AllObjects)), amount)})  // (if no target is given, any target can be chosen)
     )) +
@@ -395,9 +396,9 @@ object Lexicon {
       (Adj, Form(Self): SemanticState)
     )) +
     ("your energy" -> (NP, Form(EnergyAmount(Self)): SemanticState)) +
-    ("your opponent" -> (NP, Form(Opponent): SemanticState)) +
+    (Seq("your opponent", "the opponent") -> (NP, Form(Opponent): SemanticState)) +
     ("your opponent 's energy" -> (NP, Form(EnergyAmount(Opponent)): SemanticState)) +
-    (Seq("your opponent 's", "all of your opponent 's") -> Seq(
+    (Seq("your opponent 's", "the opponent 's", "all of your opponent 's") -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Opponent))}),
       (Adj, Form(Opponent): SemanticState)
