@@ -12,7 +12,7 @@ object CodeGenerator {
 
     val parser = new RhinoParser(compilerEnv)
     parser.parse(jsString, "", 1)
-    
+
     jsString
   }
 
