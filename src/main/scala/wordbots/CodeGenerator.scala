@@ -1,6 +1,6 @@
 package wordbots
 
-import org.mozilla.javascript._
+import org.mozilla.javascript.{ CompilerEnvirons, Parser => RhinoParser }
 
 import scala.util.Try
 
@@ -14,11 +14,11 @@ object CodeGenerator {
     } yield validatedJs
   }
 
-  def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\
+  def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\"
 
   def validateJS(jsString: String): Try[String] = {
     Try {
-      val parser = new Parser(compilerEnv)
+      val parser = new RhinoParser(compilerEnv)
       parser.parse(jsString, "", 1)
       jsString
     }

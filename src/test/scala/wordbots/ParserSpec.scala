@@ -1,7 +1,7 @@
 package wordbots
 
-import com.workday.montague.semantics.{Form, Nonsense}
-import org.mozilla.javascript.{ EvaluatorException }
+import com.workday.montague.semantics.{ Form, Nonsense }
+import org.mozilla.javascript.EvaluatorException
 import org.scalatest._
 
 import scala.util.{ Failure, Success }
