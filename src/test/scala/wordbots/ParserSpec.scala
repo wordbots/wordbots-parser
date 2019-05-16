@@ -1,9 +1,10 @@
 package wordbots
 
 import com.workday.montague.semantics.{Form, Nonsense}
+import org.mozilla.javascript.{ EvaluatorException }
 import org.scalatest._
 
-import scala.util.{Success, Failure}
+import scala.util.{ Failure, Success }
 
 // scalastyle:off line.size.limit
 class ParserSpec extends FlatSpec with Matchers {
@@ -422,6 +423,13 @@ class ParserSpec extends FlatSpec with Matchers {
     generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsMatchingConditions('robot', []))); })")
     generateJS("Gain 2 energy") should be ("(function () { actions['modifyEnergy'](targets['self'](), function (x) { return x + 2; }); })")
     generateJS("Give a robot +1 speed") should be ("(function () { actions['modifyAttribute'](targets['choose'](objectsMatchingConditions('robot', [])), 'speed', function (x) { return x + 1; }); })")
+  }
+
+  it should "not allow invalid JS code to be returned" in {
+    val terribleCardText = "At the beginning of your opponent's turn, spawn a 1/1/1 Robot named \"Annoying Gnat\" with \"At the beginning of your opponent's turn, spawn a 1/1/1 Robot named \"Annoying Gnat\" on a random tile adjacent to your opponent's kernel\" on a random tile adjacent to your opponent's kernel"
+    an[EvaluatorException] should be thrownBy {
+      generateJS(terribleCardText)
+    }
   }
 
   it should "disallow choosing targets inside a triggered action, *except* for AfterPlayed triggers" in {

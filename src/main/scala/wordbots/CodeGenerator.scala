@@ -7,18 +7,21 @@ import scala.util.Try
 object CodeGenerator {
   val compilerEnv = new CompilerEnvirons
 
-  def generateJS(node: AstNode): Option[String] = {
-    val js: String = g(node)
-    Some(js).filter(isValidJS)
+  def generateJS(node: AstNode): Try[String] = {
+    for {
+      js <- Try { g(node) }
+      validatedJs <- validateJS(js)
+    } yield validatedJs
   }
 
   def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\
 
-  def isValidJS(jsString: String): Boolean = {
+  def validateJS(jsString: String): Try[String] = {
     Try {
       val parser = new Parser(compilerEnv)
       parser.parse(jsString, "", 1)
-    }.isSuccess
+      jsString
+    }
   }
 
   // scalastyle:off method.length
