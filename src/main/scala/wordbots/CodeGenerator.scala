@@ -1,7 +1,20 @@
 package wordbots
 
+import org.mozilla.javascript.{ CompilerEnvirons, Parser => RhinoParser }
+
+import scala.util.Try
+
 object CodeGenerator {
-  def generateJS(node: AstNode): String = g(node)
+  val compilerEnv = new CompilerEnvirons
+
+  def generateJS(node: AstNode): Try[String] = Try {
+    val jsString = g(node)
+
+    val parser = new RhinoParser(compilerEnv)
+    parser.parse(jsString, "", 1)
+
+    jsString
+  }
 
   def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\"
 

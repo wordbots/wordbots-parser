@@ -6,12 +6,14 @@ import com.workday.montague.semantics.Form
 import org.http4s.{Response => H4sResponse, _}
 import org.http4s.circe._
 import org.http4s.dsl._
-import org.http4s.server.{Server => H4sServer, ServerApp}
+import org.http4s.server.{ServerApp, Server => H4sServer}
 import org.http4s.server.blaze.BlazeBuilder
 import io.circe._
 import io.circe.generic.auto._
 import io.circe.syntax._
 import scalaz.concurrent.Task
+
+import scala.util.{Failure, Success}
 
 case class ParseRequest(input: String, mode: String)
 
@@ -65,7 +67,11 @@ object Server extends ServerApp {
         parse(input, mode) match {
           case SuccessfulParse(parse, ast, parsedTokens) =>
             format match {
-              case Some("js") => successResponse(CodeGenerator.generateJS(ast), parsedTokens)
+              case Some("js") =>
+                CodeGenerator.generateJS(ast) match {
+                  case Success(js: String) => successResponse(js, parsedTokens)
+                  case Failure(ex: Throwable) => errorResponse(ParserError(s"Invalid JavaScript produced: ${ex.getMessage}. Contact the developers."))
+                }
               case Some("svg") => Ok(parse.toSvg, headers(Some("image/svg+xml")))
               case _ => BadRequest(ErrorResponse("Invalid format").asJson, headers())
             }
@@ -78,7 +84,11 @@ object Server extends ServerApp {
         request.as(jsonOf[Seq[ParseRequest]]).flatMap { parseRequests: Seq[ParseRequest] =>
           val responseBody: Json = parseRequests.map { req: ParseRequest =>
             val parseResponse: Response = parse(req.input, Option(req.mode)) match {
-              case SuccessfulParse(_, ast, parsedTokens) => SuccessfulParseResponse(CodeGenerator.generateJS(ast), parsedTokens)
+              case SuccessfulParse(_, ast, parsedTokens) =>
+                CodeGenerator.generateJS(ast) match {
+                  case Success(js: String) => SuccessfulParseResponse(js, parsedTokens)
+                  case Failure(ex: Throwable) => FailedParseResponse(ParserError(s"Invalid JavaScript produced: ${ex.getMessage}. Contact the developers."))
+                }
               case FailedParse(error, unrecognizedTokens) => FailedParseResponse(error, unrecognizedTokens)
             }
             req.input -> parseResponse
