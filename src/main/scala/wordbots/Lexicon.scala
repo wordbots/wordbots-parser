@@ -7,10 +7,16 @@ import com.workday.montague.semantics.FunctionReaderMacro.λ
 
 import scala.language.postfixOps
 
+object Fail {
+  def apply(str: String): Unit = throw new ClassCastException(str)
+}
+
 /**
   * Created by alex on 2/28/17.
-  * reminder: N = noun, NP = noun phrase, V = verb, S = sentence, PP = propositional phrase
-  * '\X'=needs X before this, '/X' = needs X after this, '|X' = needs X either before or after this
+  *
+  * CCG syntax reminder:
+  *   N = noun, NP = noun phrase, V = verb, S = sentence, PP = propositional phrase
+  *   '\X' = needs X before this, '/X' = needs X after this, '|X' = needs X either before or after this
   **/
 object Lexicon {
   // scalastyle:off method.name
@@ -25,6 +31,7 @@ object Lexicon {
     def /?/(nextWords: Seq[String]): Seq[String] = nextWords ++ nextWords.map(s"$str " +)
   }
   // scalastyle:on method.name
+
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
       (N/N, identity),
@@ -42,6 +49,7 @@ object Lexicon {
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisObject)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
+    ("adjacent tile" -> (NP, Form(TilesMatchingConditions(Seq(AdjacentTo(They)))): SemanticState)) +  // e.g. "Move each robot to a random adjacent tile."
     ("adjacent to" -> Seq(
       (PP/NP, λ {t: TargetObject => AdjacentTo(t)}),
       ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}}),
@@ -265,10 +273,13 @@ object Lexicon {
     (Seq("lose", "pay") -> (S/NP, λ {l: Life => DealDamage(Self, l.amount)})) +
     ("loses" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})) +  // Y loses X (attribute).
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
-    ("move" -> ((S/NP)/NP, λ {t: TargetObject => λ {d: WithinDistance => MultipleActions(Seq(
-      SaveTarget(t),
-      MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(d.spaces, SavedTargetObject), Unoccupied)))))
-    )}})) +
+    ("move" -> Seq(
+      ((S/PP)/NP, λ {t: TargetObject => λ {dest: TargetObject => MoveObject(t, dest)}}),
+      ((S/NP)/NP, λ {t: TargetObject => λ {d: WithinDistance => MultipleActions(Seq(
+        SaveTarget(t),
+        MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(d.spaces, SavedTargetObject), Unoccupied)))))
+      )}})
+    )) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("moved last turn" -> (S, Form(HasProperty(MovedLastTurn)): SemanticState)) +
     ("moved this turn" -> (S, Form(HasProperty(MovedThisTurn)): SemanticState)) +
@@ -332,7 +343,11 @@ object Lexicon {
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}}),
       (((S/PP)/PP)/N, λ {as: Seq[Attribute] => λ {t: TargetObject => λ {num: Number => MultipleActions(Seq(SaveTarget(t)) ++ as.map(a => SetAttribute(SavedTargetObject, a, num)))}}})
     )) +
-    (Seq("space", "tile", "hex") -> (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})) +
+    (Seq("space", "tile", "hex") -> Seq(
+      (NP\Num, λ {num: Number => if (num == Scalar(1)) Spaces(num) else Fail("Use 'tiles' instead of 'tile'") }),
+      (NP\Num, λ {num: Number => if (num == Scalar(1)) WithinDistance(num) else Fail("Use 'tiles' instead of 'tile'") }),
+      (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})
+    )) +
     (Seq("spaces", "tiles", "hexes") -> Seq(
       (NP\Num, λ {num: Number => Spaces(num)}),
       (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)})
