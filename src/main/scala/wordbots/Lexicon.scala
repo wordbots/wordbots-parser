@@ -19,6 +19,8 @@ object Fail {
   *   '\X' = needs X before this, '/X' = needs X after this, '|X' = needs X either before or after this
   **/
 object Lexicon {
+  type Sem = SemanticState
+
   // scalastyle:off method.name
   implicit class StringImplicits(val str: String) extends AnyVal {
     // "blah".s = ["blah", "blahs"]
@@ -32,6 +34,8 @@ object Lexicon {
   }
   // scalastyle:on method.name
 
+  implicit def astNodeToSem(node: ParseNode): Sem = Form(node)
+
   val lexicon =  ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
       (N/N, identity),
@@ -39,17 +43,17 @@ object Lexicon {
       (NP/NP, λ {c: GeneratedCard => c}),  // e.g. "a 1/1/1 robot"
       (NP/NP, λ {c: ObjectCollection => ChooseO(c)}),  // e.g. "a robot you control"
       (NP/NP, λ {c: CardCollection => ChooseC(c)}),  // e.g. "(discard) a card"
-      (Num, Form(Scalar(1)): SemanticState)  // e.g. "(draw) a card"
+      (Num, Scalar(1): Sem)  // e.g. "(draw) a card"
     )) +
-    ("a player" -> (NP, Form(ChooseO(ObjectsInPlay(Kernel))): SemanticState)) +
-    ("a random tile" -> (NP, Form(RandomO(Scalar(1), AllTiles)): SemanticState)) +
-    ("a tile" -> (NP, Form(ChooseO(AllTiles)): SemanticState)) +
+    ("a player" -> (NP, ChooseO(ObjectsInPlay(Kernel)): Sem)) +
+    ("a random tile" -> (NP, RandomO(Scalar(1), AllTiles): Sem)) +
+    ("a tile" -> (NP, ChooseO(AllTiles): Sem)) +
     ("activate:" -> (S/S, λ {a: Action => ActivatedAbility(a)})) +
     ("adjacent" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisObject)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
-    ("adjacent tile" -> (NP, Form(TilesMatchingConditions(Seq(AdjacentTo(They)))): SemanticState)) +  // e.g. "Move each robot to a random adjacent tile."
+    ("adjacent tile" -> (NP, TilesMatchingConditions(Seq(AdjacentTo(They))): Sem)) +  // e.g. "Move each robot to a random adjacent tile."
     ("adjacent to" -> Seq(
       (PP/NP, λ {t: TargetObject => AdjacentTo(t)}),
       ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}}),
@@ -66,8 +70,8 @@ object Lexicon {
       (NP/NP, λ {c: Collection => c}),
       (NP/PP, λ {c: Collection => c})
     )) +
-    ("all" /?/ Seq("attributes", "stats") -> (N, Form(AllAttributes): SemanticState)) +
-    (Seq("all players", "each player", "every player", "both players") -> (NP, Form(AllPlayers): SemanticState)) +
+    ("all" /?/ Seq("attributes", "stats") -> (N, AllAttributes: Sem)) +
+    (Seq("all players", "each player", "every player", "both players") -> (NP, AllPlayers: Sem)) +
     (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
       // Specific.
@@ -82,7 +86,7 @@ object Lexicon {
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     (Seq("attack", "power") -> Seq(
-      (N, Form(Attack): SemanticState),
+      (N, Attack: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)}),
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Attack)}),
       (NP\Adj, λ {comp : Comparison => AttributeComparison(Attack, comp)}), // needed for "> x health"
@@ -93,8 +97,8 @@ object Lexicon {
       (S\NP, λ {t: TargetObject => AfterAttack(t, AllObjects)}),
       ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterAttack(t, o)}})
     )) +
-    ("attacked last turn" -> (S, Form(HasProperty(AttackedLastTurn)): SemanticState)) +
-    ("attacked this turn" -> (S, Form(HasProperty(AttackedThisTurn)): SemanticState)) +
+    ("attacked last turn" -> (S, HasProperty(AttackedLastTurn): Sem)) +
+    ("attacked this turn" -> (S, HasProperty(AttackedThisTurn): Sem)) +
     ("away" -> Seq(
       ((NP\N)\NP, λ {s: Spaces => λ {t: ObjectType => ObjectsMatchingConditions(t, Seq(ExactDistanceFrom(s.num, ThisObject)))}}), // "a robot X spaces away"
       ((NP\NP)\NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ExactDistanceFrom(s.num, ThisObject))}})
@@ -113,10 +117,10 @@ object Lexicon {
     ("can't attack" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotAttack)})) +
     ("can't be changed" -> (S\NP, λ {t: TargetAttribute => FreezeAttribute(t.target, t.attr)})) +
     (("card".s :+ "a card") -> Seq(
-      (N, Form(AnyCard): SemanticState),
+      (N, AnyCard: Sem),
       (NP\Num, λ {num: Number => Cards(num)}),
       (NP/Adj, λ {num: Number => Cards(num)}),
-      (NP, Form(CardsInHand(Self)): SemanticState),
+      (NP, CardsInHand(Self): Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player)}),
       (NP\N, λ {cardType: CardType => CardsInHand(Self, cardType)}),
       ((NP/PP)\N, λ {cardType: CardType => λ {hand: Hand => CardsInHand(hand.player, cardType)}})
@@ -128,7 +132,7 @@ object Lexicon {
     ) +
     ("a copy of" -> (NP/NP, λ {t:TargetObject => CopyOfC(t)})) + // can this be decomposed further?
     (Seq("cost", "energy cost") -> Seq(
-      (N, Form(Cost): SemanticState),
+      (N, Cost: Sem),
       (NP/Adj, λ {comp : Comparison => AttributeComparison(Cost, comp)}), // needed for "cost > x "
       (NP/Num, λ {n: Number => AttributeComparison(Cost, EqualTo(n))}), // "...with cost X"(implied "equal to" in there)
       ((S\NP)/Num, λ {i: Scalar => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, Constant(i))}}),
@@ -164,15 +168,15 @@ object Lexicon {
       (V/N, λ {a: Attribute => AttributeOperation(Multiply(Scalar(2)), a)})
     )) +
     (Seq("each", "every", "each player 's", "every player 's") -> Seq(
-      (Adj, Form(AllPlayers): SemanticState),  // e.g. "each turn"
+      (Adj, AllPlayers: Sem),  // e.g. "each turn"
       (NP/PP, identity)  // e.g. "each of (your turns)"
     )) +
     ("end" -> (NP/PP, λ {turn: Turn => EndOfTurn(turn.player)})) +
-    (Seq("end of turn", "end of the turn") -> (NP, Form(TurnsPassed(1)): SemanticState)) +
-    (Seq("end of next turn", "end of the next turn") -> (NP, Form(TurnsPassed(2)): SemanticState)) +
-    ("immediately" /?/ Seq("end the turn", "end your turn") -> (S, Form(EndTurn): SemanticState)) +
+    (Seq("end of turn", "end of the turn") -> (NP, TurnsPassed(1): Sem)) +
+    (Seq("end of next turn", "end of the next turn") -> (NP, TurnsPassed(2): Sem)) +
+    ("immediately" /?/ Seq("end the turn", "end your turn") -> (S, EndTurn: Sem)) +
     ("enemy" -> Seq(
-      (NP, Form(ObjectsMatchingConditions(AllObjects, Seq(ControlledBy(Opponent)))): SemanticState),
+      (NP, ObjectsMatchingConditions(AllObjects, Seq(ControlledBy(Opponent))): Sem),
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Opponent)) ++ c.conditions)})
     )) +
@@ -186,11 +190,11 @@ object Lexicon {
       (Adj/PP, λ {num: Number => EqualTo(num)})
     )) +
     (("event".s ++ "event card".s) -> Seq(
-      (N, Form(Event): SemanticState),
+      (N, Event: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)})  // e.g. "All events in your hand"
     )) +
     (Seq("for each", "for every") -> (Adj/NP, λ {c: Collection => Count(c)})) +
-    ("everything" -> (N, Form(AllObjects): SemanticState)) +
+    ("everything" -> (N, AllObjects: Sem)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => AllO(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
     ("friendly" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
@@ -249,7 +253,7 @@ object Lexicon {
         MultipleAbilities(Seq(AttributeAdjustment(t, a._2.attr, a._2.op), HasAbility(t, a._1)))}})
     )) +
     (Seq("health", "life") -> Seq(
-      (N, Form(Health): SemanticState),
+      (N, Health: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Health)}),
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Health)}),
       (NP\Num, λ {n: Number => AttributeComparison(Health, EqualTo(n))}), // "...with X health"(implied "equal to" in there)
@@ -263,11 +267,11 @@ object Lexicon {
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("is" -> (X|X, identity)) +
-    ("it" -> (NP, Form(ItO): SemanticState)) +
+    ("it" -> (NP, ItO: Sem)) +
     ("its" -> (Num/N, λ {a: Attribute => AttributeValue(ItO, a)})) +
-    ("its controller" -> (NP, Form(ControllerOf(ItO)): SemanticState)) +
-    (Seq("its owner 's hand", "its controller 's hand", "their owner 's hands", "their controller 's hands") -> (NP, Form(ItsOwnersHand): SemanticState)) +
-    (("kernel".s ++ "core".s) -> (N, Form(Kernel): SemanticState)) +
+    ("its controller" -> (NP, ControllerOf(ItO): Sem)) +
+    (Seq("its owner 's hand", "its controller 's hand", "their owner 's hands", "their controller 's hands") -> (NP, ItsOwnersHand: Sem)) +
+    (("kernel".s ++ "core".s) -> (N, Kernel: Sem)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
     (Seq("lose", "pay") -> (S/NP, λ {l: Life => DealDamage(Self, l.amount)})) +
@@ -281,8 +285,8 @@ object Lexicon {
       )}})
     )) +
     (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
-    ("moved last turn" -> (S, Form(HasProperty(MovedLastTurn)): SemanticState)) +
-    ("moved this turn" -> (S, Form(HasProperty(MovedThisTurn)): SemanticState)) +
+    ("moved last turn" -> (S, HasProperty(MovedLastTurn): Sem)) +
+    ("moved this turn" -> (S, HasProperty(MovedThisTurn): Sem)) +
     ("moves" -> Seq(
       (S\NP, λ {c: ChooseO => AfterMove(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterMove(t)})
@@ -290,7 +294,7 @@ object Lexicon {
     ("must" -> (X/X, identity)) +
     ("named" -> ((NP/NP)\NP, λ {c: GeneratedCard => λ {n: Name => GeneratedCard(c.cardType, c.attributes, Some(n.name))}})) +
     ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
-    (("object".s :+ "objects '") -> (N, Form(AllObjects): SemanticState)) +
+    (("object".s :+ "objects '") -> (N, AllObjects: Sem)) +
     ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
     (Seq("other", "another") -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
     (Seq("or", "and") -> ((N/N)\N, λ {o1: ObjectType => λ {o2: ObjectType => MultipleObjectTypes(Seq(o1, o2))}})) +
@@ -331,13 +335,13 @@ object Lexicon {
     )) +
     ("return" -> ((S/PP)/NP, λ {t: TargetObject => λ {_: ItsOwnersHand.type => ReturnToHand(t)}})) +
     (("robot".s :+ "robots '") -> Seq(
-      (N, Form(Robot): SemanticState),
+      (N, Robot: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)}),  // e.g. "all robots in your hand"
       (NP\Adj, λ {attrs: Seq[AttributeAmount] => GeneratedCard(Robot, attrs)})  // e.g. "a 3/1/2 robot"
     )) +
-    ("robot on the board" -> (N, Form(Robot): SemanticState)) +  // e.g. "If you control a robot on the board with 3 or more health, ..."
-    ("rounded down" -> (Adv, Form(RoundedDown): SemanticState)) +
-    ("rounded up" -> (Adv, Form(RoundedUp): SemanticState)) +
+    ("robot on the board" -> (N, Robot: Sem)) +  // e.g. "If you control a robot on the board with 3 or more health, ..."
+    ("rounded down" -> (Adv, RoundedDown: Sem)) +
+    ("rounded up" -> (Adv, RoundedUp: Sem)) +
     ("set" -> Seq(
       ((S/PP)/NP, λ {t: TargetAttribute => λ {num: Number => SetAttribute(t.target, t.attr, num)}}),
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}}),
@@ -349,19 +353,21 @@ object Lexicon {
       (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})
     )) +
     (Seq("spaces", "tiles", "hexes") -> Seq(
-      (NP\Num, λ {num: Number => Spaces(num)}),
-      (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)})
+      (NP, AllTiles: Sem),  // e.g. "all tiles"
+      (NP\Num, λ {num: Number => Spaces(num)}),  // e.g. "3 tiles"
+      (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)}),  // e.g. "up to 3 tiles away"
+      (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})  // e.g. "all tiles adjacent to your kernel"
     )) +
-    (Seq("spawn", "create") -> ((S/PP)/NP, λ {c: GeneratedCard => λ {t: TargetObject => SpawnObject(c, t)}})) +
+    (Seq("spawn", "create") -> ((S/PP)/NP, λ {c: SpawnableCard => λ {t: TargetObject => SpawnObject(c, t)}})) +
     ("speed" -> Seq(
-      (N, Form(Speed): SemanticState),
+      (N, Speed: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)}),
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Speed)}),
       (NP\Adj, λ {comp : Comparison => AttributeComparison(Speed, comp)}), // need for "> x speed"
       (NP\Num, λ {n: Number => AttributeComparison(Speed, EqualTo(n))}) // need for "...with X health"(implied "equal to" in there)
     )) +
     (("structure".s :+ "structures '") -> Seq(
-      (N, Form(Structure): SemanticState),
+      (N, Structure: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Structure)})  // e.g. "All structures in your hand"
     )) +
     ("swap" -> Seq(
@@ -382,12 +388,12 @@ object Lexicon {
       ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}}),
       ((NP\N)/S, λ {cs: Seq[Condition] => λ {o: ObjectType => ObjectsMatchingConditions(o, cs)}})
     )) +
-    ("that" / Seq("robot", "creature", "structure", "object") -> (NP, Form(That): SemanticState)) +
-    (Seq("that player", "they") -> (NP, Form(ItP): SemanticState)) +
+    ("that" / Seq("robot", "creature", "structure", "object") -> (NP, That: Sem)) +
+    (Seq("that player", "they") -> (NP, ItP: Sem)) +
     ("the" -> (X/X, identity)) +
     ("their" -> (Num/N, λ {a: Attribute => AttributeValue(They, a)})) +
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
-    ("this" / Seq("robot", "creature", "structure", "object") -> (NP, Form(ThisObject): SemanticState)) +
+    ("this" / Seq("robot", "creature", "structure", "object") -> (NP, ThisObject: Sem)) +
     ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +
     ("transform" -> Seq(
       ((S/PP)/NP, λ {source: TargetObject => λ {target: TargetCard => Become(source, target)}}), // used with aCopyOf
@@ -404,19 +410,19 @@ object Lexicon {
       ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => GeneratedCard(o, attrs)}})
     )) +
     ("within" -> ((NP\NP)/NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ WithinDistanceOf(s.num, ThisObject))}})) +
-    (Seq("you", "yourself") -> (NP, Form(Self): SemanticState)) +
+    (Seq("you", "yourself") -> (NP, Self: Sem)) +
     ("your" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Self))}),
-      (Adj, Form(Self): SemanticState)
+      (Adj, Self: Sem)
     )) +
-    ("your energy" -> (NP, Form(EnergyAmount(Self)): SemanticState)) +
-    (Seq("your opponent", "the opponent") -> (NP, Form(Opponent): SemanticState)) +
-    ("your opponent 's energy" -> (NP, Form(EnergyAmount(Opponent)): SemanticState)) +
+    ("your energy" -> (NP, EnergyAmount(Self): Sem)) +
+    (Seq("your opponent", "the opponent") -> (NP, Opponent: Sem)) +
+    ("your opponent 's energy" -> (NP, EnergyAmount(Opponent): Sem)) +
     (Seq("your opponent 's", "the opponent 's", "all of your opponent 's") -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Opponent))}),
-      (Adj, Form(Opponent): SemanticState)
+      (Adj, Opponent: Sem)
     )) +
     (Seq("'", "'s") -> Seq(
       ((NP\NP)/N, λ {a: Attribute => λ {t: TargetObjectOrPlayer => TargetAttribute(t, a)}}),
@@ -426,15 +432,15 @@ object Lexicon {
       (Quoted/S, identity),
       (S\Quoted, identity)
     )) +
-    (StrictIntegerMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
-    (NumberWordMatcher -> (Num, {i: Int => Form(Scalar(i))})) +
-    (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Form(Plus(Scalar(i)))})) +
-    (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Form(Minus(Scalar(i)))})) +
+    (StrictIntegerMatcher -> (Num, {i: Int => Scalar(i): Sem})) +
+    (NumberWordMatcher -> (Num, {i: Int => Scalar(i): Sem})) +
+    (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Plus(Scalar(i)): Sem})) +
+    (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Minus(Scalar(i)): Sem})) +
     (StatsTripleMatcher -> (NP/N, {s: StatsTriple =>
       λ {o: ObjectType =>
         GeneratedCard(o, Seq(AttributeAmount(Scalar(s.attack), Attack), AttributeAmount(Scalar(s.health), Health), AttributeAmount(Scalar(s.speed), Speed)))}
     })) +
-    (NameMatcher -> (NP, {str: String => Form(Name(str))}))
+    (NameMatcher -> (NP, {str: String => Name(str): Sem}))
 
   lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
     ParserDict[CcgCat](
@@ -452,10 +458,10 @@ object Lexicon {
       .sortBy(cat => cat.category.count(raw"/|\\" contains _))  // Sort categories by increasing complexity.
   }
 
-  lazy val categoriesMap: Map[String, Seq[(CcgCat, SemanticState)]] = {
+  lazy val categoriesMap: Map[String, Seq[(CcgCat, Sem)]] = {
     categories.map(cat => s"#${cat.category.toLowerCase.replaceAll("[\\(\\)]", "")}#" -> Seq(cat -> Ignored(""))).toMap
   }
-  lazy val terminalCategoriesMap: Map[String, Seq[(CcgCat, SemanticState)]] = {
+  lazy val terminalCategoriesMap: Map[String, Seq[(CcgCat, Sem)]] = {
     categoriesMap.filterKeys(cat => cat.matches(raw"[^/|\\]*"))
   }
 

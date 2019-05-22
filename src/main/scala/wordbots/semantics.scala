@@ -34,9 +34,11 @@ sealed trait Action extends AstNode
   case class ReturnToHand(target: TargetObject) extends Action
   case class RestoreAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Option[Number] = None) extends Action
   case class SetAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Number) extends Action
-  case class SpawnObject(target: GeneratedCard, dest: TargetObject) extends Action {
-    if (target.name.isEmpty) {
-      throw new ClassCastException("SpawnObject requires a GeneratedCard with a name")
+  case class SpawnObject(target: SpawnableCard, dest: TargetObject) extends Action {
+    target match {
+      case c: GeneratedCard if c.name.isEmpty =>
+        throw new ClassCastException("Can't spawn a GeneratedCard without a name")
+      case _ =>
     }
   }
   case class SwapAttributes(target: TargetObject, attr1: Attribute, attr2: Attribute) extends Action
@@ -84,7 +86,8 @@ sealed trait Target extends AstNode
     case object They extends TargetObject  // (Salient object, but preferring the current object in an iteration over a collection)
     case object SavedTargetObject extends TargetObject
   sealed trait TargetCard extends TargetObjectOrCard
-    case class CopyOfC(objToCopy: TargetObject) extends TargetCard
+    sealed trait SpawnableCard extends TargetCard
+    case class CopyOfC(objToCopy: TargetObject) extends SpawnableCard
     case class ChooseC(collection: CardCollection) extends TargetCard
     case class AllC(collection: CardCollection) extends TargetCard
     case class RandomC(num: Number, collection: CardCollection) extends TargetCard
@@ -92,7 +95,7 @@ sealed trait Target extends AstNode
       cardType: ObjectType,
       attributes: Seq[AttributeAmount] = Seq.empty,
       name: Option[String] = None
-    ) extends TargetCard {
+    ) extends SpawnableCard {
       def getAttributeAmount(attribute: Attribute): Seq[Number] = {
         // This returns a Seq[Number] rather than Option[Number] because it's possible to, e.g.
         // write something like "a robot with 2 attack and 3 attack".
