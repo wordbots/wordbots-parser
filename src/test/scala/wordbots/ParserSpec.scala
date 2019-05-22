@@ -180,7 +180,7 @@ class ParserSpec extends FlatSpec with Matchers {
           Seq(AttributeAmount(Scalar(1), Attack), AttributeAmount(Scalar(1), Health), AttributeAmount(Scalar(1), Speed)),
           Some("Test Bot")
         ),
-        ObjectsMatchingConditions(Kernel, List(AdjacentTo(ThisObject), ControlledBy(Self)))
+        ChooseO(TilesMatchingConditions(Seq(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))))))
       )
 
     // Alpha v0.12 playtesting:
@@ -343,6 +343,7 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, List(AttributeComparison(Health, GreaterThanOrEqualTo(Scalar(3))), ControlledBy(Self)))), Draw(Self, Scalar(2))))
 
     // Alpha v0.12 playtesting:
+    val potatoBot = GeneratedCard(Robot, attrs(1, 1, 1),Some("Potato"))
     parse("When this robot is destroyed, it deals damage equal to its power to your opponent's kernel") shouldEqual
       TriggeredAbility(AfterDestroyed(ThisObject, AnyEvent), DealDamage(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Opponent))), AttributeValue(ItO, Attack)))
     parse("When this robot is played, spawn a 0/1/0 robot named \"Faygo\" on all tiles adjacent to a random enemy robot") shouldEqual
@@ -358,9 +359,15 @@ class ParserSpec extends FlatSpec with Matchers {
         BeginningOfTurn(Opponent),
         SpawnObject(
           CopyOfC(ThisObject),
-          RandomO(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ObjectsMatchingConditions(Kernel, List(ControlledBy(Opponent)))))))
+          RandomO(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Opponent)))))))
         )
       )
+    parse("When this robot is played, spawn a 1/1/1 robot named \"Potato\" adjacent to this robot") shouldEqual
+      TriggeredAbility(AfterPlayed(ThisObject), SpawnObject(potatoBot, ChooseO(TilesMatchingConditions(Seq(AdjacentTo(ThisObject))))))
+    parse("At the beginning of your turn, spawn a 1/1/1 robot named \"Potato\" on a random tile within 2 hexes of this robot") shouldEqual
+      TriggeredAbility(BeginningOfTurn(Self), SpawnObject(potatoBot, RandomO(Scalar(1), TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(2), ThisObject))))))
+    parse("At the beginning of your turn, spawn a 1/1/1 robot named \"Potato\" on a random tile 2 spaces away from this robot") shouldEqual
+      TriggeredAbility(BeginningOfTurn(Self), SpawnObject(potatoBot, RandomO(Scalar(1), TilesMatchingConditions(Seq(ExactDistanceFrom(Scalar(2), ThisObject))))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

@@ -56,6 +56,7 @@ object Lexicon {
     ("adjacent tile" -> (NP, TilesMatchingConditions(Seq(AdjacentTo(They))): Sem)) +  // e.g. "Move each robot to a random adjacent tile."
     ("adjacent to" -> Seq(
       (PP/NP, λ {t: TargetObject => AdjacentTo(t)}),
+      (PP/NP, λ {t: TargetObject => ChooseO(TilesMatchingConditions(Seq(AdjacentTo(t))))}),
       ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObject => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}}),
       (PP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
@@ -100,6 +101,8 @@ object Lexicon {
     ("attacked last turn" -> (S, HasProperty(AttackedLastTurn): Sem)) +
     ("attacked this turn" -> (S, HasProperty(AttackedThisTurn): Sem)) +
     ("away" -> Seq(
+      (PP\NP, λ {s: Spaces => ExactDistanceFrom(s.num, ThisObject)}),  // "X spaces away"
+      ((PP/PP)\NP, λ {s: Spaces => λ {t: TargetObject => ExactDistanceFrom(s.num, t)}}),  // "X spaces away from this robot"
       ((NP\N)\NP, λ {s: Spaces => λ {t: ObjectType => ObjectsMatchingConditions(t, Seq(ExactDistanceFrom(s.num, ThisObject)))}}), // "a robot X spaces away"
       ((NP\NP)\NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ExactDistanceFrom(s.num, ThisObject))}})
     )) +
@@ -409,7 +412,11 @@ object Lexicon {
       ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}}),
       ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => GeneratedCard(o, attrs)}})
     )) +
-    ("within" -> ((NP\NP)/NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ WithinDistanceOf(s.num, ThisObject))}})) +
+    ("within" -> Seq(
+      (PP/NP, λ {s: Spaces => WithinDistanceOf(s.num, ThisObject)}),
+      ((PP/PP)/NP, λ {s: Spaces => λ {t: TargetObject => WithinDistanceOf(s.num, t)}}),
+      ((NP\NP)/NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ WithinDistanceOf(s.num, ThisObject))}})
+    )) +
     (Seq("you", "yourself") -> (NP, Self: Sem)) +
     ("your" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
