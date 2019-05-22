@@ -185,6 +185,15 @@ class ParserSpec extends FlatSpec with Matchers {
         ObjectsMatchingConditions(Robot, Seq()),
         parse("When this robot is destroyed, it deals damage equal to its power to the opponent's kernel").asInstanceOf[Ability]
       )
+    parse("Move each robot to a random tile") shouldEqual
+      MoveObject(ObjectsMatchingConditions(Robot, Seq()), RandomO(Scalar(1), AllTiles))
+    parse("Move all robots to a random adjacent tile") shouldEqual
+      MoveObject(ObjectsMatchingConditions(Robot, Seq()), RandomO(Scalar(1), TilesMatchingConditions(Seq(AdjacentTo(They)))))
+    parse("Move a random robot 1 space") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(RandomO(Scalar(1), ObjectsInPlay(Robot))),
+        MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(1), SavedTargetObject), Unoccupied))))
+      ))
   }
 
   it should "treat 'with' as 'that has'" in {
