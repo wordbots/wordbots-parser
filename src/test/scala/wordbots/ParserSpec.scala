@@ -31,6 +31,10 @@ class ParserSpec extends FlatSpec with Matchers {
     CodeGenerator.generateJS(parse(input).asInstanceOf[AstNode]).get
   }
 
+  def attrs(attack: Int, health: Int, speed: Int): Seq[AttributeAmount] = {
+    Seq(AttributeAmount(Scalar(attack), Attack), AttributeAmount(Scalar(health), Health), AttributeAmount(Scalar(speed), Speed))
+  }
+
   it should "parse simple actions" in {
     parse("Draw a card") should equal (Draw(Self, Scalar(1)))
     parse("Destroy a robot") should equal (Destroy(ChooseO(ObjectsInPlay(Robot))))
@@ -341,6 +345,22 @@ class ParserSpec extends FlatSpec with Matchers {
     // Alpha v0.12 playtesting:
     parse("When this robot is destroyed, it deals damage equal to its power to your opponent's kernel") shouldEqual
       TriggeredAbility(AfterDestroyed(ThisObject, AnyEvent), DealDamage(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Opponent))), AttributeValue(ItO, Attack)))
+    parse("When this robot is played, spawn a 0/1/0 robot named \"Faygo\" on all tiles adjacent to a random enemy robot") shouldEqual
+      TriggeredAbility(
+        AfterPlayed(ThisObject),
+        SpawnObject(
+          GeneratedCard(Robot, attrs(0, 1, 0), Some("Faygo")),
+          TilesMatchingConditions(Seq(AdjacentTo(RandomO(Scalar(1), ObjectsMatchingConditions(Robot, Seq(ControlledBy(Opponent)))))))
+        )
+      )
+    parse("At the beginning of your opponent's turn, spawn a copy of this robot on a random tile adjacent to your opponent's kernel") shouldEqual
+      TriggeredAbility(
+        BeginningOfTurn(Opponent),
+        SpawnObject(
+          CopyOfC(ThisObject),
+          RandomO(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ObjectsMatchingConditions(Kernel, List(ControlledBy(Opponent)))))))
+        )
+      )
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -407,10 +427,6 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   it should "parse actions and abilities involving spawning new objects (v0.11)" in {
-    def attrs(attack: Int, health: Int, speed: Int): Seq[AttributeAmount] = {
-      Seq(AttributeAmount(Scalar(attack), Attack), AttributeAmount(Scalar(health), Health), AttributeAmount(Scalar(speed), Speed))
-    }
-
     parse("Whenever a robot is destroyed, spawn a 2/1/1 robot named \"Zombie Bot\" on a random tile") shouldEqual
       TriggeredAbility(
         AfterDestroyed(AllO(ObjectsMatchingConditions(Robot, Seq())), AnyEvent),
