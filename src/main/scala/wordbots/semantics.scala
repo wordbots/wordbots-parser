@@ -103,7 +103,7 @@ sealed trait Target extends AstNode
         attributes.filter(_.attr == attribute).map(_.amount)
       }
     }
-sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
+  sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
     case object Self extends TargetPlayer
     case object Opponent extends TargetPlayer
     case object AllPlayers extends TargetPlayer
