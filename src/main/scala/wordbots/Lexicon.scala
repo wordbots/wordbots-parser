@@ -379,6 +379,7 @@ object Lexicon {
       ((S/PP)/N, λ {attrs: Seq[Attribute] => λ {t: TargetObject => SwapAttributes(t, attrs(0), attrs(1))}})
     )) +
     ("take control" -> (S/PP, λ {t: TargetObject => TakeControl(Self, t)})) +
+    ("takes control" -> ((S\NP)/PP, λ {t: TargetObject => λ {p: TargetPlayer => TakeControl(p, t)}})) +
     ("takes damage" -> Seq(
       (S\NP, λ {c: ChooseO => AfterDamageReceived(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterDamageReceived(t)})
