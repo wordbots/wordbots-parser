@@ -169,10 +169,12 @@ sealed trait TriggerEvent extends Label
   case object Combat extends TriggerEvent
 
 sealed trait Attribute extends Label
-  case object Attack extends Attribute
-  case object Cost extends Attribute
-  case object Health extends Attribute
-  case object Speed extends Attribute
+  sealed trait SingleAttribute extends Attribute
+    case object Attack extends SingleAttribute
+    case object Cost extends SingleAttribute
+    case object Health extends SingleAttribute
+    case object Speed extends SingleAttribute
+  case class MultipleAttributes(labels: Seq[Attribute]) extends Attribute with MultiLabel
   case object AllAttributes extends Attribute
 
 sealed trait Property extends Label

@@ -77,6 +77,7 @@ object Lexicon {
     ("and" -> Seq(
       // Specific.
       ((S/S)\S, λ {a: TriggeredAbility => λ {b: TriggeredAbility => MultipleAbilities(Seq(a, b))}}),
+      ((N/N)\N, λ {a1: Attribute => λ {a2: Attribute => MultipleAttributes(Seq(a1, a2))}}),
       // General.
       (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
       (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
@@ -106,6 +107,7 @@ object Lexicon {
       ((NP\N)\NP, λ {s: Spaces => λ {t: ObjectType => ObjectsMatchingConditions(t, Seq(ExactDistanceFrom(s.num, ThisObject)))}}), // "a robot X spaces away"
       ((NP\NP)\NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ExactDistanceFrom(s.num, ThisObject))}})
     )) +
+    ("become".s -> ((S/Adj)\NP, λ {t: TargetAttribute => λ {num: Number => SetAttribute(t.target, t.attr, num)}})) +  // e.g. "Each robot's attack becomes X"
     (("become".s :+ "becomes a") -> Seq(
       ((S\NP)/NP, λ {target: TargetCard => λ {source: TargetObject => Become(source, target)}}), // used with aCopyOf
       ((S\NP)/NP, λ {target: GeneratedCard => λ {source: TargetObject => Become(source, target)}}) // only used in such things as "becomes a robot with 1 attack and...".
@@ -347,8 +349,7 @@ object Lexicon {
     ("rounded up" -> (Adv, RoundedUp: Sem)) +
     ("set" -> Seq(
       ((S/PP)/NP, λ {t: TargetAttribute => λ {num: Number => SetAttribute(t.target, t.attr, num)}}),
-      (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}}),
-      (((S/PP)/PP)/N, λ {as: Seq[Attribute] => λ {t: TargetObject => λ {num: Number => MultipleActions(Seq(SaveTarget(t)) ++ as.map(a => SetAttribute(SavedTargetObject, a, num)))}}})
+      (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}})
     )) +
     (Seq("space", "tile", "hex") -> Seq(
       (NP\Num, λ {num: Number => if (num == Scalar(1)) Spaces(num) else Fail("Use 'tiles' instead of 'tile'") }),
