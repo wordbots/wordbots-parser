@@ -93,12 +93,8 @@ class ParserSpec extends FlatSpec with Matchers {
         ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
         ModifyAttribute(SavedTargetObject, Health, Plus(Scalar(1)))
       ))
-    parse("Set the attack and speed of all robots in play to 0") shouldEqual
-      MultipleActions(Seq(
-        SaveTarget(ObjectsInPlay(Robot)),
-        SetAttribute(SavedTargetObject, Attack, Scalar(0)),
-        SetAttribute(SavedTargetObject, Speed, Scalar(0))
-      ))
+    parse("Set the attack and speed of all robots in play to 0") shouldEqual  // as of v0.12, this no longer requires MultipleActions
+      SetAttribute(ObjectsMatchingConditions(Robot, Seq()), MultipleAttributes(Seq(Attack, Speed)), Scalar(0))
   }
 
   it should "parse more complex actions" in {
@@ -198,6 +194,10 @@ class ParserSpec extends FlatSpec with Matchers {
         SaveTarget(RandomO(Scalar(1), ObjectsInPlay(Robot))),
         MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(1), SavedTargetObject), Unoccupied))))
       ))
+    parse("each robot's attack becomes equal to its health") shouldEqual
+      SetAttribute(ObjectsMatchingConditions(Robot, Seq()), Attack, AttributeValue(ItO, Health))
+    parse("Each robot's attack and speed become equal to its health") shouldEqual
+      SetAttribute(ObjectsMatchingConditions(Robot, Seq()), MultipleAttributes(Seq(Attack, Speed)), AttributeValue(ItO, Health))
   }
 
   it should "treat 'with' as 'that has'" in {
