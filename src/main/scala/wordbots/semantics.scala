@@ -34,7 +34,7 @@ sealed trait Action extends AstNode
   case class ReturnToHand(target: TargetObject) extends Action
   case class RestoreAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Option[Number] = None) extends Action
   case class SetAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Number) extends Action
-  case class SpawnObject(target: SpawnableCard, dest: TargetObject) extends Action {
+  case class SpawnObject(target: SpawnableCard, dest: TargetObject, owner: TargetPlayer = Self) extends Action {
     target match {
       case c: GeneratedCard if c.name.isEmpty =>
         throw new ClassCastException("Can't spawn a GeneratedCard without a name")

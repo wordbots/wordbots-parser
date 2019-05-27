@@ -362,7 +362,8 @@ object Lexicon {
       (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)}),  // e.g. "up to 3 tiles away"
       (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})  // e.g. "all tiles adjacent to your kernel"
     )) +
-    (Seq("spawn", "create") -> ((S/PP)/NP, λ {c: SpawnableCard => λ {t: TargetObject => SpawnObject(c, t)}})) +
+    (Seq("spawn", "create") -> ((S/PP)/NP, λ {c: SpawnableCard => λ {t: TargetObject => SpawnObject(c, t, Self)}})) +
+    (Seq("spawns", "creates") -> (((S\NP)/PP)/NP, λ {c: SpawnableCard => λ {t: TargetObject =>  λ {p: TargetPlayer => SpawnObject(c, t, p)}}})) +
     ("speed" -> Seq(
       (N, Speed: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)}),
