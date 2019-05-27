@@ -181,7 +181,7 @@ object ValidGeneratedCard extends AstRule {
 object ValidDestForSpawnObject extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
-      case SpawnObject(_, dest) =>
+      case SpawnObject(_, dest, _) =>
         dest match {
           case ChooseO(c) => validateCollectionCouldBeAnEmptyTile(c)
           case AllO(c) => validateCollectionCouldBeAnEmptyTile(c)

@@ -370,6 +370,15 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(BeginningOfTurn(Self), SpawnObject(potatoBot, RandomO(Scalar(1), TilesMatchingConditions(Seq(ExactDistanceFrom(Scalar(2), ThisObject))))))
     parse("At the end of your turn, your opponent takes control of this robot") shouldEqual
       TriggeredAbility(EndOfTurn(Self), TakeControl(Opponent, ThisObject))
+    parse("At the end of your turn, your opponent spawns a 1/1/1 robot named \"Nemesis\" on a random tile adjacent to this robot") shouldEqual
+      TriggeredAbility(
+        EndOfTurn(Self),
+        SpawnObject(
+          GeneratedCard(Robot, attrs(1, 1, 1), Some("Nemesis")),
+          RandomO(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ThisObject)))),
+          Opponent
+        )
+      )
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
