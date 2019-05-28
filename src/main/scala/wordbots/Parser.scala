@@ -5,7 +5,7 @@ import com.workday.montague.parser.{ParserDict, SemanticParseResult, SemanticPar
 import com.workday.montague.semantics._
 
 import scala.language.postfixOps
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   val VERSION = s"v${BuildInfo.version.split("-SNAPSHOT")(0)}"
@@ -17,9 +17,9 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     val result: SemanticParseResult[CcgCat] = parse(input)
 
     val output: String = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
-    val code: Option[String] = result.bestParse.map(_.semantic).flatMap {
-      case Form(v: AstNode) => CodeGenerator.generateJS(v).toOption
-      case _ => None
+    val code: Try[String] = Try { result.bestParse.get.semantic }.flatMap {
+      case Form(v: AstNode) => CodeGenerator.generateJS(v)
+      case _ => Failure(new RuntimeException("Parser did not produce a valid expression"))
     }
 
     // scalastyle:off regex
@@ -27,7 +27,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
     println(s"Error diagnosis: ${ErrorAnalyzer.diagnoseError(input, result.bestParse)}")
-    println(s"Generated JS code: ${code.getOrElse("None")}")
+    println(s"Generated JS code: ${code.getOrElse(code.failed.get)}")
     // scalastyle:on regex
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.

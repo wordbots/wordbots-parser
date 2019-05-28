@@ -146,9 +146,11 @@ object CodeGenerator {
       case AttributeValue(obj, attr) => s"attributeValue(${g(obj)}, ${g(attr)})"
       case Count(collection) => s"count(${g(collection)})"
       case EnergyAmount(player) => s"energyAmount(${g(player)})"
+      case Times(n1, n2) => s"((${g(n1)}) * (${g(n2)}))"
 
       // Collections
       case AllTiles => s"allTiles()"
+      case CardsInDiscardPile(player, cardType) => s"cardsInDiscardPile(${g(player)}, ${g(cardType)})"
       case CardsInHand(player, cardType) => s"cardsInHand(${g(player)}, ${g(cardType)})"
       case ObjectsMatchingConditions(objType, conditions) => s"objectsMatchingConditions(${g(objType)}, ${conditions.map(g).mkString("[", ", ", "]")})"
       case Other(collection) => s"other(${g(collection)})"

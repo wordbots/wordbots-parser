@@ -127,8 +127,10 @@ object Lexicon {
       (NP/Adj, λ {num: Number => Cards(num)}),
       (NP, CardsInHand(Self): Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player)}),
+      (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player)}),
       (NP\N, λ {cardType: CardType => CardsInHand(Self, cardType)}),
-      ((NP/PP)\N, λ {cardType: CardType => λ {hand: Hand => CardsInHand(hand.player, cardType)}})
+      ((NP/PP)\N, λ {cardType: CardType => λ {hand: Hand => CardsInHand(hand.player, cardType)}}),
+      ((NP/PP)\N, λ {cardType: CardType => λ {d: DiscardPile => CardsInDiscardPile(d.player, cardType)}})
     )) +
     ("control".s -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(p)))}})) +
     (Seq("control a", "control an", "has a", "has an", "have a", "have an") ->
@@ -167,12 +169,13 @@ object Lexicon {
     ("draw".s -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: Cards => Draw(p, c.num)}})) +
     ("discard" -> (S/NP, λ {t: TargetCard => Discard(t)})) +
     ("discards" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})) +
+    ("discard pile".s -> (NP\Adj, λ {p: TargetPlayer => DiscardPile(p)})) +
     ("double" -> Seq(
       (S/NP, λ {ta: TargetAttribute => ModifyAttribute(ta.target, ta.attr, Multiply(Scalar(2)))}),
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Multiply(Scalar(2)))}}),
       (V/N, λ {a: Attribute => AttributeOperation(Multiply(Scalar(2)), a)})
     )) +
-    (Seq("each", "every", "each player 's", "every player 's") -> Seq(
+    (Seq("each", "every", "all", "each player 's", "every player 's") -> Seq(
       (Adj, AllPlayers: Sem),  // e.g. "each turn"
       (NP/PP, identity)  // e.g. "each of (your turns)"
     )) +
@@ -196,9 +199,13 @@ object Lexicon {
     )) +
     (("event".s ++ "event card".s) -> Seq(
       (N, Event: Sem),
-      (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)})  // e.g. "All events in your hand"
+      (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)}),  // e.g. "All events in your hand"
+      (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Event)})
     )) +
-    (Seq("for each", "for every") -> (Adj/NP, λ {c: Collection => Count(c)})) +
+    (Seq("for each", "for every") -> Seq(
+      (Adj/NP, λ {c: Collection => Count(c)}),  // e.g. "Draw a card for each X"
+      ((NP\NP)/NP, λ {c: Collection => λ {a: AttributeOperation => a.copy(op = a.op.times(Count(c)))}})  // e.g. "+X attack for every Y"
+    )) +
     ("everything" -> (N, AllObjects: Sem)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => AllO(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
     ("friendly" -> Seq(
@@ -218,7 +225,7 @@ object Lexicon {
     )) +
     ("get".s ->  (((S/N)/Num)\NP, λ {t: TargetObject => λ {i: Scalar => λ {a: Attribute => SetAttribute(t, a, i)}}})) +  // "All robots get X attack"))
     (("get".s ++ "gain".s) -> Seq( // "[All robots] get/gain ..."
-      (((S/N)/Adj)\NP, λ {t: TargetObject => λ {o: Operation => λ {a: Attribute => ModifyAttribute(t, a, o)}}}),  // "... +X attack"
+      ((S/NP)\NP, λ {t: TargetObject => λ {op: AttributeOperation => ModifyAttribute(t, op.attr, op.op)}}),  // "... +X attack"
       ((S/NP)\NP, λ {t: TargetObject => λ {ops: Seq[AttributeOperation] =>  // "... +X attack and +Y speed"
         MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}),
       ((S/S)\NP, λ {t: TargetObject => λ {a: Ability => GiveAbility(t, a)}}),  // "... [ability]"
@@ -251,7 +258,7 @@ object Lexicon {
       (S/NP, λ {cs: Seq[AttributeComparison] => cs}), // multiple conditions
       ((S\NP)/S, λ {a: Ability => λ {t: TargetObject => HasAbility(t, a)}}),
       ((S\NP)/N, λ {a: AttributeAmount => λ {t: TargetObject => AttributeAdjustment(t, a.attr, Constant(a.amount))}}),  // "... X attack"
-      (((S\NP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => AttributeAdjustment(t, a, o)}}}),  // "... +X attack"
+      ((S/NP)\NP, λ {t: TargetObject => λ {op: AttributeOperation => AttributeAdjustment(t, op.attr, op.op)}}),  // "... +X attack"
       ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  // "... +X attack and [ability]"
         MultipleAbilities(Seq(AttributeAdjustment(t, a._1.attr, a._1.op), HasAbility(t, a._2)))}}),
       ((S/S)\NP, λ {t: TargetObject => λ {a: (Ability, AttributeOperation) =>  // "... [ability] and +X attack"
@@ -342,6 +349,7 @@ object Lexicon {
     (("robot".s :+ "robots '") -> Seq(
       (N, Robot: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)}),  // e.g. "all robots in your hand"
+      (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Robot)}),
       (NP\Adj, λ {attrs: Seq[AttributeAmount] => GeneratedCard(Robot, attrs)})  // e.g. "a 3/1/2 robot"
     )) +
     ("robot on the board" -> (N, Robot: Sem)) +  // e.g. "If you control a robot on the board with 3 or more health, ..."
@@ -362,8 +370,8 @@ object Lexicon {
       (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)}),  // e.g. "up to 3 tiles away"
       (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})  // e.g. "all tiles adjacent to your kernel"
     )) +
-    (Seq("spawn", "create") -> ((S/PP)/NP, λ {c: SpawnableCard => λ {t: TargetObject => SpawnObject(c, t, Self)}})) +
-    (Seq("spawns", "creates") -> (((S\NP)/PP)/NP, λ {c: SpawnableCard => λ {t: TargetObject =>  λ {p: TargetPlayer => SpawnObject(c, t, p)}}})) +
+    (Seq("spawn", "create") -> ((S/PP)/NP, λ {c: TargetCard => λ {t: TargetObject => SpawnObject(c, t, Self)}})) +
+    (Seq("spawns", "creates") -> (((S\NP)/PP)/NP, λ {c: TargetCard => λ {t: TargetObject =>  λ {p: TargetPlayer => SpawnObject(c, t, p)}}})) +
     ("speed" -> Seq(
       (N, Speed: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)}),
@@ -373,7 +381,8 @@ object Lexicon {
     )) +
     (("structure".s :+ "structures '") -> Seq(
       (N, Structure: Sem),
-      (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Structure)})  // e.g. "All structures in your hand"
+      (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Structure)}),  // e.g. "All structures in your hand"
+      (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Structure)})
     )) +
     ("swap" -> Seq(
       ((S/N)/NP, λ {t: TargetObject => λ {attrs: Seq[Attribute] => SwapAttributes(t, attrs(0), attrs(1))}}),
