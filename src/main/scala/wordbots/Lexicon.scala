@@ -85,6 +85,7 @@ object Lexicon {
       ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}}),  // e.g. "+1 attack and Haste"
       ((S/NP)\S, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})  // e.g. "Haste and +1 attack"
     )) +
+    ("any card" -> (N, AnyCard: Sem)) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +
     (Seq("attack", "power") -> Seq(
@@ -157,6 +158,7 @@ object Lexicon {
       (S\Num, λ {amount: Number => DealDamage(ChooseO(ObjectsInPlay(AllObjects)), amount)})  // (if no target is given, any target can be chosen)
     )) +
     ("damaged" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(HasProperty(IsDamaged)))})) +
+    ("deck".s -> (NP\Adj, λ {p: TargetPlayer => Deck(p)})) +
     (Seq("deal", "deals", "it deals", "this robot deals", "this object deals", "take", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
     ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
     (Seq("destroyed", "dies") -> Seq(
@@ -193,6 +195,7 @@ object Lexicon {
       (NP/Adj, λ {amount: Number => Energy(amount)}),
       (S\S, λ {aa: AttributeAdjustment => AttributeAdjustment(aa.target, Cost, aa.operation)})  // "X costs Y more" == "X costs Y more energy"
     )) +
+    ("enters" -> ((S\N)/NP, λ {d: DiscardPile => λ {c: CardType => AfterCardEntersDiscardPile(d.player, c)}})) +
     ("equal" -> Seq(
       (Adj/PP, identity),
       (Adj/PP, λ {num: Number => EqualTo(num)})
@@ -290,8 +293,8 @@ object Lexicon {
     ("loses" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})) +  // Y loses X (attribute).
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     ("move" -> Seq(
-      ((S/PP)/NP, λ {t: TargetObject => λ {dest: TargetObject => MoveObject(t, dest)}}),
-      ((S/NP)/NP, λ {t: TargetObject => λ {d: WithinDistance => MultipleActions(Seq(
+      ((S/PP)/NP, λ {t: TargetObject => λ {dest: TargetObject => MoveObject(t, dest)}}),  // e.g. "Move a robot to X"
+      ((S/NP)/NP, λ {t: TargetObject => λ {d: WithinDistance => MultipleActions(Seq(  // e.g. "Move a robot up to X spaces"
         SaveTarget(t),
         MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(d.spaces, SavedTargetObject), Unoccupied)))))
       )}})
@@ -345,7 +348,11 @@ object Lexicon {
       (((S/PP)/N)/Num, λ {n: Number => λ {a: Attribute => λ {t: TargetObjectOrPlayer => RestoreAttribute(t, a, Some(n))}}}),  // e.g. "Restore N health to X"
       (S/NP, λ {ta: TargetAttribute => RestoreAttribute(ta.target, ta.attr, None)})  // e.g. "Restore X's health"
     )) +
-    ("return" -> ((S/PP)/NP, λ {t: TargetObject => λ {_: ItsOwnersHand.type => ReturnToHand(t)}})) +
+    (Seq("return", "move") -> Seq(
+      ((S/PP)/NP, λ {t: TargetObject => λ {_: ItsOwnersHand.type => ReturnToHand(t)}}),  // e.g. "Return a robot to its owner's hand"
+      ((S/PP)/NP, λ {c: TargetCard => λ {h: Hand => MoveCardsToHand(c, h.player)}}),  // e.g. "Return a random robot from your discard pile to your hand"
+      ((S/PP)/NP, λ {c: TargetCard => λ {dest: TargetObject => SpawnObject(c, dest)}})  // e.g. "Return a random robot from your discard pile to a random tile"
+    )) +
     (("robot".s :+ "robots '") -> Seq(
       (N, Robot: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)}),  // e.g. "all robots in your hand"
@@ -359,6 +366,7 @@ object Lexicon {
       ((S/PP)/NP, λ {t: TargetAttribute => λ {num: Number => SetAttribute(t.target, t.attr, num)}}),
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}})
     )) +
+    ("shuffle" -> ((S/PP)/NP, λ {c: TargetCard => λ {d: Deck => ShuffleCardsIntoDeck(c, d.player)}})) +
     (Seq("space", "tile", "hex") -> Seq(
       (NP\Num, λ {num: Number => if (num == Scalar(1)) Spaces(num) else Fail("Use 'tiles' instead of 'tile'") }),
       (NP\Num, λ {num: Number => if (num == Scalar(1)) WithinDistance(num) else Fail("Use 'tiles' instead of 'tile'") }),

@@ -198,6 +198,15 @@ class ParserSpec extends FlatSpec with Matchers {
       SetAttribute(ObjectsMatchingConditions(Robot, Seq()), Attack, AttributeValue(ItO, Health))
     parse("Each robot's attack and speed become equal to its health") shouldEqual
       SetAttribute(ObjectsMatchingConditions(Robot, Seq()), MultipleAttributes(Seq(Attack, Speed)), AttributeValue(ItO, Health))
+    parse("Shuffle all events from your discard pile into your deck") shouldEqual
+      ShuffleCardsIntoDeck(AllC(CardsInDiscardPile(Self, Event)), Self)
+    parse("Return a random robot from your opponent's discard pile to your hand") shouldEqual
+      MoveCardsToHand(RandomC(Scalar(1), CardsInDiscardPile(Opponent, Robot)), Self)
+    parse("Return a random robot from your discard pile to a random space adjacent to your kernel") shouldEqual
+      SpawnObject(
+        RandomC(Scalar(1), CardsInDiscardPile(Self, Robot)),
+        RandomO(Scalar(1), TilesMatchingConditions(Seq(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))))))
+      )
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -379,6 +388,8 @@ class ParserSpec extends FlatSpec with Matchers {
           Opponent
         )
       )
+    parse("Whenever any card enters your discard pile, gain 1 life") shouldEqual
+      TriggeredAbility(AfterCardEntersDiscardPile(Self, AnyCard), ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(Scalar(1))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -426,6 +437,8 @@ class ParserSpec extends FlatSpec with Matchers {
       AttributeAdjustment(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), Speed, Constant(Scalar(4)))
     parse("Robots your opponent controls have \"This robot can move and attack immediately after it is played\" and +1 speed") shouldEqual  // ("Haste and +1 speed")
       parse("Robots your opponent controls have +1 speed and \"This robot can move and attack immediately after it is played\"")
+    parse("This robot gets +1 attack for each robot in all discard piles") shouldEqual
+      ModifyAttribute(ThisObject, Attack, Plus(Times(Scalar(1), Count(CardsInDiscardPile(AllPlayers, Robot)))))
   }
 
   it should "parse activated abilities for robots" in {

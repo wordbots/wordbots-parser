@@ -28,14 +28,14 @@ sealed trait Action extends AstNode
   case class GiveAbility(target: TargetObject, ability: Ability) extends Action
   case class ModifyAttribute(target: Target, attribute: Attribute, operation: Operation) extends Action
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
-  case class MoveCardsToHand(target: TargetCard) extends Action
+  case class MoveCardsToHand(target: TargetCard, player: TargetPlayer) extends Action
   case class MoveObject(target: TargetObject, dest: TargetObject) extends Action
   case class PayEnergy(target: TargetPlayer, amount: Number) extends Action
   case class RemoveAllAbilities(target: TargetObject) extends Action
   case class ReturnToHand(target: TargetObject) extends Action
   case class RestoreAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Option[Number] = None) extends Action
   case class SetAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Number) extends Action
-  case class ShuffleCardsIntoDeck(target: TargetCard) extends Action
+  case class ShuffleCardsIntoDeck(target: TargetCard, player: TargetPlayer) extends Action
   case class SpawnObject(target: TargetCard, dest: TargetObject, owner: TargetPlayer = Self) extends Action {
     target match {
       case c: GeneratedCard if c.name.isEmpty =>
@@ -216,6 +216,7 @@ case object ItsOwnersHand extends IntermediateNode
 // Unary containers:
 case class Cards(num: Number) extends IntermediateNode
 case class Damage(amount: Number) extends IntermediateNode
+case class Deck(player: TargetPlayer) extends IntermediateNode
 case class DiscardPile(player: TargetPlayer) extends IntermediateNode
 case class Energy(amount: Number) extends IntermediateNode
 case class Hand(player: TargetPlayer) extends IntermediateNode
