@@ -28,13 +28,15 @@ sealed trait Action extends AstNode
   case class GiveAbility(target: TargetObject, ability: Ability) extends Action
   case class ModifyAttribute(target: Target, attribute: Attribute, operation: Operation) extends Action
   case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
+  case class MoveCardsToHand(target: TargetCard, player: TargetPlayer) extends Action
   case class MoveObject(target: TargetObject, dest: TargetObject) extends Action
   case class PayEnergy(target: TargetPlayer, amount: Number) extends Action
   case class RemoveAllAbilities(target: TargetObject) extends Action
   case class ReturnToHand(target: TargetObject) extends Action
   case class RestoreAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Option[Number] = None) extends Action
   case class SetAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Number) extends Action
-  case class SpawnObject(target: SpawnableCard, dest: TargetObject, owner: TargetPlayer = Self) extends Action {
+  case class ShuffleCardsIntoDeck(target: TargetCard, player: TargetPlayer) extends Action
+  case class SpawnObject(target: TargetCard, dest: TargetObject, owner: TargetPlayer = Self) extends Action {
     target match {
       case c: GeneratedCard if c.name.isEmpty =>
         throw new ClassCastException("Can't spawn a GeneratedCard without a name")
@@ -64,6 +66,7 @@ sealed trait Effect extends AstNode
 
 sealed trait Trigger extends AstNode
   case class AfterAttack(target: TargetObject, attackedObjectType: ObjectType = AllObjects) extends Trigger
+  case class AfterCardEntersDiscardPile(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
   case class AfterCardPlay(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger  // When a given card type is played.
   case class AfterDamageReceived(target: TargetObject) extends Trigger
   case class AfterDestroyed(target: TargetObject, cause: TriggerEvent = AnyEvent) extends Trigger
@@ -86,8 +89,7 @@ sealed trait Target extends AstNode
     case object They extends TargetObject  // (Salient object, but preferring the current object in an iteration over a collection)
     case object SavedTargetObject extends TargetObject
   sealed trait TargetCard extends TargetObjectOrCard
-    sealed trait SpawnableCard extends TargetCard
-    case class CopyOfC(objToCopy: TargetObject) extends SpawnableCard
+    case class CopyOfC(objToCopy: TargetObject) extends TargetCard
     case class ChooseC(collection: CardCollection) extends TargetCard
     case class AllC(collection: CardCollection) extends TargetCard
     case class RandomC(num: Number, collection: CardCollection) extends TargetCard
@@ -95,7 +97,7 @@ sealed trait Target extends AstNode
       cardType: ObjectType,
       attributes: Seq[AttributeAmount] = Seq.empty,
       name: Option[String] = None
-    ) extends SpawnableCard {
+    ) extends TargetCard {
       def getAttributeAmount(attribute: Attribute): Seq[Number] = {
         // This returns a Seq[Number] rather than Option[Number] because it's possible to, e.g.
         // write something like "a robot with 2 attack and 3 attack".
@@ -120,10 +122,18 @@ sealed trait Condition extends AstNode
   case class WithinDistanceOf(distance: Number, obj: TargetObject) extends Condition
 
 sealed trait GlobalCondition extends AstNode
+  case class CollectionCountComparison(coll: Collection, comparison: Comparison) extends GlobalCondition
   case class CollectionExists(coll: Collection) extends GlobalCondition
   case class TargetHasProperty(target: TargetObject, property: Property) extends GlobalCondition
 
-sealed trait Operation extends AstNode
+sealed trait Operation extends AstNode {
+  def times(factor: Number): Operation = this match {
+    case Constant(num) => Constant(Times(num, factor))
+    case Plus(num) => Plus(Times(num, factor))
+    case Minus(num) => Minus(Times(num, factor))
+    case _ => throw new ClassCastException(s"Multiplying $this by $factor is meaningless!")
+  }
+}
   case class Constant(num: Number) extends Operation
   case class Plus(num: Number) extends Operation
   case class Minus(num: Number) extends Operation
@@ -144,8 +154,11 @@ sealed trait Number extends AstNode
   case class Count(collection: Collection) extends Number
   case class EnergyAmount(player: TargetPlayer) extends Number
 
+  case class Times(num1: Number, num2: Number) extends Number
+
 sealed trait Collection extends AstNode
   sealed trait CardCollection extends Collection
+    case class CardsInDiscardPile(player: TargetPlayer, cardType: CardType = AnyCard) extends CardCollection
     case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard) extends CardCollection
   sealed trait ObjectCollection extends Collection with TargetObject
     case object AllTiles extends ObjectCollection
@@ -203,7 +216,10 @@ case object ItsOwnersHand extends IntermediateNode
 
 // Unary containers:
 case class Cards(num: Number) extends IntermediateNode
+case class CardComparison(comp: Comparison) extends IntermediateNode
 case class Damage(amount: Number) extends IntermediateNode
+case class Deck(player: TargetPlayer) extends IntermediateNode
+case class DiscardPile(player: TargetPlayer) extends IntermediateNode
 case class Energy(amount: Number) extends IntermediateNode
 case class Hand(player: TargetPlayer) extends IntermediateNode
 case class Life(amount: Number) extends IntermediateNode
