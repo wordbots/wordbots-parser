@@ -120,7 +120,10 @@ object Lexicon {
     (Seq("can move and attack", "can move and attack again") -> (S\NP, λ {t: TargetObject => CanMoveAndAttackAgain(t)})) +
     ("can move over other objects" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CanMoveOverObjects)})) +
     ("can only attack" -> ((S\NP)/NP, λ {target: TargetObject => λ {attacker: TargetObject => ApplyEffect(attacker, CanOnlyAttack(target))}})) +
+    ("can't activate" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotActivate)})) +
     ("can't attack" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotAttack)})) +
+    ("can't defend" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotFightBack)})) +
+    ("can't move" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotMove)})) +
     ("can't be changed" -> (S\NP, λ {t: TargetAttribute => FreezeAttribute(t.target, t.attr)})) +
     (("card".s :+ "a card") -> Seq(
       (N, AnyCard: Sem),

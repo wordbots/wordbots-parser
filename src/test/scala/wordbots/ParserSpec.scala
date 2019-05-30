@@ -441,6 +441,8 @@ class ParserSpec extends FlatSpec with Matchers {
       parse("Robots your opponent controls have +1 speed and \"This robot can move and attack immediately after it is played\"")
     parse("This robot gets +1 attack for each robot in all discard piles") shouldEqual
       ModifyAttribute(ThisObject, Attack, Plus(Times(Scalar(1), Count(CardsInDiscardPile(AllPlayers, Robot)))))
+    parse("Robots with 1 health can't move") shouldEqual
+      ApplyEffect(ObjectsMatchingConditions(Robot, List(AttributeComparison(Health, EqualTo(Scalar(1))))), CannotMove)
   }
 
   it should "parse activated abilities for robots" in {
