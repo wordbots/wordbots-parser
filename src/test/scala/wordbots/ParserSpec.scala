@@ -15,7 +15,7 @@ class ParserSpec extends FlatSpec with Matchers {
       case Some(parse) => parse.semantic match {
         case Form(v: AstNode) =>
           println(s"    $v")
-          CodeGenerator.generateJS(v.asInstanceOf[AstNode])  // Make sure that valid JS can be generated!
+          CodeGenerator.generateJS(v.asInstanceOf[AstNode]).get  // Make sure that valid JS can be generated!
           AstValidator().validate(v) match {  // Make sure the AstValidator successfully validates the parsed ast!
             case Success(_) => v
             case f: Failure[_] => f
@@ -390,6 +390,8 @@ class ParserSpec extends FlatSpec with Matchers {
       )
     parse("Whenever any card enters your discard pile, gain 1 life") shouldEqual
       TriggeredAbility(AfterCardEntersDiscardPile(Self, AnyCard), ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(Scalar(1))))
+    parse("When this robot is played, if your discard pile has five or more cards, this robot gets +3 health") shouldEqual
+      TriggeredAbility(AfterPlayed(ThisObject), If(CollectionCountComparison(CardsInDiscardPile(Self, AnyCard), GreaterThanOrEqualTo(Scalar(5))), ModifyAttribute(ThisObject, Health, Plus(Scalar(3)))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

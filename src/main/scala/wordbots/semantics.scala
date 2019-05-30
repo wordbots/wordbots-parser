@@ -122,6 +122,7 @@ sealed trait Condition extends AstNode
   case class WithinDistanceOf(distance: Number, obj: TargetObject) extends Condition
 
 sealed trait GlobalCondition extends AstNode
+  case class CollectionCountComparison(coll: Collection, comparison: Comparison) extends GlobalCondition
   case class CollectionExists(coll: Collection) extends GlobalCondition
   case class TargetHasProperty(target: TargetObject, property: Property) extends GlobalCondition
 
@@ -215,6 +216,7 @@ case object ItsOwnersHand extends IntermediateNode
 
 // Unary containers:
 case class Cards(num: Number) extends IntermediateNode
+case class CardComparison(comp: Comparison) extends IntermediateNode
 case class Damage(amount: Number) extends IntermediateNode
 case class Deck(player: TargetPlayer) extends IntermediateNode
 case class DiscardPile(player: TargetPlayer) extends IntermediateNode

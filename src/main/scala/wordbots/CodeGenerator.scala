@@ -10,8 +10,10 @@ object CodeGenerator {
   def generateJS(node: AstNode): Try[String] = Try {
     val jsString = g(node)
 
+    // Throw if jsString is invalid JavaScript.
+    val unescapedJsString = jsString.replaceAllLiterally("\\\"", "\"").replaceAllLiterally("\\\\", "\\")
     val parser = new RhinoParser(compilerEnv)
-    parser.parse(jsString, "", 1)
+    parser.parse(unescapedJsString, "", 1)
 
     jsString
   }
@@ -41,6 +43,7 @@ object CodeGenerator {
       case GiveAbility(target, ability) => s"""(function () { actions['giveAbility'](${g(target)}, \\"${escape(g(ability))}\\"); })"""
       case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
+      case MoveCardsToHand(target, player) => s"(function () { actions['moveCardsToHand'](${g(target)}, ${g(player)}); })"
       case MoveObject(target, dest) => s"(function () { actions['moveObject'](${g(target)}, ${g(dest)}); })"
       case PayEnergy(target, amount) => s"(function () { actions['payEnergy'](${g(target)}, ${g(amount)}); })"
       case RemoveAllAbilities(target) => s"(function () { actions['removeAllAbilities'](${g(target)}); })"
@@ -48,6 +51,7 @@ object CodeGenerator {
       case RestoreAttribute(target, Health, None) => s"(function () { actions['restoreHealth'](${g(target)}); })"
       case ReturnToHand(target) => s"(function () { actions['returnToHand'](${g(target)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
+      case ShuffleCardsIntoDeck(target, player) => s"(function () { actions['shuffleCardsIntoDeck'](${g(target)}, ${g(player)}); })"
       case SpawnObject(card, dest, owner) => s"(function () { actions['spawnObject'](${g(card)}, ${g(dest)}, ${g(owner)}); })"
       case SwapAttributes(target, attr1, attr2) => s"(function () { actions['swapAttributes'](${g(target)}, ${g(attr1)}, ${g(attr2)}); })"
       case TakeControl(player, target) => s"(function () { actions['takeControl'](${g(player)}, ${g(target)}); })"
@@ -76,6 +80,7 @@ object CodeGenerator {
 
       // Triggers
       case AfterAttack(targetObj, objectType) => s"triggers['afterAttack'](function () { return ${g(targetObj)}; }, ${g(objectType)})"
+      case AfterCardEntersDiscardPile(targetPlayer, cardType) => s"triggers['afterCardEntersDiscardPile'](function () { return ${g(targetPlayer)}; }, ${g(cardType)})"
       case AfterCardPlay(targetPlayer, cardType) => s"triggers['afterCardPlay'](function () { return ${g(targetPlayer)}; }, ${g(cardType)})"
       case AfterDamageReceived(targetObj) => s"triggers['afterDamageReceived'](function () { return ${g(targetObj)}; })"
       case AfterDestroyed(targetObj, cause) => s"triggers['afterDestroyed'](function () { return ${g(targetObj)}; }, ${g(cause)})"
@@ -122,6 +127,7 @@ object CodeGenerator {
       case WithinDistanceOf(distance, obj) => s"conditions['withinDistanceOf'](${g(distance)}, ${g(obj)})"
 
       // Global conditions
+      case CollectionCountComparison(coll, comp) => s"globalConditions['collectionExists'](${g(coll)}, ${g(comp)})"
       case CollectionExists(coll) => s"globalConditions['collectionExists'](${g(coll)})"
       case TargetHasProperty(target, property) => s"globalConditions['targetHasProperty'](${g(target)}, ${g(property)})"
 
