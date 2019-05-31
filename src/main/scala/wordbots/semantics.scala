@@ -60,8 +60,10 @@ sealed trait Ability extends AstNode
 
 sealed trait Effect extends AstNode
   case object CanMoveOverObjects extends Effect with Label
+  case object CannotActivate extends Effect with Label
   case object CannotAttack extends Effect with Label
   case object CannotFightBack extends Effect with Label
+  case object CannotMove extends Effect with Label
   case class CanOnlyAttack(target: TargetObject) extends Effect
 
 sealed trait Trigger extends AstNode
