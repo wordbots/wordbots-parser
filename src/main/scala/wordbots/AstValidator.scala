@@ -32,8 +32,38 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   }
 }
 
-object AstValidator {
-  def depthFirstTraverse(rootNode: AstNode): Seq[AstNode] = {
+/**
+  * So why do you have to stick validateChildren() in your validate()?
+  * why not just have a function that returns the success status for this node/, and apply it to all nodes in an outer loop?
+  * well, it's because
+  * 1) it's the same amount of code in the derived classes
+  * 2) there's no explicit .asInstanceOf or .isInstanceOf involved this way - it's all done through match
+  * 3) you end up writing the same code anyways, this way is more functional-y
+  */
+sealed trait AstRule {
+  def validate(node: AstNode): Try[Unit]
+
+  protected def validateChildren(rule: AstRule, parentNode: AstNode): Try[Unit] = {
+    def validateRecursively(node: Any): Unit = {
+      node match {
+        case childNode: AstNode =>
+          rule.validate(node.asInstanceOf[AstNode])
+            .flatMap(_ => validateChildren(rule, childNode))
+            .get
+        case childNodes: Seq[_] =>
+          childNodes.foreach(validateRecursively)
+        case _ => ()
+      }
+    }
+
+    Try {
+      for (childNode <- parentNode.productIterator) {
+        validateRecursively(childNode)
+      }
+    }
+  }
+
+  protected def depthFirstTraverse(rootNode: AstNode): Seq[AstNode] = {
     val frontier = mutable.Queue(rootNode)
     val nodesTraversed = mutable.ListBuffer[AstNode]()
 
@@ -52,38 +82,6 @@ object AstValidator {
     }
 
     nodesTraversed
-  }
-}
-
-/**
-  * So why do you have to stick validateChildren() in your validate()?
-  * why not just have a function that returns the success status for this node/, and apply it to all nodes in an outer loop?
-  * well, it's because
-  * 1) it's the same amount of code in the derived classes
-  * 2) there's no explicit .asInstanceOf or .isInstanceOf involved this way - it's all done through match
-  * 3) you end up writing the same code anyways, this way is more functional-y
-  */
-sealed trait AstRule {
-  def validate(node: AstNode): Try[Unit]
-
-  def validateChildren(rule: AstRule, parentNode: AstNode): Try[Unit] = {
-    def validateRecursively(node: Any): Unit = {
-      node match {
-        case childNode: AstNode =>
-          rule.validate(node.asInstanceOf[AstNode])
-            .flatMap(_ => validateChildren(rule, childNode))
-            .get
-        case childNodes: Seq[_] =>
-          childNodes.foreach(validateRecursively)
-        case _ => ()
-      }
-    }
-
-    Try {
-      for (childNode <- parentNode.productIterator) {
-        validateRecursively(childNode)
-      }
-    }
   }
 }
 
@@ -231,7 +229,7 @@ object ValidDestForSpawnObject extends AstRule {
 object NoChooseAfterRandom extends AstRule {
   override def validate(node: AstNode): Try[Unit] = Try {
     var randomOperation: Option[AstNode] = None
-    for { node <- AstValidator.depthFirstTraverse(node) } {
+    for { node <- depthFirstTraverse(node) } {
       node match {
         case _: RandomC | _: RandomO =>
           randomOperation = Some(node)
