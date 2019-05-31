@@ -84,6 +84,7 @@ object CodeGenerator {
       case AfterCardEntersDiscardPile(targetPlayer, cardType) => s"triggers['afterCardEntersDiscardPile'](function () { return ${g(targetPlayer)}; }, ${g(cardType)})"
       case AfterCardPlay(targetPlayer, cardType) => s"triggers['afterCardPlay'](function () { return ${g(targetPlayer)}; }, ${g(cardType)})"
       case AfterDamageReceived(targetObj) => s"triggers['afterDamageReceived'](function () { return ${g(targetObj)}; })"
+      case AfterDestroysOtherObject(targetObj, objectType) => s"triggers['afterDestroysOtherObject'](function () { return ${g(targetObj)}; }, ${g(objectType)})"
       case AfterDestroyed(targetObj, cause) => s"triggers['afterDestroyed'](function () { return ${g(targetObj)}; }, ${g(cause)})"
       case AfterMove(targetObj) => s"triggers['afterMove'](function () { return ${g(targetObj)}; })"
       case AfterPlayed(targetObj) => s"triggers['afterPlayed'](function () { return ${g(targetObj)}; })"

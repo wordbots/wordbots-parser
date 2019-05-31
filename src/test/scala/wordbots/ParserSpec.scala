@@ -394,6 +394,10 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(AfterCardEntersDiscardPile(Self, AnyCard), ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(Scalar(1))))
     parse("When this robot is played, if your discard pile has five or more cards, this robot gets +3 health") shouldEqual
       TriggeredAbility(AfterPlayed(ThisObject), If(CollectionCountComparison(CardsInDiscardPile(Self, AnyCard), GreaterThanOrEqualTo(Scalar(5))), ModifyAttribute(ThisObject, Health, Plus(Scalar(3)))))
+    parse("Whenever this robot destroys an enemy robot, draw a card") shouldEqual
+      TriggeredAbility(AfterDestroysOtherObject(ThisObject, Robot),Draw(Self, Scalar(1)))
+    parse("Whenever an enemy robot is destroyed by this robot, draw a card") shouldEqual
+      TriggeredAbility(AfterDestroysOtherObject(ThisObject, Robot),Draw(Self, Scalar(1)))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

@@ -165,6 +165,14 @@ object Lexicon {
     ("deck".s -> (NP\Adj, λ {p: TargetPlayer => Deck(p)})) +
     (Seq("deal", "deals", "it deals", "this robot deals", "this object deals", "take", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
     ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
+    (Seq("destroys", "kills") -> Seq(
+      ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterDestroysOtherObject(t, o)}}),
+      ((S\NP)/N, λ {e: EnemyObject => λ {t: TargetObject => AfterDestroysOtherObject(t, e.objectType)}})
+    )) +
+    (Seq("destroyed by", "killed by") -> Seq(
+      ((S/NP)\N, λ {o: ObjectType => λ {t: TargetObject => AfterDestroysOtherObject(t, o)}}),
+      ((S/NP)\N, λ {e: EnemyObject => λ {t: TargetObject => AfterDestroysOtherObject(t, e.objectType)}})
+    )) +
     (Seq("destroyed", "dies") -> Seq(
       (S\NP, λ {c: ChooseO => AfterDestroyed(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterDestroyed(t)}),
@@ -193,9 +201,11 @@ object Lexicon {
     (Seq("end of next turn", "end of the next turn") -> (NP, TurnsPassed(2): Sem)) +
     ("immediately" /?/ Seq("end the turn", "end your turn") -> (S, EndTurn: Sem)) +
     ("enemy" -> Seq(
-      (NP, ObjectsMatchingConditions(AllObjects, Seq(ControlledBy(Opponent))): Sem),
-      (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
-      (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Opponent)) ++ c.conditions)})
+      (N, EnemyObject(AllObjects): Sem),  // e.g. "whenever X destroys an enemy"
+      (NP, ObjectsMatchingConditions(AllObjects, Seq(ControlledBy(Opponent))): Sem),  // e.g. "deal X damage to each enemy"
+      (N/N, λ {o: ObjectType => EnemyObject(o)}),  // e.g. "whenever X destroys an enemy object"
+      (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),  // e.g. "deal X damage to each enemy robot"
+      (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Opponent)) ++ c.conditions)})  // e.g. "enemy robot in Y"
     )) +
     ("energy" -> Seq(
       (NP|Num, λ {amount: Number => Energy(amount)}),
