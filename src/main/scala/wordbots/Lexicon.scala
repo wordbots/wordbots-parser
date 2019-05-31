@@ -214,7 +214,8 @@ object Lexicon {
     )) +
     (Seq("for each", "for every") -> Seq(
       (Adj/NP, λ {c: Collection => Count(c)}),  // e.g. "Draw a card for each X"
-      ((NP\NP)/NP, λ {c: Collection => λ {a: AttributeOperation => a.copy(op = a.op.times(Count(c)))}})  // e.g. "+X attack for every Y"
+      ((NP\NP)/NP, λ {c: Collection => λ {a: AttributeOperation => a.copy(op = a.op.times(Count(c)))}}),  // e.g. "+X attack for every Y"
+      ((S\S)/NP, λ {c: Collection => λ {a: Action => Repeat(a, Count(c)) }})  // "(do something) for each X"
     )) +
     ("everything" -> (N, AllObjects: Sem)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => AllO(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
