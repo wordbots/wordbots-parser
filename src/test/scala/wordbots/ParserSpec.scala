@@ -189,11 +189,11 @@ class ParserSpec extends FlatSpec with Matchers {
       MoveObject(ObjectsMatchingConditions(Robot, Seq()), RandomO(Scalar(1), AllTiles))
     parse("Move all robots to a random adjacent tile") shouldEqual
       MoveObject(ObjectsMatchingConditions(Robot, Seq()), RandomO(Scalar(1), TilesMatchingConditions(Seq(AdjacentTo(They)))))
-    parse("Move a random robot 1 space") shouldEqual
+    /* parse("Move a random robot 1 space") shouldEqual   // see "disallow choosing targets after a random target has been selected" test
       MultipleActions(Seq(
-        SaveTarget(RandomO(Scalar(1), ObjectsInPlay(Robot))),
-        MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(1), SavedTargetObject), Unoccupied))))
-      ))
+       SaveTarget(RandomO(Scalar(1), ObjectsInPlay(Robot))),
+       MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(1), SavedTargetObject), Unoccupied))))
+     )) */
     parse("each robot's attack becomes equal to its health") shouldEqual
       SetAttribute(ObjectsMatchingConditions(Robot, Seq()), Attack, AttributeValue(ItO, Health))
     parse("Each robot's attack and speed become equal to its health") shouldEqual
@@ -506,6 +506,11 @@ class ParserSpec extends FlatSpec with Matchers {
 
     parse("When this robot is played, destroy a robot.") should not equal
       Failure(ValidationError("Choosing targets not allowed for triggered actions."))
+  }
+
+  it should "disallow choosing targets after a random target has been selected" in {
+    parse("Move a random robot 1 space") shouldEqual
+      Failure(ValidationError("Can't ask player to select a target (ChooseO(TilesMatchingConditions(List(WithinDistanceOf(Scalar(1),SavedTargetObject), Unoccupied)))) after a random operation (RandomO(Scalar(1),ObjectsMatchingConditions(Robot,List()))) to prevent 're-rolling'"))
   }
 }
 // scalastyle:on line.size.limit
