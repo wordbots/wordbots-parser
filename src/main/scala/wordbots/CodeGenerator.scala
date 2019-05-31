@@ -144,6 +144,8 @@ object CodeGenerator {
       case EqualTo(num) => s"(function (x) { return x === ${g(num)}; })"
       case GreaterThan(num) => s"(function (x) { return x > ${g(num)}; })"
       case GreaterThanOrEqualTo(num) => s"(function (x) { return x >= ${g(num)}; })"
+      case IsEven => "(function (x) { return x % 2 == 0; })"
+      case IsOdd => "(function (x) { return x % 2 == 1; })"
       case LessThan(num) => s"(function (x) { return x < ${g(num)}; })"
       case LessThanOrEqualTo(num) => s"(function (x) { return x <= ${g(num)}; })"
 
