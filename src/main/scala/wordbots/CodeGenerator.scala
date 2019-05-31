@@ -28,6 +28,7 @@ object CodeGenerator {
       case If(condition, action) => s"(function () { if (${g(condition)}) { (${g(action)})(); } })"
       case MultipleActions(actions) => s"(function () { ${actions.map(action => s"${g(action)}();").mkString(" ")} })"
       case MultipleAbilities(abilities) => s"(function () { ${abilities.map(ability => s"${g(ability)}();").mkString(" ")} })"
+      case Repeat(action, times) => s"(function () { for (var i = 0; i < (${g(times)}); i++) { ${g(action)}; } })"
       case Until(TurnsPassed(num), action) => s"(function () { save('duration', $num); ${g(action)}(); save('duration', null); })"
 
       // Actions: Normal
