@@ -69,12 +69,10 @@ sealed trait AstRule {
 
     while (frontier.nonEmpty) {
       val node: AstNode = frontier.dequeue()
-      val children: Seq[AstNode] = node.productIterator.toSeq.flatMap { child: Any =>
-        child match {
-          case node: AstNode => Seq(node)
-          case seq: Seq[_]   => seq.collect { case a: AstNode => a }
-          case _             => Seq.empty
-        }
+      val children: Seq[AstNode] = node.productIterator.toSeq.flatMap {
+        case node: AstNode => Seq(node)
+        case nodes: Seq[_] => nodes.collect { case a: AstNode => a }
+        case _             => Seq.empty
       }
 
       frontier.enqueue(children: _*)
