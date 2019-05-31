@@ -72,6 +72,7 @@ sealed trait Trigger extends AstNode
   case class AfterCardEntersDiscardPile(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
   case class AfterCardPlay(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger  // When a given card type is played.
   case class AfterDamageReceived(target: TargetObject) extends Trigger
+  case class AfterDestroysOtherObject(targetObject: TargetObject, objectType: ObjectType = AllObjects) extends Trigger
   case class AfterDestroyed(target: TargetObject, cause: TriggerEvent = AnyEvent) extends Trigger
   case class AfterMove(Target: TargetObject) extends Trigger
   case class AfterPlayed(Target: TargetObject) extends Trigger  // When a specific card is played.
@@ -225,6 +226,7 @@ case class CardComparison(comp: Comparison) extends IntermediateNode
 case class Damage(amount: Number) extends IntermediateNode
 case class Deck(player: TargetPlayer) extends IntermediateNode
 case class DiscardPile(player: TargetPlayer) extends IntermediateNode
+case class EnemyObject(objectType: ObjectType) extends IntermediateNode  // used, e.g. in parsing "whenever this robot destroys an enemy object"
 case class Energy(amount: Number) extends IntermediateNode
 case class Hand(player: TargetPlayer) extends IntermediateNode
 case class Life(amount: Number) extends IntermediateNode
