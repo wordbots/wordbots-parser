@@ -147,6 +147,8 @@ sealed trait Comparison extends AstNode
   case class EqualTo(num: Number) extends Comparison
   case class GreaterThan(num: Number) extends Comparison
   case class GreaterThanOrEqualTo(num: Number) extends Comparison
+  case object IsEven extends Comparison
+  case object IsOdd extends Comparison
   case class LessThan(num: Number) extends Comparison
   case class LessThanOrEqualTo(num: Number) extends Comparison
 

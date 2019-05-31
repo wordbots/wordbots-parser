@@ -207,6 +207,7 @@ object Lexicon {
       (Adj/PP, identity),
       (Adj/PP, λ {num: Number => EqualTo(num)})
     )) +
+    ("even" -> (NP/N, λ {attr: Attribute => AttributeComparison(attr, IsEven)})) +
     (("event".s ++ "event card".s) -> Seq(
       (N, Event: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)}),  // e.g. "All events in your hand"
@@ -319,6 +320,7 @@ object Lexicon {
     ("named" -> ((NP/NP)\NP, λ {c: GeneratedCard => λ {n: Name => GeneratedCard(c.cardType, c.attributes, Some(n.name))}})) +
     ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
     (("object".s :+ "objects '") -> (N, AllObjects: Sem)) +
+    ("odd" -> (NP/N, λ {attr: Attribute => AttributeComparison(attr, IsOdd)})) +
     ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
     (Seq("other", "another") -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
     (Seq("or", "and") -> ((N/N)\N, λ {o1: ObjectType => λ {o2: ObjectType => MultipleObjectTypes(Seq(o1, o2))}})) +
