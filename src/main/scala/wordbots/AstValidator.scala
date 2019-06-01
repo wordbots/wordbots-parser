@@ -1,5 +1,6 @@
 package wordbots
 
+import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 case class ValidationError(message: String) extends Exception(message)
@@ -16,7 +17,8 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
     NoModifyingCostOfObjects,
     OnlyRestoreHealth,
     OnlyThisObjectPlayed,
-    ValidGeneratedCard
+    ValidGeneratedCard,
+    NoChooseAfterRandom
   )
 
   val rules: Seq[AstRule] = mode match {
@@ -41,7 +43,7 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
 sealed trait AstRule {
   def validate(node: AstNode): Try[Unit]
 
-  def validateChildren(rule: AstRule, parentNode: AstNode): Try[Unit] = {
+  protected def validateChildren(rule: AstRule, parentNode: AstNode): Try[Unit] = {
     def validateRecursively(node: Any): Unit = {
       node match {
         case childNode: AstNode =>
@@ -59,6 +61,25 @@ sealed trait AstRule {
         validateRecursively(childNode)
       }
     }
+  }
+
+  protected def depthFirstTraverse(rootNode: AstNode): Seq[AstNode] = {
+    val frontier = mutable.Queue(rootNode)
+    val nodesTraversed = mutable.ListBuffer[AstNode]()
+
+    while (frontier.nonEmpty) {
+      val node: AstNode = frontier.dequeue()
+      val children: Seq[AstNode] = node.productIterator.toSeq.flatMap {
+        case node: AstNode => Seq(node)
+        case nodes: Seq[_] => nodes.collect { case a: AstNode => a }
+        case _             => Seq.empty
+      }
+
+      frontier.enqueue(children: _*)
+      nodesTraversed += node
+    }
+
+    nodesTraversed
   }
 }
 
@@ -198,5 +219,22 @@ object ValidDestForSpawnObject extends AstRule {
     case TilesMatchingConditions(_) => Success()
     case Other(c: ObjectCollection) => validateCollectionCouldBeAnEmptyTile(c)
     case _ => Failure(ValidationError(s"Not a valid destination collection for SpawnObject: $collection"))
+  }
+}
+
+/** Validates that targets can't be chosen after (assuming DFS evaluation order) a random selection is made,
+  * to prevent "gaming" the system by canceling target selection when dissatisfied with the random choice. */
+object NoChooseAfterRandom extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = Try {
+    var randomOperation: Option[AstNode] = None
+    for { node <- depthFirstTraverse(node) } {
+      node match {
+        case _: RandomC | _: RandomO =>
+          randomOperation = Some(node)
+        case _: ChooseC | _: ChooseO if randomOperation.isDefined =>
+          throw ValidationError(s"Can't ask player to select a target ($node) after a random operation (${randomOperation.get}) to prevent 're-rolling'")
+        case _ =>
+      }
+    }
   }
 }
