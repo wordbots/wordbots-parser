@@ -91,6 +91,9 @@ object CodeGenerator {
       case BeginningOfTurn(targetPlayer) => s"triggers['beginningOfTurn'](function () { return ${g(targetPlayer)}; })"
       case EndOfTurn(targetPlayer) => s"triggers['endOfTurn'](function () { return ${g(targetPlayer)}; })"
 
+      // Targets
+      case ConditionTargetOn(target, condition) => s"targets['conditionOn'](${g(target)}, function () { return ${g(condition)}; })"
+
       // Target objects
       case ChooseO(collection) => s"targets['choose'](${g(collection)})"
       case AllO(collection) => s"targets['all'](${g(collection)})"
@@ -111,7 +114,7 @@ object CodeGenerator {
         val attributesObjStr = Seq(Attack, Health, Speed).map { attr =>
           s"'${attr.name}': ${card.getAttributeAmount(attr).headOption.map(g).getOrElse("null")}"
         }.mkString("{", ", ", "}")
-        s"targets['generateCard'](${g(cardType)}, $attributesObjStr, ${name.map(n => s"'${n}'")getOrElse("null")})"
+        s"targets['generateCard'](${g(cardType)}, $attributesObjStr, ${name.map(n => s"'$n'")getOrElse("null")})"
 
       // Target players
       case Self => "targets['self']()"

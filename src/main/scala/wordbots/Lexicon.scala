@@ -296,7 +296,10 @@ object Lexicon {
       (NP|Num, λ {amount: Number => Life(amount)}),
       (NP/Adj, λ {amount: Number => Life(amount)})
     )) +
-    ("if" -> ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}})) +
+    ("if" -> Seq(
+      ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}}),  // "if" for actions
+      ((S|S)|S, λ {c: GlobalCondition => λ {a: PassiveAbility => a.conditionOn(c)}})   // "if" for abilities
+    )) +
     (Seq("in", "on", "of", "from", "into") -> (PP/NP, identity)) +
     ("instead" -> (S|S, λ {a: Action => Instead(a)})) +
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
