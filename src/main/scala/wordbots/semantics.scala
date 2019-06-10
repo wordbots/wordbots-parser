@@ -53,7 +53,14 @@ sealed trait Ability extends AstNode
   case class MultipleAbilities(abilities: Seq[Ability]) extends Ability
   case class TriggeredAbility(trigger: Trigger, action: Action) extends Ability
   case class ActivatedAbility(action: Action) extends Ability
-  sealed trait PassiveAbility extends Ability
+  sealed trait PassiveAbility extends Ability {
+    def conditionOn(condition: GlobalCondition): PassiveAbility = this match {
+      case ApplyEffect(target, effect) => ApplyEffect(ConditionTargetOn(target, condition), effect)
+      case AttributeAdjustment(target, attribute, operation) => AttributeAdjustment(ConditionTargetOn(target, condition), attribute, operation)
+      case HasAbility(target, ability) => HasAbility(ConditionTargetOn(target, condition), ability)
+      case _ => throw new ClassCastException(s"Can't condition $this on $condition is meaningless!")
+    }
+  }
     case class ApplyEffect(target: TargetObjectOrCard, effect: Effect) extends PassiveAbility
     case class AttributeAdjustment(target: TargetObjectOrCard, attribute: Attribute, operation: Operation) extends PassiveAbility
     case class FreezeAttribute(target: Target, attribute: Attribute) extends PassiveAbility
@@ -82,6 +89,8 @@ sealed trait Trigger extends AstNode
 sealed trait Target extends AstNode
   sealed trait TargetObjectOrCard extends Target
   sealed trait TargetObjectOrPlayer extends Target
+
+  case class ConditionTargetOn(target: TargetObjectOrCard, condition: GlobalCondition) extends TargetObjectOrCard
 
   sealed trait TargetObject extends TargetObjectOrCard with TargetObjectOrPlayer
     case class ChooseO(collection: ObjectCollection) extends TargetObject

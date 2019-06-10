@@ -451,6 +451,8 @@ class ParserSpec extends FlatSpec with Matchers {
       ApplyEffect(ObjectsMatchingConditions(Robot, List(AttributeComparison(Health, EqualTo(Scalar(1))))), CannotMove)
     parse("Robots with even power can't attack") shouldEqual
       ApplyEffect(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Attack, IsEven))),CannotAttack)
+    parse("This robot has +4 attack if your discard pile has 5 or more cards") shouldEqual
+      AttributeAdjustment(ConditionTargetOn(ThisObject, CollectionCountComparison(CardsInDiscardPile(Self), GreaterThanOrEqualTo(Scalar(5)))), Attack, Plus(Scalar(4)))
   }
 
   it should "parse activated abilities for robots" in {
