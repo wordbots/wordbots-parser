@@ -20,6 +20,9 @@ object CodeGenerator {
 
   def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\"
 
+  // Defer execution of a JS function to as late as possible, e.g. so that it works correctly with 'they' when iterating over a collection
+  def deferred(str: String): String = s"""\\"(() => ${escape(str)})\\""""
+
   // scalastyle:off method.length
   // scalastyle:off cyclomatic.complexity
   private def g(node: AstNode): String = {
@@ -51,7 +54,7 @@ object CodeGenerator {
       case RestoreAttribute(target, Health, Some(num)) => s"(function () { actions['restoreHealth'](${g(target)}, ${g(num)}); })"
       case RestoreAttribute(target, Health, None) => s"(function () { actions['restoreHealth'](${g(target)}); })"
       case ReturnToHand(target) => s"(function () { actions['returnToHand'](${g(target)}); })"
-      case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${g(num)}); })"
+      case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${deferred(g(num))}); })"
       case ShuffleCardsIntoDeck(target, player) => s"(function () { actions['shuffleCardsIntoDeck'](${g(target)}, ${g(player)}); })"
       case SpawnObject(card, dest, owner) => s"(function () { actions['spawnObject'](${g(card)}, ${g(dest)}, ${g(owner)}); })"
       case SwapAttributes(target, attr1, attr2) => s"(function () { actions['swapAttributes'](${g(target)}, ${g(attr1)}, ${g(attr2)}); })"
