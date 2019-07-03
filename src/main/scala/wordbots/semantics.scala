@@ -12,9 +12,9 @@ sealed trait Action extends AstNode
   case class MultipleActions(actions: Seq[Action]) extends Action
   object And { def apply(actions: Action*): MultipleActions = MultipleActions(actions) }
 
+  case class ForEach(collection: Collection, action: Action) extends Action
   case class If(condition: GlobalCondition, action: Action) extends Action
   case class Instead(action: Action) extends Action
-  case class Repeat(action: Action, times: Number) extends Action
   case class Until(duration: Duration, action: Action) extends Action
 
   case class Become(source: TargetObject, target: TargetCard) extends Action
@@ -121,8 +121,9 @@ sealed trait Target extends AstNode
   sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
     case object Self extends TargetPlayer
     case object Opponent extends TargetPlayer
-    case object AllPlayers extends TargetPlayer
+    case object AllPlayers extends TargetPlayer with Collection
     case object ItP extends TargetPlayer  // (Salient player)
+    case object TheyP extends TargetPlayer  // (Salient player, but preferring the current player in an iteration over a collection)
     case class ControllerOf(t: TargetObject) extends TargetPlayer
 
 sealed trait Condition extends AstNode

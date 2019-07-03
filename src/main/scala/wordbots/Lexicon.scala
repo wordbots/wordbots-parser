@@ -196,6 +196,7 @@ object Lexicon {
       (Adj, AllPlayers: Sem),  // e.g. "each turn"
       (NP/PP, identity)  // e.g. "each of (your turns)"
     )) +
+    (Seq("each player", "every player", "all players") -> (S/S, λ {a: Action => ForEach(AllPlayers, a)})) +
     ("end" -> (NP/PP, λ {turn: Turn => EndOfTurn(turn.player)})) +
     (Seq("end of turn", "end of the turn") -> (NP, TurnsPassed(1): Sem)) +
     (Seq("end of next turn", "end of the next turn") -> (NP, TurnsPassed(2): Sem)) +
@@ -226,7 +227,7 @@ object Lexicon {
     (Seq("for each", "for every") -> Seq(
       (Adj/NP, λ {c: Collection => Count(c)}),  // e.g. "Draw a card for each X"
       ((NP\NP)/NP, λ {c: Collection => λ {a: AttributeOperation => a.copy(op = a.op.times(Count(c)))}}),  // e.g. "+X attack for every Y"
-      ((S\S)/NP, λ {c: Collection => λ {a: Action => Repeat(a, Count(c)) }})  // "(do something) for each X"
+      ((S\S)/NP, λ {c: Collection => λ {a: Action => ForEach(c, a) }})  // "(do something) for each X"
     )) +
     ("everything" -> (N, AllObjects: Sem)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => AllO(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
@@ -390,7 +391,7 @@ object Lexicon {
       ((S/PP)/NP, λ {t: TargetAttribute => λ {num: Number => SetAttribute(t.target, t.attr, num)}}),
       (((S/PP)/PP)/N, λ {a: Attribute => λ {t: TargetObject => λ {num: Number => SetAttribute(t, a, num)}}})
     )) +
-    ("shuffle" -> ((S/PP)/NP, λ {c: TargetCard => λ {d: Deck => ShuffleCardsIntoDeck(c, d.player)}})) +
+    ("shuffle".s -> ((S/PP)/NP, λ {c: TargetCard => λ {d: Deck => ShuffleCardsIntoDeck(c, d.player)}})) +
     (Seq("space", "tile", "hex") -> Seq(
       (NP\Num, λ {num: Number => if (num == Scalar(1)) Spaces(num) else Fail("Use 'tiles' instead of 'tile'") }),
       (NP\Num, λ {num: Number => if (num == Scalar(1)) WithinDistance(num) else Fail("Use 'tiles' instead of 'tile'") }),
@@ -438,7 +439,10 @@ object Lexicon {
     ("that" / Seq("robot", "creature", "structure", "object") -> (NP, That: Sem)) +
     (Seq("that player", "they") -> (NP, ItP: Sem)) +
     ("the" -> (X/X, identity)) +
-    ("their" -> (Num/N, λ {a: Attribute => AttributeValue(They, a)})) +
+    ("their" -> Seq(
+      (Adj, TheyP: Sem),
+      (Num/N, λ {a: Attribute => AttributeValue(They, a)})
+    )) +
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, ThisObject: Sem)) +
     ("total" -> ((Num/PP)/N, λ {a: Attribute => λ {c: Collection => AttributeSum(c, a)}})) +

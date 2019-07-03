@@ -208,7 +208,9 @@ class ParserSpec extends FlatSpec with Matchers {
         RandomO(Scalar(1), TilesMatchingConditions(Seq(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))))))
       )
     parse("Deal 3 damage to your kernel for each robot in play") shouldEqual
-      Repeat(DealDamage(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Scalar(3)), Count(ObjectsMatchingConditions(Robot, Seq())))
+      ForEach(ObjectsMatchingConditions(Robot, Seq()), DealDamage(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Scalar(3)))
+    parse("Each player shuffles all cards from their hand into their deck") shouldEqual
+      ForEach(AllPlayers, ShuffleCardsIntoDeck(AllC(CardsInHand(TheyP, AnyCard)), TheyP))
   }
 
   it should "treat 'with' as 'that has'" in {
