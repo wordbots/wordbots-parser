@@ -2,6 +2,7 @@ package wordbots
 
 import scala.collection.mutable
 
+// scalastyle:off number.of.methods
 object Semantics {
   sealed trait ParseNode extends Product
   sealed trait AstNode extends ParseNode {
