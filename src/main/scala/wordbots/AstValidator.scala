@@ -2,7 +2,6 @@ package wordbots
 
 import wordbots.Semantics._
 
-import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 case class ValidationError(message: String) extends Exception(message)
@@ -181,30 +180,6 @@ object ValidGeneratedCard extends AstRule {
   }
 }
 
-/** Validates that the destination of a SpawnObject action is something that *could* be an empty tile. */
-object ValidDestForSpawnObject extends AstRule {
-  override def validate(node: AstNode): Try[Unit] = {
-    node match {
-      case SpawnObject(_, dest, _) =>
-        dest match {
-          case ChooseO(c) => validateCollectionCouldBeAnEmptyTile(c)
-          case AllO(c) => validateCollectionCouldBeAnEmptyTile(c)
-          case RandomO(_, c) => validateCollectionCouldBeAnEmptyTile(c)
-          case SavedTargetObject => Success()
-          case _ => Failure(ValidationError(s"Not a valid destination for SpawnObject: $dest"))
-        }
-      case n: AstNode => validateChildren(this, n)
-    }
-  }
-
-  def validateCollectionCouldBeAnEmptyTile(collection: ObjectCollection): Try[Unit] = collection match {
-    case AllTiles => Success()
-    case TilesMatchingConditions(_) => Success()
-    case Other(c: ObjectCollection) => validateCollectionCouldBeAnEmptyTile(c)
-    case _ => Failure(ValidationError(s"Not a valid destination collection for SpawnObject: $collection"))
-  }
-}
-
 /** Validates that targets can't be chosen after (assuming DFS evaluation order) a random selection is made,
   * to prevent "gaming" the system by canceling target selection when dissatisfied with the random choice. */
 object NoChooseAfterRandom extends AstRule {
@@ -212,9 +187,9 @@ object NoChooseAfterRandom extends AstRule {
     var randomOperation: Option[AstNode] = None
     for { n <- node.depthFirstTraverse } {
       n match {
-        case _: RandomC | _: RandomO =>
+        case _: RandomC | _: RandomO | _: RandomT =>
           randomOperation = Some(node)
-        case _: ChooseC | _: ChooseO if randomOperation.isDefined =>
+        case _: ChooseC | _: ChooseO | _: ChooseT if randomOperation.isDefined =>
           throw ValidationError(s"Can't ask player to select a target ($n) after a random operation (${randomOperation.get}) to prevent 're-rolling'")
         case _ =>
       }

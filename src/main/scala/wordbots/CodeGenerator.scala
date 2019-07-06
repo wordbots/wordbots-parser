@@ -111,6 +111,11 @@ object CodeGenerator {
       case TheyP => "targets['theyP']()"
       case SavedTargetObject => "load('target')"
 
+      // Target tiles
+      case ChooseT(collection) => s"targets['choose'](${g(collection)})"
+      case AllT(collection) => s"targets['all'](${g(collection)})"
+      case RandomT(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
+
       // Target cards
       case ChooseC(collection) => s"targets['choose'](${g(collection)})"
       case AllC(collection) => s"targets['all'](${g(collection)})"
