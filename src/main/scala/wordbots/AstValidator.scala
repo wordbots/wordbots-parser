@@ -188,7 +188,7 @@ object NoChooseAfterRandom extends AstRule {
     for { n <- node.depthFirstTraverse } {
       n match {
         case _: RandomC | _: RandomO | _: RandomT =>
-          randomOperation = Some(node)
+          randomOperation = Some(n)
         case _: ChooseC | _: ChooseO | _: ChooseT if randomOperation.isDefined =>
           throw ValidationError(s"Can't ask player to select a target ($n) after a random operation (${randomOperation.get}) to prevent 're-rolling'")
         case _ =>
