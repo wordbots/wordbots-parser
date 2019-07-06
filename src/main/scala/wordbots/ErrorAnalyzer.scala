@@ -9,6 +9,8 @@ import scala.util.{Failure, Success}
 case class ParserError(description: String, suggestions: Set[String] = Set())
 
 object ErrorAnalyzer {
+  import Semantics._
+
   def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]])
                    (implicit validationMode: ValidationMode = ValidateUnknownCard): Option[ParserError] = {
     parseResult.map(_.semantic) match {

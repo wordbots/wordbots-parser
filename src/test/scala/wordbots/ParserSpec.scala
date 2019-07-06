@@ -8,6 +8,8 @@ import scala.util.{ Failure, Success }
 
 // scalastyle:off line.size.limit
 class ParserSpec extends FlatSpec with Matchers {
+  import Semantics._
+
   //scalastyle:off regex
   def parse(input: String): Any = {
     println(s"Parsing $input...")

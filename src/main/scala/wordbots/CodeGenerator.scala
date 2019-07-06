@@ -5,6 +5,8 @@ import org.mozilla.javascript.{ CompilerEnvirons, Parser => RhinoParser }
 import scala.util.Try
 
 object CodeGenerator {
+  import Semantics._
+
   val compilerEnv = new CompilerEnvirons
 
   def generateJS(node: AstNode): Try[String] = Try {

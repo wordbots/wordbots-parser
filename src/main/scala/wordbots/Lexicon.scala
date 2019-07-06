@@ -19,6 +19,8 @@ object Fail {
   *   '\X' = needs X before this, '/X' = needs X after this, '|X' = needs X either before or after this
   **/
 object Lexicon {
+  import Semantics._
+
   type Sem = SemanticState
 
   // scalastyle:off method.name

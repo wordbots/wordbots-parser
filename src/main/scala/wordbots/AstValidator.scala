@@ -1,5 +1,7 @@
 package wordbots
 
+import wordbots.Semantics._
+
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
@@ -61,25 +63,6 @@ sealed trait AstRule {
         validateRecursively(childNode)
       }
     }
-  }
-
-  protected def depthFirstTraverse(rootNode: AstNode): Seq[AstNode] = {
-    val frontier = mutable.Queue(rootNode)
-    val nodesTraversed = mutable.ListBuffer[AstNode]()
-
-    while (frontier.nonEmpty) {
-      val node: AstNode = frontier.dequeue()
-      val children: Seq[AstNode] = node.productIterator.toSeq.flatMap {
-        case node: AstNode => Seq(node)
-        case nodes: Seq[_] => nodes.collect { case a: AstNode => a }
-        case _             => Seq.empty
-      }
-
-      frontier.enqueue(children: _*)
-      nodesTraversed += node
-    }
-
-    nodesTraversed
   }
 }
 
@@ -227,12 +210,12 @@ object ValidDestForSpawnObject extends AstRule {
 object NoChooseAfterRandom extends AstRule {
   override def validate(node: AstNode): Try[Unit] = Try {
     var randomOperation: Option[AstNode] = None
-    for { node <- depthFirstTraverse(node) } {
-      node match {
+    for { n <- node.depthFirstTraverse } {
+      n match {
         case _: RandomC | _: RandomO =>
           randomOperation = Some(node)
         case _: ChooseC | _: ChooseO if randomOperation.isDefined =>
-          throw ValidationError(s"Can't ask player to select a target ($node) after a random operation (${randomOperation.get}) to prevent 're-rolling'")
+          throw ValidationError(s"Can't ask player to select a target ($n) after a random operation (${randomOperation.get}) to prevent 're-rolling'")
         case _ =>
       }
     }
