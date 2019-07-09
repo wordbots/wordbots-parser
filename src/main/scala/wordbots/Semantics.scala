@@ -216,7 +216,7 @@ object Semantics {
     sealed trait ObjectCollection extends ObjectOrCardCollection with TargetObject
       object ObjectsInPlay { def apply(objectType: ObjectType): ObjectCollection = ObjectsMatchingConditions(objectType, Seq()) }
       case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends ObjectCollection
-      case class Other(collection: Collection) extends ObjectCollection
+      case class Other(collection: ObjectCollection) extends ObjectCollection
     sealed trait TileCollection extends Collection with TargetTile
       case object AllTiles extends TileCollection
       case class TilesMatchingConditions(conditions: Seq[Condition]) extends TileCollection

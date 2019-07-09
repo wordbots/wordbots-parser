@@ -13,14 +13,14 @@ object CodeGenerator {
     val jsString = g(node)
 
     // Throw if jsString is invalid JavaScript.
-    val unescapedJsString = jsString.replaceAllLiterally("\\\"", "\"").replaceAllLiterally("\\\\", "\\")
     val parser = new RhinoParser(compilerEnv)
-    parser.parse(unescapedJsString, "", 1)
+    parser.parse(unescape(jsString), "", 1)
 
     jsString
   }
 
   def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\"
+  def unescape(str: String): String = str.replaceAllLiterally("\\\"", "\"").replaceAllLiterally("\\\\", "\\")
 
   // Defer execution of a JS function to as late as possible, e.g. so that it works correctly with 'they' when iterating over a collection
   def deferred(str: String): String = s"""\\"(() => ${escape(str)})\\""""
@@ -37,7 +37,7 @@ object CodeGenerator {
       case Until(TurnsPassed(num), action) => s"(function () { save('duration', $num); ${g(action)}(); save('duration', null); })"
 
       // Actions: Normal
-      case Become(source, target) => s"(function () {actions['become'](${g(source)},${g(target)});})"
+      case Become(source, target) => s"(function () { actions['become'](${g(source)},${g(target)});})"
       case CanAttackAgain(target) => s"(function () { actions['canAttackAgain'](${g(target)}); })"
       case CanMoveAgain(target) => s"(function () { actions['canMoveAgain'](${g(target)}); })"
       case CanMoveAndAttackAgain(target) => s"(function () { actions['canMoveAndAttackAgain'](${g(target)}); })"

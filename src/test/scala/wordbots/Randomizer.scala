@@ -1,6 +1,7 @@
 package wordbots
 
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator
+import io.circe.Json
 import io.circe.syntax._
 import org.scalacheck.Gen.oneOf
 import org.scalacheck.rng.Seed
@@ -9,7 +10,15 @@ import org.scalacheck.{Arbitrary, Gen}
 import scala.reflect.runtime.universe._
 import scala.util.Try
 
-// NOTE: This takes a while to compile because of shapeless magic.
+/**
+  * Tools for generating random valid Wordbots ASTs.
+  *
+  * To run:
+  *   (optionally) export RANDOM_DATA_GENERATOR_SEED=<seed>
+  *   sbt "test:run-main wordbots.Randomizer"
+  *
+  * NOTE: This takes a while to compile because of shapeless magic.
+  */
 object Randomizer extends RandomDataGenerator {
   import Semantics._
 
@@ -17,11 +26,7 @@ object Randomizer extends RandomDataGenerator {
 
   var currentSeed: Seed = seed
 
-  def randomAction: Option[Action] = safeRandom[Action].filterNot { action =>
-    // Ignore Instead(_) actions because they can only occur inside a TriggeredAbility, not on their own
-    action.depthFirstTraverse.exists(_.isInstanceOf[Instead])
-  }
-
+  def randomAction: Option[Action] = safeRandom[Action]
   def randomAbility: Option[Ability] = safeRandom[Ability]
 
   /**
@@ -37,12 +42,14 @@ object Randomizer extends RandomDataGenerator {
       Stream.continually { randomAction }
         .flatten
         .filter(_.size < MAX_ACTION_SIZE)
+        .filter(AstValidator(ValidateRandomlyGeneratedAction).isValid)
         .distinct
         .take(NUM_ACTIONS)
         .toSet
 
     // This intentionally throws an exception if CodeGenerator returns None for any action.
-    println("\n" + actions.map(CodeGenerator.generateJS(_).get).asJson)
+    val json: Json = actions.map(CodeGenerator.generateJS(_).map(CodeGenerator.unescape).get).asJson
+    println(s"\n$json")
   }
 
   private def safeRandom[T: WeakTypeTag: Arbitrary]: Option[T] = {

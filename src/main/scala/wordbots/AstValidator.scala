@@ -9,6 +9,7 @@ case class ValidationError(message: String) extends Exception(message)
 sealed trait ValidationMode
 case object ValidateObject extends ValidationMode
 case object ValidateEvent extends ValidationMode
+case object ValidateRandomlyGeneratedAction extends ValidationMode
 case object ValidateUnknownCard extends ValidationMode
 
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
@@ -19,18 +20,22 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
     OnlyRestoreHealth,
     OnlyThisObjectPlayed,
     ValidGeneratedCard,
-    NoChooseAfterRandom
+    NoChooseAfterRandom,
+    NoInstead
   )
 
   val rules: Seq[AstRule] = mode match {
     case ValidateObject => baseRules :+ MustBeAbility
     case ValidateEvent => baseRules ++ Seq(MustBeAction, NoThis)
+    case ValidateRandomlyGeneratedAction => baseRules ++ Seq(MustBeAction, NoInstead)
     case ValidateUnknownCard => baseRules
   }
 
   def validate(ast: AstNode): Try[Unit] = {
     Try(rules.foreach(_.validate(ast).get))
   }
+
+  def isValid(ast: AstNode): Boolean = validate(ast).isSuccess
 }
 
 /**
@@ -152,6 +157,15 @@ object NoThis extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
       case ThisObject => Failure(ValidationError(s"Events can't refer to the current object"))
+      case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+object NoInstead extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case Instead(_) => Failure(ValidationError(s"Can't use Instead in this context"))
       case n: AstNode => validateChildren(this, n)
     }
   }
