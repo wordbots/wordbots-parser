@@ -20,8 +20,7 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
     OnlyRestoreHealth,
     OnlyThisObjectPlayed,
     ValidGeneratedCard,
-    NoChooseAfterRandom,
-    NoInstead
+    NoChooseAfterRandom
   )
 
   val rules: Seq[AstRule] = mode match {

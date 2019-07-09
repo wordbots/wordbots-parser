@@ -52,7 +52,7 @@ object Semantics {
     case class Draw(target: TargetPlayer, num: Number) extends Action
     case object EndTurn extends Action
     case class GiveAbility(target: TargetObject, ability: Ability) extends Action
-    case class ModifyAttribute(target: Target, attribute: Attribute, operation: Operation) extends Action
+    case class ModifyAttribute(target: TargetObjectCardOrPlayer, attribute: Attribute, operation: Operation) extends Action
     case class ModifyEnergy(target: TargetPlayer, operation: Operation) extends Action
     case class MoveCardsToHand(target: TargetCard, player: TargetPlayer) extends Action
     case class MoveObject(target: TargetObject, dest: TargetObjectOrTile) extends Action
@@ -65,7 +65,7 @@ object Semantics {
         case _ => throw new ClassCastException(s"Can't restore $attribute")
       }
     }
-    case class SetAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Number) extends Action
+    case class SetAttribute(target: TargetObjectCardOrPlayer, attribute: Attribute, num: Number) extends Action
     case class ShuffleCardsIntoDeck(target: TargetCard, player: TargetPlayer) extends Action
     case class SpawnObject(target: TargetCard, dest: TargetTile, owner: TargetPlayer = Self) extends Action {
       target match {
@@ -117,8 +117,9 @@ object Semantics {
     case class EndOfTurn(player: TargetPlayer) extends Trigger
 
   sealed trait Target extends AstNode
-    sealed trait TargetObjectOrCard extends Target
-    sealed trait TargetObjectOrPlayer extends Target
+    sealed trait TargetObjectCardOrPlayer extends Target
+    sealed trait TargetObjectOrCard extends TargetObjectCardOrPlayer
+    sealed trait TargetObjectOrPlayer extends TargetObjectCardOrPlayer
     sealed trait TargetObjectOrTile extends Target
 
     case class ConditionTargetOn(target: TargetObjectOrCard, condition: GlobalCondition) extends TargetObjectOrCard
