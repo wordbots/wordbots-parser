@@ -1,25 +1,28 @@
 package wordbots
 
 import com.danielasfregola.randomdatagenerator.RandomDataGenerator
+import io.circe.syntax._
 import org.scalacheck.Gen.oneOf
 import org.scalacheck.rng.Seed
 import org.scalacheck.{Arbitrary, Gen}
 
 import scala.reflect.runtime.universe._
-import scala.util.{Random, Try}
+import scala.util.Try
 
 // NOTE: This takes a while to compile because of shapeless magic.
 object Randomizer extends RandomDataGenerator {
-  implicit lazy val arbInt: Arbitrary[Int] = Arbitrary(oneOf(0, 1, 2, 3))
-
   import Semantics._
 
-  def action(): Option[Action] = safeRandom[Action]() match {
-    case Some(Instead(_)) => None
-    case a => a
+  implicit lazy val arbInt: Arbitrary[Int] = Arbitrary(oneOf(0, 1, 2, 3))
+
+  var currentSeed: Seed = seed
+
+  def randomAction: Option[Action] = safeRandom[Action].filterNot { action =>
+    // Ignore Instead(_) actions because they can only occur inside a TriggeredAbility, not on their own
+    action.depthFirstTraverse.exists(_.isInstanceOf[Instead])
   }
 
-  def ability(): Option[Ability] = safeRandom[Ability]()
+  def randomAbility: Option[Ability] = safeRandom[Ability]
 
   /**
     * Generate a random list of JS actions (for testing).
@@ -29,27 +32,24 @@ object Randomizer extends RandomDataGenerator {
     val MAX_ACTION_SIZE = 20
 
     val actions: Set[Action] =
-      Stream.continually { action() }
+      Stream.continually { randomAction }
         .flatten
         .filter(_.size < MAX_ACTION_SIZE)
         .distinct
         .take(NUM_ACTIONS)
         .toSet
 
-    println("[")
-    for { a <- actions } {
-      println(s"""  "${CodeGenerator.generateJS(a).get}",""")
-    }
-    println("]")
+    // This intentionally throws an exception if CodeGenerator returns None for any action.
+    println("\n" + actions.map(CodeGenerator.generateJS(_).get).asJson)
   }
 
-  private def safeRandom[T: WeakTypeTag: Arbitrary](seed: Seed = Seed(Random.nextLong)): Option[T] = {
-    val gen = Gen.infiniteStream(implicitly[Arbitrary[T]].arbitrary)
+  private def safeRandom[T: WeakTypeTag: Arbitrary]: Option[T] = {
+    print(".")
+    currentSeed = currentSeed.next
 
     Try {
-      gen.apply(Gen.Parameters.default, seed)
-    }.flatMap { stream => Try {
-      stream.get.take(1).head
-    }}.toOption
+      implicitly[Arbitrary[T]].arbitrary
+        .apply(Gen.Parameters.default, currentSeed)
+    }.toOption.flatten
   }
 }
