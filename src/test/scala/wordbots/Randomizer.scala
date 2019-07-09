@@ -27,9 +27,11 @@ object Randomizer extends RandomDataGenerator {
   /**
     * Generate a random list of JS actions (for testing).
     */
-  def main(): Unit = {
+  def main(args: Array[String] = Array()): Unit = {
     val NUM_ACTIONS = 100
     val MAX_ACTION_SIZE = 20
+
+    print(s"Generating $NUM_ACTIONS random actions of size < $MAX_ACTION_SIZE ")
 
     val actions: Set[Action] =
       Stream.continually { randomAction }
