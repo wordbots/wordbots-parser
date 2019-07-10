@@ -1,6 +1,7 @@
 package wordbots
 
-import scala.collection.mutable
+import wordbots.Semantics._
+
 import scala.util.{Failure, Success, Try}
 
 case class ValidationError(message: String) extends Exception(message)
@@ -8,6 +9,7 @@ case class ValidationError(message: String) extends Exception(message)
 sealed trait ValidationMode
 case object ValidateObject extends ValidationMode
 case object ValidateEvent extends ValidationMode
+case object ValidateRandomlyGeneratedAction extends ValidationMode
 case object ValidateUnknownCard extends ValidationMode
 
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
@@ -24,12 +26,15 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val rules: Seq[AstRule] = mode match {
     case ValidateObject => baseRules :+ MustBeAbility
     case ValidateEvent => baseRules ++ Seq(MustBeAction, NoThis)
+    case ValidateRandomlyGeneratedAction => baseRules ++ Seq(MustBeAction, NoInstead)
     case ValidateUnknownCard => baseRules
   }
 
   def validate(ast: AstNode): Try[Unit] = {
     Try(rules.foreach(_.validate(ast).get))
   }
+
+  def isValid(ast: AstNode): Boolean = validate(ast).isSuccess
 }
 
 /**
@@ -61,25 +66,6 @@ sealed trait AstRule {
         validateRecursively(childNode)
       }
     }
-  }
-
-  protected def depthFirstTraverse(rootNode: AstNode): Seq[AstNode] = {
-    val frontier = mutable.Queue(rootNode)
-    val nodesTraversed = mutable.ListBuffer[AstNode]()
-
-    while (frontier.nonEmpty) {
-      val node: AstNode = frontier.dequeue()
-      val children: Seq[AstNode] = node.productIterator.toSeq.flatMap {
-        case node: AstNode => Seq(node)
-        case nodes: Seq[_] => nodes.collect { case a: AstNode => a }
-        case _             => Seq.empty
-      }
-
-      frontier.enqueue(children: _*)
-      nodesTraversed += node
-    }
-
-    nodesTraversed
   }
 }
 
@@ -175,6 +161,15 @@ object NoThis extends AstRule {
   }
 }
 
+object NoInstead extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case Instead(_) => Failure(ValidationError(s"Can't use Instead in this context"))
+      case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
 /** Validates that generated cards have exactly one of each desired attribute. */
 object ValidGeneratedCard extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
@@ -198,41 +193,17 @@ object ValidGeneratedCard extends AstRule {
   }
 }
 
-/** Validates that the destination of a SpawnObject action is something that *could* be an empty tile. */
-object ValidDestForSpawnObject extends AstRule {
-  override def validate(node: AstNode): Try[Unit] = {
-    node match {
-      case SpawnObject(_, dest, _) =>
-        dest match {
-          case ChooseO(c) => validateCollectionCouldBeAnEmptyTile(c)
-          case AllO(c) => validateCollectionCouldBeAnEmptyTile(c)
-          case RandomO(_, c) => validateCollectionCouldBeAnEmptyTile(c)
-          case SavedTargetObject => Success()
-          case _ => Failure(ValidationError(s"Not a valid destination for SpawnObject: $dest"))
-        }
-      case n: AstNode => validateChildren(this, n)
-    }
-  }
-
-  def validateCollectionCouldBeAnEmptyTile(collection: ObjectCollection): Try[Unit] = collection match {
-    case AllTiles => Success()
-    case TilesMatchingConditions(_) => Success()
-    case Other(c: ObjectCollection) => validateCollectionCouldBeAnEmptyTile(c)
-    case _ => Failure(ValidationError(s"Not a valid destination collection for SpawnObject: $collection"))
-  }
-}
-
 /** Validates that targets can't be chosen after (assuming DFS evaluation order) a random selection is made,
   * to prevent "gaming" the system by canceling target selection when dissatisfied with the random choice. */
 object NoChooseAfterRandom extends AstRule {
   override def validate(node: AstNode): Try[Unit] = Try {
     var randomOperation: Option[AstNode] = None
-    for { node <- depthFirstTraverse(node) } {
-      node match {
-        case _: RandomC | _: RandomO =>
-          randomOperation = Some(node)
-        case _: ChooseC | _: ChooseO if randomOperation.isDefined =>
-          throw ValidationError(s"Can't ask player to select a target ($node) after a random operation (${randomOperation.get}) to prevent 're-rolling'")
+    for { n <- node.depthFirstTraverse } {
+      n match {
+        case _: RandomC | _: RandomO | _: RandomT =>
+          randomOperation = Some(n)
+        case _: ChooseC | _: ChooseO | _: ChooseT if randomOperation.isDefined =>
+          throw ValidationError(s"Can't ask player to select a target ($n) after a random operation (${randomOperation.get}) to prevent 're-rolling'")
         case _ =>
       }
     }

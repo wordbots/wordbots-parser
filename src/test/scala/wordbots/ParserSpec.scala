@@ -8,6 +8,8 @@ import scala.util.{ Failure, Success }
 
 // scalastyle:off line.size.limit
 class ParserSpec extends FlatSpec with Matchers {
+  import Semantics._
+
   //scalastyle:off regex
   def parse(input: String): Any = {
     println(s"Parsing $input...")
@@ -60,7 +62,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Deal 2 damage to a robot that has 3 or less speed") shouldEqual
       DealDamage(ChooseO(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Speed, LessThanOrEqualTo(Scalar(3)))))), Scalar(2))
     parse ("Deal 1 damage to all robots adjacent to a tile") shouldEqual
-      DealDamage(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ChooseO(AllTiles)))), Scalar(1))
+      DealDamage(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ChooseT(AllTiles)))), Scalar(1))
     parse("Give all robots you control +2 attack") shouldEqual
       ModifyAttribute(ObjectsMatchingConditions(Robot, Seq(ControlledBy(Self))), Attack, Plus(Scalar(2)))
     //scalastyle:off magic.number
@@ -156,7 +158,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Move a robot up to 2 spaces") shouldEqual
       MultipleActions(Seq(
         SaveTarget(ChooseO(ObjectsInPlay(Robot))),
-        MoveObject(SavedTargetObject, ChooseO(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(2), SavedTargetObject), Unoccupied))))
+        MoveObject(SavedTargetObject, ChooseT(TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(2), SavedTargetObject), Unoccupied))))
       ))
     parse("Remove all abilities from all robots") shouldEqual
       RemoveAllAbilities(ObjectsInPlay(Robot))
@@ -176,7 +178,7 @@ class ParserSpec extends FlatSpec with Matchers {
           Seq(AttributeAmount(Scalar(1), Attack), AttributeAmount(Scalar(1), Health), AttributeAmount(Scalar(1), Speed)),
           Some("Test Bot")
         ),
-        ChooseO(TilesMatchingConditions(Seq(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))))))
+        ChooseT(TilesMatchingConditions(Seq(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))))))
       )
 
     // Alpha v0.12 playtesting:
@@ -186,9 +188,9 @@ class ParserSpec extends FlatSpec with Matchers {
         parse("When this robot is destroyed, it deals damage equal to its power to the opponent's kernel").asInstanceOf[Ability]
       )
     parse("Move each robot to a random tile") shouldEqual
-      MoveObject(ObjectsMatchingConditions(Robot, Seq()), RandomO(Scalar(1), AllTiles))
+      MoveObject(ObjectsMatchingConditions(Robot, Seq()), RandomT(Scalar(1), AllTiles))
     parse("Move all robots to a random adjacent tile") shouldEqual
-      MoveObject(ObjectsMatchingConditions(Robot, Seq()), RandomO(Scalar(1), TilesMatchingConditions(Seq(AdjacentTo(They)))))
+      MoveObject(ObjectsMatchingConditions(Robot, Seq()), RandomT(Scalar(1), TilesMatchingConditions(Seq(AdjacentTo(They)))))
     /* parse("Move a random robot 1 space") shouldEqual   // see "disallow choosing targets after a random target has been selected" test
       MultipleActions(Seq(
        SaveTarget(RandomO(Scalar(1), ObjectsInPlay(Robot))),
@@ -205,7 +207,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Return a random robot from your discard pile to a random space adjacent to your kernel") shouldEqual
       SpawnObject(
         RandomC(Scalar(1), CardsInDiscardPile(Self, Robot)),
-        RandomO(Scalar(1), TilesMatchingConditions(Seq(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))))))
+        RandomT(Scalar(1), TilesMatchingConditions(Seq(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self)))))))
       )
     parse("Deal 3 damage to your kernel for each robot in play") shouldEqual
       ForEach(ObjectsMatchingConditions(Robot, Seq()), DealDamage(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Scalar(3)))
@@ -372,15 +374,15 @@ class ParserSpec extends FlatSpec with Matchers {
         BeginningOfTurn(Opponent),
         SpawnObject(
           CopyOfC(ThisObject),
-          RandomO(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Opponent)))))))
+          RandomT(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Opponent)))))))
         )
       )
     parse("When this robot is played, spawn a 1/1/1 robot named \"Potato\" adjacent to this robot") shouldEqual
-      TriggeredAbility(AfterPlayed(ThisObject), SpawnObject(potatoBot, ChooseO(TilesMatchingConditions(Seq(AdjacentTo(ThisObject))))))
+      TriggeredAbility(AfterPlayed(ThisObject), SpawnObject(potatoBot, ChooseT(TilesMatchingConditions(Seq(AdjacentTo(ThisObject))))))
     parse("At the beginning of your turn, spawn a 1/1/1 robot named \"Potato\" on a random tile within 2 hexes of this robot") shouldEqual
-      TriggeredAbility(BeginningOfTurn(Self), SpawnObject(potatoBot, RandomO(Scalar(1), TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(2), ThisObject))))))
+      TriggeredAbility(BeginningOfTurn(Self), SpawnObject(potatoBot, RandomT(Scalar(1), TilesMatchingConditions(Seq(WithinDistanceOf(Scalar(2), ThisObject))))))
     parse("At the beginning of your turn, spawn a 1/1/1 robot named \"Potato\" on a random tile 2 spaces away from this robot") shouldEqual
-      TriggeredAbility(BeginningOfTurn(Self), SpawnObject(potatoBot, RandomO(Scalar(1), TilesMatchingConditions(Seq(ExactDistanceFrom(Scalar(2), ThisObject))))))
+      TriggeredAbility(BeginningOfTurn(Self), SpawnObject(potatoBot, RandomT(Scalar(1), TilesMatchingConditions(Seq(ExactDistanceFrom(Scalar(2), ThisObject))))))
     parse("At the end of your turn, your opponent takes control of this robot") shouldEqual
       TriggeredAbility(EndOfTurn(Self), TakeControl(Opponent, ThisObject))
     parse("At the end of your turn, your opponent spawns a 1/1/1 robot named \"Nemesis\" on a random tile adjacent to this robot") shouldEqual
@@ -388,7 +390,7 @@ class ParserSpec extends FlatSpec with Matchers {
         EndOfTurn(Self),
         SpawnObject(
           GeneratedCard(Robot, attrs(1, 1, 1), Some("Nemesis")),
-          RandomO(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ThisObject)))),
+          RandomT(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ThisObject)))),
           Opponent
         )
       )
@@ -479,7 +481,7 @@ class ParserSpec extends FlatSpec with Matchers {
         AfterDestroyed(AllO(ObjectsMatchingConditions(Robot, Seq())), AnyEvent),
         SpawnObject(
           GeneratedCard(Robot, attrs(2, 1, 1), Some("Zombie Bot")),
-          RandomO(Scalar(1), AllTiles)
+          RandomT(Scalar(1), AllTiles)
         )
       )
 
@@ -513,8 +515,7 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   it should "disallow choosing targets after a random target has been selected" in {
-    parse("Move a random robot 1 space") shouldEqual
-      Failure(ValidationError("Can't ask player to select a target (ChooseO(TilesMatchingConditions(List(WithinDistanceOf(Scalar(1),SavedTargetObject), Unoccupied)))) after a random operation (RandomO(Scalar(1),ObjectsMatchingConditions(Robot,List()))) to prevent 're-rolling'"))
+    parse("Move a random robot 1 space") shouldBe a[Failure[ValidationError]]
   }
 }
 // scalastyle:on line.size.limit

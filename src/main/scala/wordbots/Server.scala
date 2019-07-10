@@ -18,10 +18,12 @@ import scala.util.{Failure, Success}
 case class ParseRequest(input: String, mode: String)
 
 sealed trait ParserOutput
-case class SuccessfulParse(parse: SemanticParseNode[CcgCat], ast: AstNode, parsedTokens: Seq[String]) extends ParserOutput
+case class SuccessfulParse(parse: SemanticParseNode[CcgCat], ast: Semantics.AstNode, parsedTokens: Seq[String]) extends ParserOutput
 case class FailedParse(error: ParserError, unrecognizedTokens: Seq[String]) extends ParserOutput
 
 object Server extends ServerApp {
+  import Semantics._
+
   sealed trait Response
   case class ErrorResponse(error: String) extends Response
   case class SuccessfulParseResponse(js: String, tokens: Seq[String], version: String = Parser.VERSION) extends Response

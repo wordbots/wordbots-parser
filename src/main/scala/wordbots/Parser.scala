@@ -18,7 +18,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
     val output: String = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
     val code: Try[String] = Try { result.bestParse.get.semantic }.flatMap {
-      case Form(v: AstNode) => CodeGenerator.generateJS(v)
+      case Form(v: Semantics.AstNode) => CodeGenerator.generateJS(v)
       case _ => Failure(new RuntimeException("Parser did not produce a valid expression"))
     }
 

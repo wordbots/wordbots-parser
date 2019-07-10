@@ -9,6 +9,7 @@ resolvers += Resolver.sonatypeRepo("releases")
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 libraryDependencies ++= Seq(
+  "com.danielasfregola" %% "random-data-generator" % "2.3",
   "io.circe" %% "circe-generic" % circeVersion,
   "org.http4s" %% "http4s-blaze-client" % http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % http4sVersion,
