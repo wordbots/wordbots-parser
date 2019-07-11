@@ -77,6 +77,7 @@ object ErrorAnalyzer {
     val exceptions: Set[String] = parseResult.map(_.exs).getOrElse(Set()).map(
       _.getMessage
         .replace("cannot be cast to", "is not a")
+        .replaceAllLiterally("Semantics$", "")
         .replaceAllLiterally("$", "")
         .replaceAllLiterally("wordbots.", "")
     )

@@ -103,7 +103,7 @@ object NoModifyingCostOfObjects extends AstRule {
     node match {
       case AttributeAdjustment(target, Cost, _) =>
         target match {
-          case _: TargetObject => Failure(ValidationError("Can't modify the cost of objects on the board."))
+          case _: TargetObject => Failure(ValidationError("Can't modify the cost of objects on the board (try \"robot cards\" instead of \"robots\", etc)."))
           case _ => validateChildren(this, node)
         }
       case n: AstNode => validateChildren(this, n)

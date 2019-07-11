@@ -106,6 +106,7 @@ object Semantics {
 
   sealed trait Trigger extends AstNode
     case class AfterAttack(target: TargetObject, attackedObjectType: ObjectType = AllObjects) extends Trigger
+    case class AfterCardDraw(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
     case class AfterCardEntersDiscardPile(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
     case class AfterCardPlay(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger  // When a given card type is played.
     case class AfterDamageReceived(target: TargetObject) extends Trigger
@@ -205,6 +206,7 @@ object Semantics {
     case class AttributeValue(obj: TargetObject, attribute: SingleAttribute) extends Number
     case class Count(collection: Collection) extends Number
     case class EnergyAmount(player: TargetPlayer) extends Number
+    case class MaximumEnergyAmount(player: TargetPlayer) extends Number
 
     case class Times(num1: Number, num2: Number) extends Number
 
@@ -212,8 +214,8 @@ object Semantics {
     sealed trait ObjectOrCardCollection extends Collection
 
     sealed trait CardCollection extends ObjectOrCardCollection
-      case class CardsInDiscardPile(player: TargetPlayer, cardType: CardType = AnyCard) extends CardCollection
-      case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard) extends CardCollection
+      case class CardsInDiscardPile(player: TargetPlayer, cardType: CardType = AnyCard, conditions: Seq[Condition] = Seq()) extends CardCollection
+      case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard, conditions: Seq[Condition] = Seq()) extends CardCollection
     sealed trait ObjectCollection extends ObjectOrCardCollection with TargetObject
       object ObjectsInPlay { def apply(objectType: ObjectType): ObjectCollection = ObjectsMatchingConditions(objectType, Seq()) }
       case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends ObjectCollection
@@ -267,6 +269,7 @@ object Semantics {
   sealed trait IntermediateNode extends ParseNode
 
   // Nullary containers:
+  case object AllEnergy extends IntermediateNode
   case object ItsOwnersHand extends IntermediateNode
 
   // Unary containers:
@@ -277,6 +280,7 @@ object Semantics {
   case class DiscardPile(player: TargetPlayer) extends IntermediateNode
   case class EnemyObject(objectType: ObjectType) extends IntermediateNode  // used, e.g. in parsing "whenever this robot destroys an enemy object"
   case class Energy(amount: Number) extends IntermediateNode
+  case class EnergyComparison(comp: Comparison) extends IntermediateNode
   case class Hand(player: TargetPlayer) extends IntermediateNode
   case class Life(amount: Number) extends IntermediateNode
   case class Name(name: String) extends IntermediateNode
