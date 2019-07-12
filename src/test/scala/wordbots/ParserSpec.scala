@@ -229,6 +229,8 @@ class ParserSpec extends FlatSpec with Matchers {
       )
     parse("Your opponent returns a random robot from their discard pile to a random tile") shouldEqual
       SpawnObject(RandomC(Scalar(1), CardsInDiscardPile(TheyP,Robot, Seq())), RandomT(Scalar(1), AllTiles), Opponent)
+    parse("Reduce the attack, speed, and health of all robots to 1") shouldEqual
+      ModifyAttribute(ObjectsMatchingConditions(Robot, Seq()), MultipleAttributes(Seq(Health, Speed, Attack)), Minus(Scalar(1)))
   }
 
   it should "treat 'with' as 'that has'" in {

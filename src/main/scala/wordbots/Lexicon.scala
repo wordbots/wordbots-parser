@@ -82,10 +82,13 @@ object Lexicon {
       // Specific.
       ((S/S)\S, λ {a: TriggeredAbility => λ {b: TriggeredAbility => MultipleAbilities(Seq(a, b))}}),
       ((N/N)\N, λ {a1: Attribute => λ {a2: Attribute => MultipleAttributes(Seq(a1, a2))}}),
+      (((N\N)\N)/N, λ {a1: Attribute => λ {a2: Attribute => λ {a3: Attribute => MultipleAttributes(Seq(a1, a2, a3))}}}),
       // General.
       (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
       (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
-      (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => Seq(a, b, c)}}}),  // e.g. "1 attack, 2 health, and 3 speed"
+      (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode =>  // e.g. "1 attack, 2 health, and 3 speed"
+        if (a.isInstanceOf[Attribute] && b.isInstanceOf[Attribute] && c.isInstanceOf[Attribute]) Fail("") else Seq(a, b, c)}}}  // the conditional Fail() is to force the specific 3-Attribute rule above
+      ),
       ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}}),  // e.g. "+1 attack and Haste"
       ((S/NP)\S, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})  // e.g. "Haste and +1 attack"
     )) +
