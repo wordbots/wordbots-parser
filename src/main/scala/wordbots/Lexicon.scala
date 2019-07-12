@@ -427,13 +427,13 @@ object Lexicon {
     (Seq("space", "tile", "hex") -> Seq(
       (NP\Num, λ {num: Number => if (num == Scalar(1)) Spaces(num) else Fail("Use 'tiles' instead of 'tile'") }),
       (NP\Num, λ {num: Number => if (num == Scalar(1)) WithinDistance(num) else Fail("Use 'tiles' instead of 'tile'") }),
-      (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})
+      (NP/PP, λ {c: ObjectCondition => TilesMatchingConditions(Seq(c))})
     )) +
     (Seq("spaces", "tiles", "hexes") -> Seq(
       (NP, AllTiles: Sem),  // e.g. "all tiles"
       (NP\Num, λ {num: Number => Spaces(num)}),  // e.g. "3 tiles"
       (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)}),  // e.g. "up to 3 tiles away"
-      (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})  // e.g. "all tiles adjacent to your kernel"
+      (NP/PP, λ {c: ObjectCondition => TilesMatchingConditions(Seq(c))})  // e.g. "all tiles adjacent to your kernel"
     )) +
     (Seq("spawn", "create") -> ((S/PP)/NP, λ {c: TargetCard => λ {t: TargetTile => SpawnObject(c, t, Self)}})) +
     (Seq("spawns", "creates") -> (((S\NP)/PP)/NP, λ {c: TargetCard => λ {t: TargetTile =>  λ {p: TargetPlayer => SpawnObject(c, t, p)}}})) +
@@ -466,8 +466,8 @@ object Lexicon {
       (PP/Num, identity)
     )) +
     ("that" -> Seq(
-      ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}}),
-      ((NP\N)/S, λ {cs: Seq[Condition] => λ {o: ObjectType => ObjectsMatchingConditions(o, cs)}})
+      ((NP\N)/S, λ {c: ObjectCondition => λ { o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}}),
+      ((NP\N)/S, λ {cs: Seq[ObjectCondition] => λ { o: ObjectType => ObjectsMatchingConditions(o, cs)}})
     )) +
     ("that" / Seq("robot", "creature", "structure", "object") -> (NP, That: Sem)) +
     (Seq("that costs", "which costs") -> Seq(
