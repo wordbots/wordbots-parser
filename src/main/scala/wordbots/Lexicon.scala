@@ -62,9 +62,10 @@ object Lexicon {
       ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObjectOrTile => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}}),
       (PP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
-    (Seq("adjacent to a", "adjacent to an") ->
-      ((S/NP)\NP, λ {o: TargetObject => λ {c: ObjectsMatchingConditions => CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ AdjacentTo(o)))}})
-    ) +
+    ("is" /?/ Seq("adjacent to", "adjacent to a", "adjacent to an") -> Seq(
+      ((S\N)/NP, λ {o: TargetObject => λ {e: EnemyObject => CollectionExists(ObjectsMatchingConditions(e.objectType, Seq(AdjacentTo(o), ControlledBy(Opponent))))}}),
+      ((S\NP)/NP, λ {c: ObjectsMatchingConditions => λ {o: TargetObject => CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ AdjacentTo(o)))}})
+    )) +
     ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisObject, AllObjects), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
       (NP/N, λ {o: ObjectType => ObjectsInPlay(o)}),
@@ -74,16 +75,20 @@ object Lexicon {
       (NP/PP, λ {c: Collection => c})
     )) +
     ("all" /?/ Seq("attributes", "stats") -> (N, AllAttributes: Sem)) +
-    (Seq("all players", "each player", "every player", "both players") -> (NP, AllPlayers: Sem)) +
+    ("all energy" -> (NP, AllEnergy: Sem)) +
+    (Seq("all players", "each player", "every player", "either player", "a player", "both players") -> (NP, AllPlayers: Sem)) +
     (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
       // Specific.
       ((S/S)\S, λ {a: TriggeredAbility => λ {b: TriggeredAbility => MultipleAbilities(Seq(a, b))}}),
       ((N/N)\N, λ {a1: Attribute => λ {a2: Attribute => MultipleAttributes(Seq(a1, a2))}}),
+      (((N\N)\N)/N, λ {a1: Attribute => λ {a2: Attribute => λ {a3: Attribute => MultipleAttributes(Seq(a1, a2, a3))}}}),
       // General.
       (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
       (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
-      (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => Seq(a, b, c)}}}),  // e.g. "1 attack, 2 health, and 3 speed"
+      (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode =>  // e.g. "1 attack, 2 health, and 3 speed"
+        if (a.isInstanceOf[Attribute] && b.isInstanceOf[Attribute] && c.isInstanceOf[Attribute]) Fail("") else Seq(a, b, c)}}}  // the conditional Fail() is to force the specific 3-Attribute rule above
+      ),
       ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}}),  // e.g. "+1 attack and Haste"
       ((S/NP)\S, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})  // e.g. "Haste and +1 attack"
     )) +
@@ -93,9 +98,10 @@ object Lexicon {
     (Seq("attack", "power") -> Seq(
       (N, Attack: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)}),
+      (NP|Adj, λ {amount: Number => AttributeAmount(amount, Attack)}),
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Attack)}),
-      (NP\Adj, λ {comp : Comparison => AttributeComparison(Attack, comp)}), // needed for "> x health"
-      (NP\Num, λ {n: Number => AttributeComparison(Attack, EqualTo(n))}) // "...with X health"(implied "equal to" in there)
+      (NP\Adj, λ {comp : Comparison => AttributeComparison(Attack, comp)}), // needed for "> x attack"
+      (NP\Num, λ {n: Number => AttributeComparison(Attack, EqualTo(n))}) // "...with X attack" (implied "equal to" in there)
     )) +
     ("attacks" -> Seq(
       (S\NP, λ {c: ChooseO => AfterAttack(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
@@ -110,7 +116,10 @@ object Lexicon {
       ((NP\N)\NP, λ {s: Spaces => λ {t: ObjectType => ObjectsMatchingConditions(t, Seq(ExactDistanceFrom(s.num, ThisObject)))}}), // "a robot X spaces away"
       ((NP\NP)\NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ExactDistanceFrom(s.num, ThisObject))}})
     )) +
-    ("become".s -> ((S/Adj)\NP, λ {t: TargetAttribute => λ {num: Number => SetAttribute(t.target, t.attr, num)}})) +  // e.g. "Each robot's attack becomes X"
+    ("become".s -> Seq(
+      ((S\NP)/Num, λ {num: Number => λ {e: EnergyAmount => ModifyEnergy(e.player, Constant(num))}}),  // e.g. "Your energy becomes X"
+      ((S/Adj)\NP, λ {t: TargetAttribute => λ {num: Number => SetAttribute(t.target, t.attr, num)}})  // e.g. "Each robot's attack becomes X"
+    )) +
     (("become".s :+ "becomes a") -> Seq(
       ((S\NP)/NP, λ {target: TargetCard => λ {source: TargetObject => Become(source, target)}}), // used with aCopyOf
       ((S\NP)/NP, λ {target: GeneratedCard => λ {source: TargetObject => Become(source, target)}}) // only used in such things as "becomes a robot with 1 attack and...".
@@ -147,6 +156,7 @@ object Lexicon {
     ("a copy of" -> (NP/NP, λ {t:TargetObject => CopyOfC(t)})) + // can this be decomposed further?
     (Seq("cost", "energy cost") -> Seq(
       (N, Cost: Sem),
+      (NP|Adj, λ {amount: Number => AttributeAmount(amount, Cost)}),
       (NP/Adj, λ {comp : Comparison => AttributeComparison(Cost, comp)}), // needed for "cost > x "
       (NP/Num, λ {n: Number => AttributeComparison(Cost, EqualTo(n))}), // "...with cost X"(implied "equal to" in there)
       ((S\NP)/Num, λ {i: Scalar => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, Constant(i))}}),
@@ -164,8 +174,9 @@ object Lexicon {
       (S\Num, λ {amount: Number => DealDamage(ChooseO(ObjectsInPlay(AllObjects)), amount)})  // (if no target is given, any target can be chosen)
     )) +
     ("damaged" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(HasProperty(IsDamaged)))})) +
-    ("deck".s -> (NP\Adj, λ {p: TargetPlayer => Deck(p)})) +
     (Seq("deal", "deals", "it deals", "this robot deals", "this object deals", "take", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
+    ("deck".s -> (NP\Adj, λ {p: TargetPlayer => Deck(p)})) +
+    ("defending robot" -> (NP, That: Sem)) +  // This works within AfterAttack because That refers to the undergoer (patient) of an action
     ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
     (Seq("destroys", "kills") -> Seq(
       ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterDestroysOtherObject(t, o)}}),
@@ -182,9 +193,15 @@ object Lexicon {
     )) +
     (Seq("doesn't deal damage when attacked", "only deals damage when attacking") -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotFightBack)})) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
-    ("draw".s -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: Cards => Draw(p, c.num)}})) +
+    ("draw".s -> Seq(
+      ((S/NP)\NP, λ {p: TargetPlayer => λ {c: Cards => Draw(p, c.num)}}),
+      ((S/N)\NP, λ {t: TargetPlayer => λ {c: CardType => AfterCardDraw(t, c)}})  // e.g. "[whenever] you draw a robot, [do something]"
+    )) +
     ("discard" -> (S/NP, λ {t: TargetCard => Discard(t)})) +
-    ("discards" -> ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})) +
+    ("discards" -> Seq(
+      ((S/NP)\NP, λ {p: TargetPlayer => λ {_: CardsInHand => Fail("Cards can't force a player to make a decision (try \"random card(s)\" instead)")}}),
+      ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})
+    )) +
     ("discard pile".s -> Seq(
       (NP\Adj, λ {p: TargetPlayer => DiscardPile(p)}),
       (NP\Adj, λ {p: TargetPlayer => CardsInDiscardPile(p)})
@@ -210,9 +227,10 @@ object Lexicon {
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),  // e.g. "deal X damage to each enemy robot"
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Opponent)) ++ c.conditions)})  // e.g. "enemy robot in Y"
     )) +
-    ("energy" -> Seq(
+    (Seq("energy", "energy to play") -> Seq(
       (NP|Num, λ {amount: Number => Energy(amount)}),
       (NP/Adj, λ {amount: Number => Energy(amount)}),
+      (NP\Adj, λ {comp: Comparison => EnergyComparison(comp)}),
       (S\S, λ {aa: AttributeAdjustment => AttributeAdjustment(aa.target, Cost, aa.operation)})  // "X costs Y more" == "X costs Y more energy"
     )) +
     ("enters" -> ((S\N)/NP, λ {d: DiscardPile => λ {c: CardType => AfterCardEntersDiscardPile(d.player, c)}})) +
@@ -242,7 +260,7 @@ object Lexicon {
       (S/NP, λ {l: Life => ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(l.amount))})  // Gain X life.
     )) +
     ("gain".s -> Seq( // "[All robots] gain ..."
-      (((S/N)/Num)\NP, λ {t: TargetObject => λ {i: Scalar => λ {a: Attribute => ModifyAttribute(t, a, Plus(i))}}}),  // "... X attack"
+      ((S\NP)/NP, λ {aa: AttributeAmount => λ {t: TargetObject => ModifyAttribute(t, aa.attr, Plus(aa.amount))}}),  // " ... X attack"
       ((S/N)\NP, λ {t: TargetObject => λ {attrs: Seq[AttributeAmount] =>  // "... X attack and Y speed"
         MultipleActions(Seq(SaveTarget(t)) ++ attrs.map(a => ModifyAttribute(SavedTargetObject, a.attr, Plus(a.amount))))}}),
       ((S/NP)\NP, λ {p: TargetPlayer => λ {e: Energy => ModifyEnergy(p, Plus(e.amount))}}),  // Y gains X energy.
@@ -293,6 +311,7 @@ object Lexicon {
     (Seq("health", "life") -> Seq(
       (N, Health: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Health)}),
+      (NP|Adj, λ {amount: Number => AttributeAmount(amount, Health)}),
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Health)}),
       (NP\Num, λ {n: Number => AttributeComparison(Health, EqualTo(n))}), // "...with X health"(implied "equal to" in there)
       (NP\Adj, λ {comp : Comparison => AttributeComparison(Health, comp)}), // "...greater than X health"
@@ -315,8 +334,16 @@ object Lexicon {
     (("kernel".s ++ "core".s) -> (N, Kernel: Sem)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
     ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
+    ("lose" -> Seq(
+      (S/NP, λ {e: Energy => ModifyEnergy(Self, Minus(e.amount))}),  // Lose X energy.
+      (S/NP, λ {_: AllEnergy.type => ModifyEnergy(Self, Constant(Scalar(0)))})  // Lose all energy.
+    )) +
     (Seq("lose", "pay") -> (S/NP, λ {l: Life => DealDamage(Self, l.amount)})) +
-    ("loses" -> (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})) +  // Y loses X (attribute).
+    ("lose".s -> Seq(
+      ((S/NP)\NP, λ {p: TargetPlayer => λ {_: AllEnergy.type => ModifyEnergy(p, Constant(Scalar(0)))}}),  // Y loses all energy.
+      ((S/NP)\NP, λ {p: TargetPlayer => λ {e: Energy => ModifyEnergy(p, Minus(e.amount))}}),  // Y loses X energy.
+      (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})  // Y loses X (attribute).
+    )) +
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     ("move" -> Seq(
       ((S/PP)/NP, λ {t: TargetObject => λ {dest: TargetTile => MoveObject(t, dest)}}),  // e.g. "Move a robot to X"
@@ -378,8 +405,13 @@ object Lexicon {
     )) +
     (Seq("return", "move") -> Seq(
       ((S/PP)/NP, λ {t: TargetObject => λ {_: ItsOwnersHand.type => ReturnToHand(t)}}),  // e.g. "Return a robot to its owner's hand"
-      ((S/PP)/NP, λ {c: TargetCard => λ {h: Hand => MoveCardsToHand(c, h.player)}}),  // e.g. "Return a random robot from your discard pile to your hand"
+      ((S/PP)/NP, λ {c: TargetCard => λ {h: Hand => MoveCardsToHand(c, h.player)}})  // e.g. "Return a random robot from your discard pile to your hand"
+    )) +
+    (Seq("return", "move", "play") -> Seq(
       ((S/PP)/NP, λ {c: TargetCard => λ {dest: TargetTile => SpawnObject(c, dest)}})  // e.g. "Return a random robot from your discard pile to a random tile"
+    )) +
+    (Seq("returns", "moves", "plays") -> Seq(
+      (((S\NP)/PP)/NP, λ {c: TargetCard => λ {dest: TargetTile => λ {p: TargetPlayer => SpawnObject(c, dest, p)}}})  // e.g. "Your opponent returns a random robot from their discard pile to a random tile"
     )) +
     (("robot".s :+ "robots '") -> Seq(
       (N, Robot: Sem),
@@ -398,22 +430,23 @@ object Lexicon {
     (Seq("space", "tile", "hex") -> Seq(
       (NP\Num, λ {num: Number => if (num == Scalar(1)) Spaces(num) else Fail("Use 'tiles' instead of 'tile'") }),
       (NP\Num, λ {num: Number => if (num == Scalar(1)) WithinDistance(num) else Fail("Use 'tiles' instead of 'tile'") }),
-      (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})
+      (NP/PP, λ {c: ObjectCondition => TilesMatchingConditions(Seq(c))})
     )) +
     (Seq("spaces", "tiles", "hexes") -> Seq(
       (NP, AllTiles: Sem),  // e.g. "all tiles"
       (NP\Num, λ {num: Number => Spaces(num)}),  // e.g. "3 tiles"
       (NP\Adj, λ {c: LessThanOrEqualTo => WithinDistance(c.num)}),  // e.g. "up to 3 tiles away"
-      (NP/PP, λ {c: Condition => TilesMatchingConditions(Seq(c))})  // e.g. "all tiles adjacent to your kernel"
+      (NP/PP, λ {c: ObjectCondition => TilesMatchingConditions(Seq(c))})  // e.g. "all tiles adjacent to your kernel"
     )) +
     (Seq("spawn", "create") -> ((S/PP)/NP, λ {c: TargetCard => λ {t: TargetTile => SpawnObject(c, t, Self)}})) +
     (Seq("spawns", "creates") -> (((S\NP)/PP)/NP, λ {c: TargetCard => λ {t: TargetTile =>  λ {p: TargetPlayer => SpawnObject(c, t, p)}}})) +
     ("speed" -> Seq(
       (N, Speed: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Speed)}),
+      (NP|Adj, λ {amount: Number => AttributeAmount(amount, Speed)}),
       (NP\Adj, λ {op: Operation => AttributeOperation(op, Speed)}),
       (NP\Adj, λ {comp : Comparison => AttributeComparison(Speed, comp)}), // need for "> x speed"
-      (NP\Num, λ {n: Number => AttributeComparison(Speed, EqualTo(n))}) // need for "...with X health"(implied "equal to" in there)
+      (NP\Num, λ {n: Number => AttributeComparison(Speed, EqualTo(n))}) // need for "...with X speed" (implied "equal to" in there)
     )) +
     (("structure".s :+ "structures '") -> Seq(
       (N, Structure: Sem),
@@ -436,16 +469,23 @@ object Lexicon {
       (PP/Num, identity)
     )) +
     ("that" -> Seq(
-      ((NP\N)/S, λ {c: Condition => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}}),
-      ((NP\N)/S, λ {cs: Seq[Condition] => λ {o: ObjectType => ObjectsMatchingConditions(o, cs)}})
+      ((NP\N)/S, λ {c: ObjectCondition => λ { o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}}),
+      ((NP\N)/S, λ {cs: Seq[ObjectCondition] => λ { o: ObjectType => ObjectsMatchingConditions(o, cs)}})
     )) +
     ("that" / Seq("robot", "creature", "structure", "object") -> (NP, That: Sem)) +
+    (Seq("that costs", "which costs") -> Seq(
+      ((NP\NP)/NP, λ {e: Energy => λ {c: CardsInHand => CardsInHand(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, EqualTo(e.amount)))}}),
+      ((NP\NP)/NP, λ {ec: EnergyComparison => λ {c: CardsInHand => CardsInHand(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, ec.comp))}}),
+      ((NP\NP)/NP, λ {e: Energy => λ {c: CardsInDiscardPile => CardsInDiscardPile(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, EqualTo(e.amount)))}}),
+      ((NP\NP)/NP, λ {ec: EnergyComparison => λ {c: CardsInDiscardPile => CardsInDiscardPile(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, ec.comp))}})
+    )) +
     (Seq("that player", "they") -> (NP, ItP: Sem)) +
     ("the" -> (X/X, identity)) +
     ("their" -> Seq(
       (Adj, TheyP: Sem),
       (Num/N, λ {a: SingleAttribute => AttributeValue(They, a)})
     )) +
+    (Seq("there is", "there is a", "there is an") -> (S/NP, λ {c: Collection => CollectionExists(c)})) +
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("this" / Seq("robot", "creature", "structure", "object") -> (NP, ThisObject: Sem)) +
     ("total" -> ((Num/PP)/N, λ {a: SingleAttribute => λ {c: ObjectOrCardCollection => AttributeSum(c, a)}})) +
@@ -475,8 +515,10 @@ object Lexicon {
       (Adj, Self: Sem)
     )) +
     ("your energy" -> (NP, EnergyAmount(Self): Sem)) +
+    ("your maximum energy" -> (NP, MaximumEnergyAmount(Self): Sem)) +
     (Seq("your opponent", "the opponent") -> (NP, Opponent: Sem)) +
     ("your opponent 's energy" -> (NP, EnergyAmount(Opponent): Sem)) +
+    ("your opponent 's maximum energy" -> (NP, MaximumEnergyAmount(Opponent): Sem)) +
     (Seq("your opponent 's", "the opponent 's", "all of your opponent 's") -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Opponent))}),

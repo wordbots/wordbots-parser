@@ -106,6 +106,7 @@ object Semantics {
 
   sealed trait Trigger extends AstNode
     case class AfterAttack(target: TargetObject, attackedObjectType: ObjectType = AllObjects) extends Trigger
+    case class AfterCardDraw(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
     case class AfterCardEntersDiscardPile(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
     case class AfterCardPlay(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger  // When a given card type is played.
     case class AfterDamageReceived(target: TargetObject) extends Trigger
@@ -163,13 +164,15 @@ object Semantics {
       case class ControllerOf(t: TargetObject) extends TargetPlayer
 
   sealed trait Condition extends AstNode
-    case class AdjacentTo(obj: TargetObjectOrTile) extends Condition
-    case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends Condition
-    case class ControlledBy(player: TargetPlayer) extends Condition
-    case class ExactDistanceFrom(distance: Number, obj: TargetObject) extends Condition
-    case class HasProperty(property: Property) extends Condition
-    case object Unoccupied extends Condition
-    case class WithinDistanceOf(distance: Number, obj: TargetObject) extends Condition
+    sealed trait CardCondition extends Condition
+    sealed trait ObjectCondition extends Condition
+      case class AdjacentTo(obj: TargetObjectOrTile) extends ObjectCondition
+      case class AttributeComparison(attribute: Attribute, comparison: Comparison) extends ObjectCondition with CardCondition
+      case class ControlledBy(player: TargetPlayer) extends ObjectCondition
+      case class ExactDistanceFrom(distance: Number, obj: TargetObject) extends ObjectCondition
+      case class HasProperty(property: Property) extends ObjectCondition
+      case object Unoccupied extends ObjectCondition
+      case class WithinDistanceOf(distance: Number, obj: TargetObject) extends ObjectCondition
 
   sealed trait GlobalCondition extends AstNode
     case class CollectionCountComparison(coll: Collection, comparison: Comparison) extends GlobalCondition
@@ -205,6 +208,7 @@ object Semantics {
     case class AttributeValue(obj: TargetObject, attribute: SingleAttribute) extends Number
     case class Count(collection: Collection) extends Number
     case class EnergyAmount(player: TargetPlayer) extends Number
+    case class MaximumEnergyAmount(player: TargetPlayer) extends Number
 
     case class Times(num1: Number, num2: Number) extends Number
 
@@ -212,15 +216,15 @@ object Semantics {
     sealed trait ObjectOrCardCollection extends Collection
 
     sealed trait CardCollection extends ObjectOrCardCollection
-      case class CardsInDiscardPile(player: TargetPlayer, cardType: CardType = AnyCard) extends CardCollection
-      case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard) extends CardCollection
+      case class CardsInDiscardPile(player: TargetPlayer, cardType: CardType = AnyCard, conditions: Seq[CardCondition] = Seq()) extends CardCollection
+      case class CardsInHand(player: TargetPlayer, cardType: CardType = AnyCard, conditions: Seq[CardCondition] = Seq()) extends CardCollection
     sealed trait ObjectCollection extends ObjectOrCardCollection with TargetObject
       object ObjectsInPlay { def apply(objectType: ObjectType): ObjectCollection = ObjectsMatchingConditions(objectType, Seq()) }
-      case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[Condition]) extends ObjectCollection
+      case class ObjectsMatchingConditions(objectType: ObjectType, conditions: Seq[ObjectCondition]) extends ObjectCollection
       case class Other(collection: ObjectCollection) extends ObjectCollection
     sealed trait TileCollection extends Collection with TargetTile
       case object AllTiles extends TileCollection
-      case class TilesMatchingConditions(conditions: Seq[Condition]) extends TileCollection
+      case class TilesMatchingConditions(conditions: Seq[ObjectCondition]) extends TileCollection
 
   sealed trait CardType extends Label
     case object AnyCard extends CardType
@@ -267,6 +271,7 @@ object Semantics {
   sealed trait IntermediateNode extends ParseNode
 
   // Nullary containers:
+  case object AllEnergy extends IntermediateNode
   case object ItsOwnersHand extends IntermediateNode
 
   // Unary containers:
@@ -277,6 +282,7 @@ object Semantics {
   case class DiscardPile(player: TargetPlayer) extends IntermediateNode
   case class EnemyObject(objectType: ObjectType) extends IntermediateNode  // used, e.g. in parsing "whenever this robot destroys an enemy object"
   case class Energy(amount: Number) extends IntermediateNode
+  case class EnergyComparison(comp: Comparison) extends IntermediateNode
   case class Hand(player: TargetPlayer) extends IntermediateNode
   case class Life(amount: Number) extends IntermediateNode
   case class Name(name: String) extends IntermediateNode

@@ -56,6 +56,11 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Lose 1 life") should equal (DealDamage(Self, Scalar(1)))
     parse("A random robot loses 2 health") should equal (ModifyAttribute(RandomO(Scalar(1), ObjectsInPlay(Robot)), Health, Minus(Scalar(2))))
     parse("Halve the life of all robots") should equal (ModifyAttribute(ObjectsInPlay(Robot), Health, Divide(Scalar(2), RoundedDown)))
+
+    // alpha v0.13
+    parse("Lose 10 energy") shouldEqual ModifyEnergy(Self, Minus(Scalar(10)))
+    parse("You lose all energy") shouldEqual ModifyEnergy(Self, Constant(Scalar(0)))
+    parse("Your energy becomes 0") shouldEqual ModifyEnergy(Self, Constant(Scalar(0)))
   }
 
   it should "parse simple conditions" in {
@@ -213,6 +218,19 @@ class ParserSpec extends FlatSpec with Matchers {
       ForEach(ObjectsMatchingConditions(Robot, Seq()), DealDamage(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Scalar(3)))
     parse("Each player shuffles all cards from their hand into their deck") shouldEqual
       ForEach(AllPlayers, ShuffleCardsIntoDeck(AllC(CardsInHand(TheyP, AnyCard)), TheyP))
+
+    // alpha v0.13
+    parse("Deal damage to a robot equal to your maximum energy") shouldEqual
+      DealDamage(ChooseO(ObjectsMatchingConditions(Robot, Seq())), MaximumEnergyAmount(Self))
+    parse("Play a random robot from your discard pile that costs 3 or less energy on a random tile") shouldEqual
+      SpawnObject(
+        RandomC(Scalar(1), CardsInDiscardPile(Self,Robot, Seq(AttributeComparison(Cost,LessThanOrEqualTo(Scalar(3)))))),
+        RandomT(Scalar(1), AllTiles)
+      )
+    parse("Your opponent returns a random robot from their discard pile to a random tile") shouldEqual
+      SpawnObject(RandomC(Scalar(1), CardsInDiscardPile(TheyP,Robot, Seq())), RandomT(Scalar(1), AllTiles), Opponent)
+    parse("Reduce the attack, speed, and health of all robots to 1") shouldEqual
+      ModifyAttribute(ObjectsMatchingConditions(Robot, Seq()), MultipleAttributes(Seq(Health, Speed, Attack)), Minus(Scalar(1)))
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -402,6 +420,18 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(AfterDestroysOtherObject(ThisObject, Robot),Draw(Self, Scalar(1)))
     parse("Whenever an enemy robot is destroyed by this robot, draw a card") shouldEqual
       TriggeredAbility(AfterDestroysOtherObject(ThisObject, Robot),Draw(Self, Scalar(1)))
+
+    // alpha v0.13
+    parse("Whenever a player draws a card, that player discards a random card") shouldEqual
+      TriggeredAbility(AfterCardDraw(AllPlayers, AnyCard), Discard(RandomC(Scalar(1), CardsInHand(ItP, AnyCard))))
+    parse("Whenever this robot attacks, it gains health equal to its attack") shouldEqual
+      TriggeredAbility(AfterAttack(ThisObject, AllObjects), ModifyAttribute(ItO, Health, Plus(AttributeValue(ItO, Attack))))
+    parse("Whenever this robot attacks, it gains health equal to the defending robot's attack") shouldEqual
+      TriggeredAbility(AfterAttack(ThisObject, AllObjects), ModifyAttribute(ItO, Health, Plus(AttributeValue(That, Attack))))
+    parse("At the start of your turn, if there is an adjacent enemy robot, draw a card") shouldEqual
+      TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Opponent)))), Draw(Self, Scalar(1))))
+    parse("At the start of your turn, if an enemy robot is adjacent to this robot, draw a card") shouldEqual
+      TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Opponent)))), Draw(Self, Scalar(1))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -457,6 +487,10 @@ class ParserSpec extends FlatSpec with Matchers {
       ApplyEffect(ObjectsMatchingConditions(Robot, Seq(AttributeComparison(Attack, IsEven))),CannotAttack)
     parse("This robot has +4 attack if your discard pile has 5 or more cards") shouldEqual
       AttributeAdjustment(ConditionTargetOn(ThisObject, CollectionCountComparison(CardsInDiscardPile(Self), GreaterThanOrEqualTo(Scalar(5)))), Attack, Plus(Scalar(4)))
+
+    // alpha v0.13
+    parse("All robot cards cost 1 less energy to play") shouldEqual
+      AttributeAdjustment(AllC(CardsInHand(Self,Robot)), Cost, Minus(Scalar(1)))
   }
 
   it should "parse activated abilities for robots" in {
