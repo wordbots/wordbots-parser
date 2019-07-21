@@ -1,29 +1,72 @@
 package wordbots
 
-import org.mozilla.javascript.{ CompilerEnvirons, Parser => RhinoParser }
 
+import scala.collection.mutable
 import scala.util.Try
+
+object JavaScriptValidator {
+  import org.mozilla.javascript._
+  import org.mozilla.javascript.ast._
+
+  val compilerEnv = new CompilerEnvirons
+
+  /**
+    * Throw if jsString is invalid JavaScript.
+    */
+  def assertIsValidJS(jsString: String): Unit = {
+    val parser = new Parser(compilerEnv)
+
+    // Parse the given JS string ...
+    val ast: AstRoot = parser.parse(jsString, "", 1)
+    // ... and also parse any stringified function embedded within
+    StringCollector.stringifiedFunctionsInAst(ast).foreach(assertIsValidJS)
+  }
+
+  private class StringCollector extends NodeVisitor {
+    val stringLiteralsFound: mutable.ArrayBuffer[String] = mutable.ArrayBuffer()
+
+    def visit(node: AstNode): Boolean = {
+      node match {
+        case str: StringLiteral => stringLiteralsFound += str.getValue()
+        case _ =>
+      }
+      true
+    }
+  }
+
+  object StringCollector {
+    def stringifiedFunctionsInAst(ast: AstRoot): Seq[String] = {
+      val stringCollector = new StringCollector()
+      ast.visitAll(stringCollector)
+      stringCollector.stringLiteralsFound.filter(_.contains("function"))
+    }
+  }
+}
 
 object CodeGenerator {
   import Semantics._
 
-  val compilerEnv = new CompilerEnvirons
+  private var escapeLevel = 0
 
-  def generateJS(node: AstNode): Try[String] = Try {
+  def generateJS(node: AstNode) = Try {
+    escapeLevel = 0
     val jsString = g(node)
-
-    // Throw if jsString is invalid JavaScript.
-    val parser = new RhinoParser(compilerEnv)
-    parser.parse(unescape(jsString), "", 1)
-
+    JavaScriptValidator.assertIsValidJS(jsString)
     jsString
   }
 
-  def escape(str: String): String = str.replaceAllLiterally("\\\"", "\\\\\\\"")  // For those following along at home, it's \" -> \\\"
-  def unescape(str: String): String = str.replaceAllLiterally("\\\"", "\"").replaceAllLiterally("\\\\", "\\")
+  private def escape(str: => String) = {
+    escapeLevel += 1
+    val unescapedStr = str
+    val escapedStr = unescapedStr.replaceAllLiterally("\"", s"""${"\\" * escapeLevel}"""")
+    escapeLevel -= 1
+    escapedStr
+  }
 
   // Defer execution of a JS function to as late as possible, e.g. so that it works correctly with 'they' when iterating over a collection
-  def deferred(str: String): String = s"""\\"(() => ${escape(str)})\\""""
+  private def deferred(str: String) = {
+    s""""(function () { return ${escape(str)}; })""""
+  }
 
   // scalastyle:off method.length
   // scalastyle:off cyclomatic.complexity
@@ -46,7 +89,7 @@ object CodeGenerator {
       case Discard(target) => s"(function () { actions['discard'](${g(target)}); })"
       case Draw(target, num) => s"(function () { actions['draw'](${g(target)}, ${g(num)}); })"
       case EndTurn => "(function () { actions['endTurn'](); })"
-      case GiveAbility(target, ability) => s"""(function () { actions['giveAbility'](${g(target)}, \\"${escape(g(ability))}\\"); })"""
+      case GiveAbility(target, ability) => s"""(function () { actions['giveAbility'](${g(target)}, "${escape(g(ability))}"); })"""
       case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case MoveCardsToHand(target, player) => s"(function () { actions['moveCardsToHand'](${g(target)}, ${g(player)}); })"
@@ -67,7 +110,7 @@ object CodeGenerator {
 
       // Activated and triggered abilities
       case ActivatedAbility(action) =>
-        s"""(function () { setAbility(abilities['activated'](function () { return ${g(ThisObject)}; }, \\"${escape(g(action))}\\")); })"""
+        s"""(function () { setAbility(abilities['activated'](function () { return ${g(ThisObject)}; }, "${escape(g(action))}")); })"""
       case TriggeredAbility(trigger, Instead(action)) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}, {override: true}); })"
       case TriggeredAbility(trigger, action) => s"(function () { setTrigger(${g(trigger)}, ${g(action)}); })"
 
@@ -79,7 +122,7 @@ object CodeGenerator {
       case FreezeAttribute(target, attr) =>
         s"(function () { setAbility(abilities['freezeAttribute'](function () { return ${g(target)}; }, ${g(attr)})); })"
       case HasAbility(target, ability) =>
-        s"""(function () { setAbility(abilities['giveAbility'](function () { return ${g(target)}; }, \\"${escape(g(ability))}\\")); })"""
+        s"""(function () { setAbility(abilities['giveAbility'](function () { return ${g(target)}; }, "${escape(g(ability))}")); })"""
 
       // Effects
       case CanOnlyAttack(target) => s"'canonlyattack', {target: ${g(target)}}"

@@ -48,7 +48,7 @@ object Randomizer extends RandomDataGenerator {
         .toSet
 
     // This intentionally throws an exception if CodeGenerator returns None for any action.
-    val json: Json = actions.map(CodeGenerator.generateJS(_).map(CodeGenerator.unescape).get).asJson
+    val json: Json = actions.map(CodeGenerator.generateJS(_).get).asJson
     println(s"\n$json")
   }
 
