@@ -48,7 +48,7 @@ object CodeGenerator {
 
   private var escapeLevel = 0
 
-  def generateJS(node: AstNode) = Try {
+  def generateJS(node: AstNode): Try[String] = Try {
     escapeLevel = 0
     val jsString = g(node)
     JavaScriptValidator.assertIsValidJS(jsString)
