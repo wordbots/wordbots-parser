@@ -22,6 +22,9 @@ object JavaScriptValidator {
     StringCollector.stringifiedFunctionsInAst(ast).foreach(assertIsValidJS)
   }
 
+  /**
+    * A [[NodeVisitor]] that keeps track of all [[StringLiteral]]s found within an [[AstNode]].
+    */
   private class StringCollector extends NodeVisitor {
     val stringLiteralsFound: mutable.ArrayBuffer[String] = mutable.ArrayBuffer()
 
