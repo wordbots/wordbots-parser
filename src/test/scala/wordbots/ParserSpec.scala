@@ -549,7 +549,7 @@ class ParserSpec extends FlatSpec with Matchers {
   }
 
   it should "disallow choosing targets after a random target has been selected" in {
-    parse("Move a random robot 1 space") shouldBe a[Failure[ValidationError]]
+    parse("Move a random robot 1 space") shouldBe a[Failure[_]]  // Failure[ValidationError]
   }
 }
 // scalastyle:on line.size.limit
