@@ -1,7 +1,7 @@
 import sbt.{Build => SbtBuild, _}
 
 object Build extends SbtBuild {
-  val MONTAGUE_COMMIT_SHA = "bc4b7233cf4e7e85e93c2f3f35028a7bbec1e6aa"
+  val MONTAGUE_COMMIT_SHA = "8d88f7b3a02248d5658ba372a36f3a23fa93948b"
 
   lazy val root = Project("root", file(".")) dependsOn montague
 
