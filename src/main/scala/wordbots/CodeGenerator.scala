@@ -190,7 +190,7 @@ object CodeGenerator {
       case WithinDistanceOf(distance, obj) => s"conditions['withinDistanceOf'](${g(distance)}, ${g(obj)})"
 
       // Global conditions
-      case CollectionCountComparison(coll, comp) => s"globalConditions['collectionExists'](${g(coll)}, ${g(comp)})"
+      case CollectionCountComparison(coll, comp) => s"globalConditions['CollectionCountComparison'](${g(coll)}, ${g(comp)})"
       case CollectionExists(coll) => s"globalConditions['collectionExists'](${g(coll)})"
       case TargetHasProperty(target, property) => s"globalConditions['targetHasProperty'](${g(target)}, ${g(property)})"
 
