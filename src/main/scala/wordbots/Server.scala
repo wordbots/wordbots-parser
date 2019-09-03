@@ -66,7 +66,9 @@ object Server extends ServerApp {
         Ok("", headers())
 
       case request @ GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) +& ModeParamMatcher(mode) =>
+        // scalastyle:off regex
         println(s"> ${input.trim}")
+        // scalastyle:on regex
         parse(input, mode) match {
           case SuccessfulParse(parse, ast, parsedTokens) =>
             format match {
