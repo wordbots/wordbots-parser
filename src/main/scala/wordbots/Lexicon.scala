@@ -405,6 +405,7 @@ object Lexicon {
     )) +
     (Seq("return", "move") -> Seq(
       ((S/PP)/NP, λ {t: TargetObject => λ {_: ItsOwnersHand.type => ReturnToHand(t)}}),  // e.g. "Return a robot to its owner's hand"
+      ((S/PP)/NP, λ {t: TargetObject => λ {h: Hand => ReturnToHand(t, Some(h.player))}}),  // e.g. "Return all robots to your hand"
       ((S/PP)/NP, λ {c: TargetCard => λ {h: Hand => MoveCardsToHand(c, h.player)}})  // e.g. "Return a random robot from your discard pile to your hand"
     )) +
     (Seq("return", "move", "play") -> Seq(

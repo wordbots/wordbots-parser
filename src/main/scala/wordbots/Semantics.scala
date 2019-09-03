@@ -58,7 +58,7 @@ object Semantics {
     case class MoveObject(target: TargetObject, dest: TargetObjectOrTile) extends Action
     case class PayEnergy(target: TargetPlayer, amount: Number) extends Action
     case class RemoveAllAbilities(target: TargetObject) extends Action
-    case class ReturnToHand(target: TargetObject) extends Action
+    case class ReturnToHand(target: TargetObject, player: Option[TargetPlayer] = None) extends Action
     case class RestoreAttribute(target: TargetObjectOrPlayer, attribute: Attribute, num: Option[Number] = None) extends Action {
       attribute match {
         case Health =>

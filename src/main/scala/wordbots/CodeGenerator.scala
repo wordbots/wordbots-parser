@@ -101,7 +101,7 @@ object CodeGenerator {
       case RemoveAllAbilities(target) => s"(function () { actions['removeAllAbilities'](${g(target)}); })"
       case RestoreAttribute(target, Health, Some(num)) => s"(function () { actions['restoreHealth'](${g(target)}, ${g(num)}); })"
       case RestoreAttribute(target, Health, None) => s"(function () { actions['restoreHealth'](${g(target)}); })"
-      case ReturnToHand(target) => s"(function () { actions['returnToHand'](${g(target)}); })"
+      case ReturnToHand(target, player) => s"(function () { actions['returnToHand'](${g(target)}, ${g(player)}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${deferred(g(num))}); })"
       case ShuffleCardsIntoDeck(target, player) => s"(function () { actions['shuffleCardsIntoDeck'](${g(target)}, ${g(player)}); })"
       case SpawnObject(card, dest, owner) => s"(function () { actions['spawnObject'](${g(card)}, ${g(dest)}, ${g(owner)}); })"
@@ -235,4 +235,6 @@ object CodeGenerator {
   }
   // scalastyle:on method.length
   // scalastyle:on cyclomatic.complexity
+
+  private def g(nodeOpt: Option[AstNode]): String = nodeOpt.map(g).getOrElse("null")
 }
