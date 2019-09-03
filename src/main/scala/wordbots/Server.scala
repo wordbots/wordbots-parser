@@ -66,6 +66,7 @@ object Server extends ServerApp {
         Ok("", headers())
 
       case request @ GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) +& ModeParamMatcher(mode) =>
+        println(s"> ${input.trim}")
         parse(input, mode) match {
           case SuccessfulParse(parse, ast, parsedTokens) =>
             format match {

@@ -156,6 +156,7 @@ object NoThis extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
       case ThisObject => Failure(ValidationError(s"Events can't refer to the current object"))
+      case GiveAbility(_, _) => Success()  // Don't validate this inside GiveAbility clauses to allow, e.g., 'Give all robots "Activate: Destroy this robot"'
       case n: AstNode => validateChildren(this, n)
     }
   }

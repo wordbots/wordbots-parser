@@ -11,14 +11,14 @@ class ParserSpec extends FlatSpec with Matchers {
   import Semantics._
 
   //scalastyle:off regex
-  def parse(input: String): Any = {
+  def parse(input: String, validationMode: ValidationMode = ValidateUnknownCard): Any = {
     println(s"Parsing $input...")
     Parser.parse(input).bestParse match {
       case Some(parse) => parse.semantic match {
         case Form(v: AstNode) =>
           println(s"    $v")
           CodeGenerator.generateJS(v.asInstanceOf[AstNode]).get  // Make sure that valid JS can be generated!
-          AstValidator().validate(v) match {  // Make sure the AstValidator successfully validates the parsed ast!
+          AstValidator(validationMode).validate(v) match {  // Make sure the AstValidator successfully validates the parsed ast!
             case Success(_) => v
             case f: Failure[_] => f
           }
@@ -233,6 +233,8 @@ class ParserSpec extends FlatSpec with Matchers {
       ModifyAttribute(ObjectsMatchingConditions(Robot, Seq()), MultipleAttributes(Seq(Health, Speed, Attack)), Minus(Scalar(1)))
     parse("Return all robots to your hand") shouldEqual
       ReturnToHand(ObjectsMatchingConditions(Robot, Seq()), Some(Self))
+    parse("Give all robots \"Activate: Destroy this robot\"", ValidateEvent) shouldEqual
+      GiveAbility(ObjectsInPlay(Robot), ActivatedAbility(Destroy(ThisObject)))  // Test that this doesn't fail the NoThis validator
   }
 
   it should "treat 'with' as 'that has'" in {
