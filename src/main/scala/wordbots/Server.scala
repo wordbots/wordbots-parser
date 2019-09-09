@@ -11,6 +11,7 @@ import org.http4s.server.blaze.BlazeBuilder
 import io.circe._
 import io.circe.generic.auto._
 import io.circe.syntax._
+import scalaz.Memo
 import scalaz.concurrent.Task
 
 import scala.util.{Failure, Success}
@@ -69,7 +70,7 @@ object Server extends ServerApp {
         // scalastyle:off regex
         println(s"> ${input.trim}")
         // scalastyle:on regex
-        parse(input, mode) match {
+        parseMemoized((input, mode)) match {
           case SuccessfulParse(parse, ast, parsedTokens) =>
             format match {
               case Some("js") =>
@@ -88,7 +89,7 @@ object Server extends ServerApp {
 
         request.as(jsonOf[Seq[ParseRequest]]).flatMap { parseRequests: Seq[ParseRequest] =>
           val responseBody: Json = parseRequests.map { req: ParseRequest =>
-            val parseResponse: Response = parse(req.input, Option(req.mode)) match {
+            val parseResponse: Response = parseMemoized((req.input, Option(req.mode))) match {
               case SuccessfulParse(_, ast, parsedTokens) =>
                 CodeGenerator.generateJS(ast) match {
                   case Success(js: String) => SuccessfulParseResponse(js, parsedTokens)
@@ -107,6 +108,12 @@ object Server extends ServerApp {
           case None => Ok(s"I can understand ${lexicon.size.toString} terms:\n\n${lexiconTerms.mkString("\n")}", headers())
           case _ => BadRequest(ErrorResponse("Invalid format").asJson, headers())
         }
+    }
+  }
+
+  val parseMemoized: ((String, Option[String])) => ParserOutput = {
+    Memo.mutableHashMapMemo { args: (String, Option[String]) =>
+      parse(args._1, args._2)
     }
   }
 
