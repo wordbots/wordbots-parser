@@ -27,7 +27,7 @@ object Server extends ServerApp {
 
   sealed trait Response
   case class ErrorResponse(error: String) extends Response
-  case class SuccessfulParseResponse(js: String, tokens: Seq[String], version: String = Parser.VERSION) extends Response
+  case class SuccessfulParseResponse(js: String, tokens: Seq[String], estCost: String, version: String = Parser.VERSION) extends Response
   case class FailedParseResponse(error: String, suggestions: Seq[String], unrecognizedTokens: Seq[String]) extends Response
   object FailedParseResponse {
     def apply(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): FailedParseResponse = {
@@ -76,7 +76,7 @@ object Server extends ServerApp {
             format match {
               case Some("js") =>
                 CodeGenerator.generateJS(ast) match {
-                  case Success(js: String) => successResponse(js, parsedTokens, CostEstimator.estimateCost(ast, mode)))
+                  case Success(js: String) => successResponse(js, parsedTokens, CostEstimator.estimateCost(ast, mode))
                   case Failure(ex: Throwable) => errorResponse(ParserError(s"Invalid JavaScript produced: ${ex.getMessage}. Contact the developers."))
                 }
               case Some("svg") => Ok(parse.toSvg, headers(Some("image/svg+xml")))

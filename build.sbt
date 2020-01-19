@@ -20,6 +20,12 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 )
 
+val MONTAGUE_COMMIT_SHA = "b451836235cee5d900ec5f578a54ac702587858b"
+lazy val montague = RootProject(uri(s"git://github.com/Workday/upshot-montague.git#$MONTAGUE_COMMIT_SHA"))
+lazy val root = Project("root", file(".")) dependsOn montague
+
+
+
 enablePlugins(JavaAppPackaging)
 enablePlugins(BuildInfoPlugin)
 

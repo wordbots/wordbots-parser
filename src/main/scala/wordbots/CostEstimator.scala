@@ -1,4 +1,7 @@
 package wordbots
+
+import wordbots.Semantics._
+
 /*
 * scoring: good is positive, bad is negative. applying to enemy multiplies by -1.
 * */
@@ -28,7 +31,6 @@ object CostEstimator {
       case Until(TurnsPassed(num), action) => 1 * childCosts(node).product
 
       // Actions: Normal
-      case BecomeACopy(source, target)    => 1 * childCosts(node).product
       case CanAttackAgain(target)         => 1 * childCosts(node).product
       case CanMoveAgain(target)           => 1 * childCosts(node).product
       case CanMoveAndAttackAgain(target)  => 1 * childCosts(node).product
@@ -45,7 +47,7 @@ object CostEstimator {
       case RemoveAllAbilities(target)     => 1 * childCosts(node).product
       case RestoreAttribute(target, Health, Some(num)) => 1 * childCosts(node).product
       case RestoreAttribute(target, Health, None) => 1 * childCosts(node).product
-      case ReturnToHand(target)           => 1 * childCosts(node).product
+      case ReturnToHand(target, player)           => 1 * childCosts(node).product
       case SetAttribute(target, attr, num)=> 1 * childCosts(node).product
       case SwapAttributes(target, attr1, attr2) => 1 * childCosts(node).product
       case TakeControl(player, target)    => 2 * childCosts(node).product
@@ -136,7 +138,7 @@ object CostEstimator {
 
       // Collections
       case AllTiles                       => 1
-      case CardsInHand(player, cardType)  => 1 * childCosts(node).product
+      case CardsInHand(player, cardType, conditions)  => 1 * childCosts(node).product
       case ObjectsMatchingConditions(objType, conditions) => 1 * childCosts(node).product
       case Other(collection)              => 1 * childCosts(node).product
       case TilesMatchingConditions(conditions) => 1 * childCosts(node).product
