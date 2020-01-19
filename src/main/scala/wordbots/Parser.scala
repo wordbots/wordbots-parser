@@ -1,34 +1,37 @@
 package wordbots
 
-import java.io.PrintWriter
-
 import com.workday.montague.ccg._
 import com.workday.montague.parser.{ParserDict, SemanticParseResult, SemanticParser}
 import com.workday.montague.semantics._
 
-import scala.util.Try
+import scala.language.postfixOps
+import scala.util.{Failure, Try}
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
+  val VERSION = s"v${BuildInfo.version.split("-SNAPSHOT")(0)}"
+
+  val nameRegex = """named \"(.*)\"""".r
+
   override def main(args: Array[String]): Unit = {
     val input = args.mkString(" ")
     val result: SemanticParseResult[CcgCat] = parse(input)
 
     val output: String = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
-    val code: Option[String] = result.bestParse.map(_.semantic).flatMap {
-      case Form(v: AstNode) => Try(CodeGenerator.generateJS(v)).toOption
-      case _ => None
+    val code: Try[String] = Try { result.bestParse.get.semantic }.flatMap {
+      case Form(v: Semantics.AstNode) => CodeGenerator.generateJS(v)
+      case _ => Failure(new RuntimeException("Parser did not produce a valid expression"))
     }
 
     // scalastyle:off regex
     println(s"Input: $input")
-    // println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
+    println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
     println(s"Error diagnosis: ${ErrorAnalyzer.diagnoseError(input, result.bestParse)}")
-    println(s"Generated JS code: ${code.getOrElse("None")}")
+    println(s"Generated JS code: ${code.getOrElse(code.failed.get)}")
     // scalastyle:on regex
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.
-    //result.bestParse.foreach(result => new PrintWriter("test.svg") { write(result.toSvg); close() })
+    //result.bestParse.foreach(result => new java.io.PrintWriter("test.svg") { write(result.toSvg); close() })
   }
 
   def parse(input: String): SemanticParseResult[CcgCat] = parse(input, tokenizer)
@@ -37,9 +40,11 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     new SemanticParser[CcgCat](lexicon).parse(input, tokenizer)
   }
 
-  def tokenizer(str: String): IndexedSeq[String] = {
-    str.trim
+  override val tokenizer: String => IndexedSeq[String] = { (str: String) =>
+    nameRegex.replaceAllIn(str, m => s"named name:${NameConverters.encodeBase36(m.group(1))}")
+      .trim
       .toLowerCase
+      .replaceAll("""[\u202F\u00A0]""", " ")
       .replaceAllLiterally("\' ", " \' ")
       .replaceAllLiterally("\'s", " \'s ")
       .replaceAllLiterally("\"", " \" ")

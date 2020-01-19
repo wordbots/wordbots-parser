@@ -9,6 +9,8 @@ import scala.util.{Failure, Success}
 case class ParserError(description: String, suggestions: Set[String] = Set())
 
 object ErrorAnalyzer {
+  import Semantics._
+
   def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]])
                    (implicit validationMode: ValidationMode = ValidateUnknownCard): Option[ParserError] = {
     parseResult.map(_.semantic) match {
@@ -66,32 +68,42 @@ object ErrorAnalyzer {
   private def diagnoseSyntaxError(input: String): ParserError = {
     val words = input.split(" ")
     val edits = findValidEdits(words)
-
     val error: Option[String] = edits.headOption.map(_.description(words))
-    val suggestions: Set[String] = edits.flatMap(_(words)).toSet.filter(isSemanticallyValid)
 
-    ParserError(s"Parse failed (${error.getOrElse("syntax error")})", suggestions)
+    ParserError(s"Parse failed (${error.getOrElse("syntax error")})", getSyntacticSuggestions(input))
   }
 
   private def diagnoseSemanticsError(input: String, parseResult: Option[SemanticParseNode[CcgCat]]): ParserError = {
+    val exceptions: Set[String] = parseResult.map(_.exs).getOrElse(Set()).map(
+      _.getMessage
+        .replace("cannot be cast to", "is not a")
+        .replaceAllLiterally("Semantics$", "")
+        .replaceAllLiterally("$", "")
+        .replaceAllLiterally("wordbots.", "")
+    )
+    val errorMsg = if (exceptions.nonEmpty) exceptions.mkString(" - ", ", ", "") else ""
+
+    val semanticSuggestions = getSemanticSuggestions(input)
+    val suggestions = if (semanticSuggestions.isEmpty) getSyntacticSuggestions(input) else semanticSuggestions
+
+    ParserError(s"Parse failed (semantics mismatch$errorMsg)", suggestions)
+  }
+
+  private def getSyntacticSuggestions(input: String): Set[String] = {
+    val words = input.split(" ")
+    val edits = findValidEdits(words)
+    edits.flatMap(_(words)).toSet.filter(isSemanticallyValid)
+  }
+
+  private def getSemanticSuggestions(input: String): Set[String] = {
     def semanticReplacements(terminal: SemanticParseNode[CcgCat]): Seq[String] = {
       val token = terminal.parseTokenString
       val alternatives = Lexicon.termsInCategory(terminal.syntactic)
       alternatives.map(alternative => s" ${input.toLowerCase} ".replaceFirst(s" $token ", s" $alternative ").trim.capitalize)
     }
 
-    val exceptions: Set[String] = parseResult.map(_.exs).getOrElse(Set()).map(
-      _.getMessage
-        .replace("cannot be cast to", "is not a")
-        .replaceAllLiterally("$", "")
-        .replaceAllLiterally("wordbots.", "")
-    )
-    val errorMsg = if (exceptions.nonEmpty) exceptions.mkString(" - ", ", ", "") else ""
-
     val terminalNodes: Seq[SemanticParseNode[CcgCat]] = syntacticParse(input).get.terminals
-    val suggestions: Set[String] = terminalNodes.flatMap(semanticReplacements).toSet.filter(isSemanticallyValid)
-
-    ParserError(s"Parse failed (semantics mismatch$errorMsg)", suggestions)
+    terminalNodes.flatMap(semanticReplacements).toSet.filter(isSemanticallyValid)
   }
 
   private def findValidEdits(words: Seq[String]): Stream[Edit] = {
@@ -142,8 +154,8 @@ object ErrorAnalyzer {
     parseResult.map(_.semantic) match {
       // Is the semantic parse successful?
       case Some(Form(v: AstNode)) =>
-        // Does the parse produce a sentence (CCG category S)?
-        parseResult.map(_.syntactic.category) == Some("S")
+        // Does the parse produce a sentence (CCG category S), and are the semantics valid?
+        parseResult.get.syntactic.category == "S" && AstValidator().validate(v).isSuccess
       case _ => false
     }
   }
