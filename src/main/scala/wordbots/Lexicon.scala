@@ -4,8 +4,12 @@ import com.workday.montague.ccg._
 import com.workday.montague.parser.ParserDict
 import com.workday.montague.semantics._
 import com.workday.montague.semantics.FunctionReaderMacro.λ
+import io.circe.Json
 
+import scala.language.implicitConversions
 import scala.language.postfixOps
+
+case class LexiconDefinition(syntax: String, semantics: String)
 
 object Fail {
   def apply(str: String): Unit = throw new ClassCastException(str)
@@ -38,7 +42,7 @@ object Lexicon {
 
   implicit def astNodeToSem(node: ParseNode): Sem = Form(node)
 
-  val lexicon =  ParserDict[CcgCat]() +
+  val lexicon: ParserDict[CcgCat] = ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
       (N/N, identity),
       (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o))}),  // e.g. "a robot"
@@ -199,7 +203,7 @@ object Lexicon {
     )) +
     ("discard" -> (S/NP, λ {t: TargetCard => Discard(t)})) +
     ("discards" -> Seq(
-      ((S/NP)\NP, λ {p: TargetPlayer => λ {_: CardsInHand => Fail("Cards can't force a player to make a decision (try \"random card(s)\" instead)")}}),
+      ((S/NP)\NP, λ {_: TargetPlayer => λ {_: CardsInHand => Fail("Cards can't force a player to make a decision (try \"random card(s)\" instead)")}}),
       ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})
     )) +
     ("discard pile".s -> Seq(
@@ -543,32 +547,64 @@ object Lexicon {
     })) +
     (NameMatcher -> (NP, {str: String => Name(str): Sem}))
 
+  /** Like [[lexicon]], but with null semantics (i.e. all semantic values set to [[Ignored]]),
+    * and with added dummy entries for each syntactic category (in [[categoriesMap]].
+    * Used by [[ErrorAnalyzer.syntacticParse]] to diagnose whether a given error is syntactic or semantic. */
   lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
     ParserDict[CcgCat](
-      Lexicon.lexicon.map.mapValues(_.map {case (syn, sem) => (syn, Ignored(""))}),
-      Lexicon.lexicon.funcs.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}}),
-      Lexicon.lexicon.fallbacks.map(func => {str: String => func(str).map {case (syn, sem) => (syn, Ignored(""))}})
+      lexicon.map.mapValues(_.map {case (syn, _) => (syn, Ignored(""))}),
+      lexicon.funcs.map(func => {str: String => func(str).map {case (syn, _) => (syn, Ignored(""))}}),
+      lexicon.fallbacks.map(func => {str: String => func(str).map {case (syn, _) => (syn, Ignored(""))}})
     ).withTerms(categoriesMap)
   }
 
-  lazy val categories: Seq[CcgCat] = {
-    lexicon.map
-      .flatMap(d => d._2.map(_._1))
-      .toSeq
-      .distinct
-      .sortBy(cat => cat.category.count(raw"/|\\" contains _))  // Sort categories by increasing complexity.
-  }
-
+  /** Dummy entries for each syntactic category in the [[lexicon]], with null semantics. */
   lazy val categoriesMap: Map[String, Seq[(CcgCat, Sem)]] = {
-    categories.map(cat => s"#${cat.category.toLowerCase.replaceAll("[\\(\\)]", "")}#" -> Seq(cat -> Ignored(""))).toMap
+    categories.map(cat => s"#${cat.category.toLowerCase.replaceAll("[()]", "")}#" -> Seq(cat -> Ignored(""))).toMap
   }
+  /** Dummy entries for each *terminal* (non-compositional) syntactic category in the [[lexicon]], with null semantics. */
   lazy val terminalCategoriesMap: Map[String, Seq[(CcgCat, Sem)]] = {
     categoriesMap.filterKeys(cat => cat.matches(raw"[^/|\\]*"))
   }
 
+  /** Returns all terms with a corresponding entry in the given syntactic category. */
   def termsInCategory(category: CcgCat): Seq[String] = {
-    lexicon.map.filter { case (term, definition) =>
-      definition.exists(_._1 == category)
-    }.keys.toSeq
+    lexicon.map
+      .filter { case (_, definition) => definition.exists(_._1 == category) }
+      .keys
+      .toSeq
+  }
+
+  /** List of all terms in [[lexicon]]. */
+  lazy val listOfTerms: List[String] = lexicon.map.keys.toList.sorted
+
+  /** A human-readable JSON representation of the lexicon, used by [[Server]]'s /lexicon endpoint. */
+  lazy val asJson: Json = {
+    import io.circe.generic.auto._
+    import io.circe.syntax._
+
+    lexicon.map
+      .mapValues((defs: Seq[(CcgCat, SemanticState)]) => defs.map { case (syn, sem) =>
+        LexiconDefinition(
+          syn.toString
+            .replaceAllLiterally("Noun", "N")
+            .replaceAllLiterally("\\", "\\\\"),
+          sem.toString
+            .replaceAllLiterally("Lambda", "λ ")
+            .replaceAllLiterally("\\", "\\\\")
+            .replaceAllLiterally("\"", "\\\"")
+            .replaceAllLiterally("\n", " ")
+        )
+      })
+      .asJson
+  }
+
+  /** List of all CCG categories in [[lexicon]], sorted in increasing complexity. */
+  private lazy val categories: Seq[CcgCat] = {
+    lexicon.map
+      .flatMap(d => d._2.map(_._1))
+      .toSeq
+      .distinct
+      .sortBy(_.category.count(raw"/|\\" contains _))  // Sort categories by increasing complexity.
   }
 }
