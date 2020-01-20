@@ -5,13 +5,15 @@ import com.workday.montague.parser.{ParserDict, SemanticParseResult, SemanticPar
 import com.workday.montague.semantics._
 
 import scala.language.postfixOps
+import scala.util.matching.Regex.Match
 import scala.util.{Failure, Try}
 
 object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   val VERSION = s"v${BuildInfo.version.split("-SNAPSHOT")(0)}"
 
-  val nameRegex = """named \"(.*)\"""".r
-
+  /** Entry point from the console (see [[wordbots.parse]])
+    * Parses and outputs debug information.
+    */
   override def main(args: Array[String]): Unit = {
     val input = args.mkString(" ")
     val result: SemanticParseResult[CcgCat] = parse(input)
@@ -34,21 +36,28 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     //result.bestParse.foreach(result => new java.io.PrintWriter("test.svg") { write(result.toSvg); close() })
   }
 
+  /** Parses the input. */
   def parse(input: String): SemanticParseResult[CcgCat] = parse(input, tokenizer)
 
+  /** Parses the input with a given [[lexicon]] (used, e.g., in [[ErrorAnalyzer.syntacticParse]]). */
   def parseWithLexicon(input: String, lexicon: ParserDict[CcgCat]): SemanticParseResult[CcgCat] = {
     new SemanticParser[CcgCat](lexicon).parse(input, tokenizer)
   }
 
-  override val tokenizer: String => IndexedSeq[String] = { (str: String) =>
-    nameRegex.replaceAllIn(str, m => s"named name:${NameConverters.encodeBase36(m.group(1))}")
+  override val tokenizer: String => IndexedSeq[String] = { str: String =>
+    str
+      .replaceAllWith("""named "(.*)"""", m => s"named name:${NameConverters.encodeBase36(m.group(1))}")  // e.g. 'robot named "Test Bot"' => 'robot named name:1a7bu6u4ve1ro'
       .trim
       .toLowerCase
-      .replaceAll("""[\u202F\u00A0]""", " ")
-      .replaceAllLiterally("\' ", " \' ")
-      .replaceAllLiterally("\'s", " \'s ")
-      .replaceAllLiterally("\"", " \" ")
-      .split("\\s+|[.?!,\\(\\)]")
-      .filter("" !=)
+      .replaceAll("[\u202F\u00A0]", " ")  // treat special space characters as spaces
+      .replaceAllLiterally("\' ", " \' ")  // add spaces before and after <'>, <'s>, and <">, to make them separate tokens
+      .replaceAllLiterally("\'s", " \'s ")  // etc.
+      .replaceAllLiterally("\"", " \" ")  // etc.
+      .split("""\s+|[.?!,()]""")  // tokenize by splitting on spaces and punctuation
+      .filter("" !=)  // ignore empty tokens
+  }
+
+  implicit class RichString(str: String) {
+    def replaceAllWith(regex: String, replacer: Match => String): String = regex.r.replaceAllIn(str, replacer)
   }
 }
