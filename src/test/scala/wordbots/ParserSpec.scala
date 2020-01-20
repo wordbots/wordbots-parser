@@ -235,6 +235,12 @@ class ParserSpec extends FlatSpec with Matchers {
       ReturnToHand(ObjectsMatchingConditions(Robot, Seq()), Some(Self))
     parse("Give all robots \"Activate: Destroy this robot\"", ValidateEvent) shouldEqual
       GiveAbility(ObjectsInPlay(Robot), ActivatedAbility(Destroy(ThisObject)))  // Test that this doesn't fail the NoThis validator
+    parse("Move all event cards from your discard pile that cost 2 or more energy to your hand") shouldEqual
+      MoveCardsToHand(AllC(CardsInDiscardPile(Self, Event, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(2)))))), Self)
+    parse("Move all event cards with more than 2 cost from your discard pile to your hand") shouldEqual
+      MoveCardsToHand(AllC(CardsInDiscardPile(Self, Event, Seq(AttributeComparison(Cost, GreaterThan(Scalar(2)))))), Self)
+    parse("Move all event cards with >2 cost from your discard pile to your hand") shouldEqual
+      MoveCardsToHand(AllC(CardsInDiscardPile(Self, Event, Seq(AttributeComparison(Cost, GreaterThan(Scalar(2)))))), Self)
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -436,12 +442,6 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Opponent)))), Draw(Self, Scalar(1))))
     parse("At the start of your turn, if an enemy robot is adjacent to this robot, draw a card") shouldEqual
       TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Opponent)))), Draw(Self, Scalar(1))))
-    parse("Move all event cards from your discard pile that cost 2 or more energy to your hand") shouldEqual
-      MoveCardsToHand(AllC(CardsInDiscardPile(Self, Event, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(2)))))), Self)
-    parse("Move all event cards with more than 2 cost from your discard pile to your hand") shouldEqual
-      MoveCardsToHand(AllC(CardsInDiscardPile(Self, Event, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(2)))))), Self)
-    parse("Move all event cards with >2 cost from your discard pile to your hand") shouldEqual
-      MoveCardsToHand(AllC(CardsInDiscardPile(Self, Event, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(2)))))), Self)
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

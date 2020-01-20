@@ -50,10 +50,10 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
       .trim
       .toLowerCase
       .replaceAll("[\u202F\u00A0]", " ")  // treat special space characters as spaces
-      .replaceAllLiterally("\' ", " \' ")  // add spaces before and after <'>, <'s>, and <">, to make them separate tokens
-      .replaceAllLiterally("\'s", " \'s ")  // etc.
-      .replaceAllLiterally("\"", " \" ")  // etc.
-      .split("""\s+|[.?!,()><]""")  // tokenize by splitting on spaces and punctuation
+      .replaceAllLiterally("\' ", " \' ")  // add spaces before and after <'> to make it a separate token
+      .replaceAllLiterally("\'s", " \'s ")  // add spaces before and after <'s> to make it a separate token
+      .replaceAll("""["<>]""", " $0 ")  // add spaces before and after { " < > }, to make them separate tokens
+      .split("""\s+|[.?!,()]""")  // tokenize by splitting on spaces and punctuation
       .filter("" !=)  // ignore empty tokens
   }
 
