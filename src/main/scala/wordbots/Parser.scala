@@ -53,7 +53,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
       .replaceAllLiterally("\' ", " \' ")  // add spaces before and after <'>, <'s>, and <">, to make them separate tokens
       .replaceAllLiterally("\'s", " \'s ")  // etc.
       .replaceAllLiterally("\"", " \" ")  // etc.
-      .split("""\s+|[.?!,()]""")  // tokenize by splitting on spaces and punctuation
+      .split("""\s+|[.?!,()><]""")  // tokenize by splitting on spaces and punctuation
       .filter("" !=)  // ignore empty tokens
   }
 

@@ -150,7 +150,9 @@ object Lexicon {
       (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player)}),
       (NP\N, λ {cardType: CardType => CardsInHand(Self, cardType)}),
       ((NP/PP)\N, λ {cardType: CardType => λ {hand: Hand => CardsInHand(hand.player, cardType)}}),
-      ((NP/PP)\N, λ {cardType: CardType => λ {d: DiscardPile => CardsInDiscardPile(d.player, cardType)}})
+      ((NP/PP)\N, λ {cardType: CardType => λ {d: DiscardPile => CardsInDiscardPile(d.player, cardType)}}),
+      ((NP/PP)/Adj, λ {condition: CardCondition => λ {hand: Hand => CardsInHand(hand.player, AnyCard, Seq(condition))}}),
+      ((NP/PP)/Adj, λ {condition: CardCondition => λ {d: DiscardPile => CardsInDiscardPile(d.player, AnyCard, Seq(condition))}})
     )) +
     ("control".s -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(p)))}})) +
     (Seq("control a", "control an", "has a", "has an", "have a", "have an") ->
@@ -162,6 +164,7 @@ object Lexicon {
       (N, Cost: Sem),
       (NP|Adj, λ {amount: Number => AttributeAmount(amount, Cost)}),
       (NP/Adj, λ {comp : Comparison => AttributeComparison(Cost, comp)}), // needed for "cost > x "
+      (NP\Adj, λ {comp : Comparison => AttributeComparison(Cost, comp)}),  // needed for "> x cost"
       (NP/Num, λ {n: Number => AttributeComparison(Cost, EqualTo(n))}), // "...with cost X"(implied "equal to" in there)
       ((S\NP)/Num, λ {i: Scalar => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, Constant(i))}}),
       ((S\NP)/Adv, λ {o: Operation => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, o)}}),
@@ -246,7 +249,9 @@ object Lexicon {
     (("event".s ++ "event card".s) -> Seq(
       (N, Event: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)}),  // e.g. "All events in your hand"
-      (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Event)})
+      ((NP/PP)/Adj, λ {condition: CardCondition => λ {hand: Hand => CardsInHand(hand.player, Event, Seq(condition))}}),
+      (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Event)}),
+      ((NP/PP)/Adj, λ {condition: CardCondition => λ {d: DiscardPile => CardsInDiscardPile(d.player, Event, Seq(condition))}})
     )) +
     (Seq("for each", "for every") -> Seq(
       (Adj/NP, λ {c: Collection => Count(c)}),  // e.g. "Draw a card for each X"
@@ -337,7 +342,7 @@ object Lexicon {
     (Seq("its owner 's hand", "its controller 's hand", "their owner 's hands", "their controller 's hands") -> (NP, ItsOwnersHand: Sem)) +
     (("kernel".s ++ "core".s) -> (N, Kernel: Sem)) +
     ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
-    ("less than" -> (Adj/Num, λ {num: Number => LessThan(num)})) +
+    (Seq("less than", "<") -> (Adj/Num, λ {num: Number => LessThan(num)})) +
     ("lose" -> Seq(
       (S/NP, λ {e: Energy => ModifyEnergy(Self, Minus(e.amount))}),  // Lose X energy.
       (S/NP, λ {_: AllEnergy.type => ModifyEnergy(Self, Constant(Scalar(0)))})  // Lose all energy.
@@ -356,7 +361,7 @@ object Lexicon {
         MoveObject(SavedTargetObject, ChooseT(TilesMatchingConditions(Seq(WithinDistanceOf(d.spaces, SavedTargetObject), Unoccupied)))))
       )}})
     )) +
-    (Seq("more than", "greater than") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
+    (Seq("more than", "greater than", ">") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
     ("moved last turn" -> (S, HasProperty(MovedLastTurn): Sem)) +
     ("moved this turn" -> (S, HasProperty(MovedThisTurn): Sem)) +
     ("moves" -> Seq(
@@ -422,6 +427,8 @@ object Lexicon {
       (N, Robot: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Robot)}),  // e.g. "all robots in your hand"
       (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Robot)}),
+      ((NP/PP)/Adj, λ {condition: CardCondition => λ {hand: Hand => CardsInHand(hand.player, Robot, Seq(condition))}}),
+      ((NP/PP)/Adj, λ {condition: CardCondition => λ {d: DiscardPile => CardsInDiscardPile(d.player, Robot, Seq(condition))}}),
       (NP\Adj, λ {attrs: Seq[AttributeAmount] => GeneratedCard(Robot, attrs)})  // e.g. "a 3/1/2 robot"
     )) +
     ("robot on the board" -> (N, Robot: Sem)) +  // e.g. "If you control a robot on the board with 3 or more health, ..."
@@ -456,7 +463,9 @@ object Lexicon {
     (("structure".s :+ "structures '") -> Seq(
       (N, Structure: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Structure)}),  // e.g. "All structures in your hand"
-      (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Structure)})
+      (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Structure)}),
+      ((NP/PP)/Adj, λ {condition: CardCondition => λ {hand: Hand => CardsInHand(hand.player, Structure, Seq(condition))}}),
+      ((NP/PP)/Adj, λ {condition: CardCondition => λ {d: DiscardPile => CardsInDiscardPile(d.player, Structure, Seq(condition))}}),
     )) +
     ("swap" -> Seq(
       ((S/N)/NP, λ {t: TargetObject => λ {attrs: Seq[Attribute] => SwapAttributes(t, attrs(0), attrs(1))}}),
@@ -478,7 +487,7 @@ object Lexicon {
       ((NP\N)/S, λ {cs: Seq[ObjectCondition] => λ { o: ObjectType => ObjectsMatchingConditions(o, cs)}})
     )) +
     ("that" / Seq("robot", "creature", "structure", "object") -> (NP, That: Sem)) +
-    (Seq("that costs", "which costs") -> Seq(
+    (("that cost".s ++ "which costs".s) -> Seq(
       ((NP\NP)/NP, λ {e: Energy => λ {c: CardsInHand => CardsInHand(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, EqualTo(e.amount)))}}),
       ((NP\NP)/NP, λ {ec: EnergyComparison => λ {c: CardsInHand => CardsInHand(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, ec.comp))}}),
       ((NP\NP)/NP, λ {e: Energy => λ {c: CardsInDiscardPile => CardsInDiscardPile(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, EqualTo(e.amount)))}}),
@@ -504,6 +513,7 @@ object Lexicon {
       ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})
     ) +
     ("with" -> Seq(  // "with" = "that" + "has"
+      (Adj/NP, identity),
       ((NP\N)/NP, λ {s: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(s))}}),
       ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}}),
       ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => GeneratedCard(o, attrs)}})
