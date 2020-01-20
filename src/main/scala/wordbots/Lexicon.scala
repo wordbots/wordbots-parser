@@ -465,7 +465,7 @@ object Lexicon {
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Structure)}),  // e.g. "All structures in your hand"
       (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Structure)}),
       ((NP/PP)/Adj, λ {condition: CardCondition => λ {hand: Hand => CardsInHand(hand.player, Structure, Seq(condition))}}),
-      ((NP/PP)/Adj, λ {condition: CardCondition => λ {d: DiscardPile => CardsInDiscardPile(d.player, Structure, Seq(condition))}}),
+      ((NP/PP)/Adj, λ {condition: CardCondition => λ {d: DiscardPile => CardsInDiscardPile(d.player, Structure, Seq(condition))}})
     )) +
     ("swap" -> Seq(
       ((S/N)/NP, λ {t: TargetObject => λ {attrs: Seq[Attribute] => SwapAttributes(t, attrs(0), attrs(1))}}),
