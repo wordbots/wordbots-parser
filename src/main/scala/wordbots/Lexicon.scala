@@ -256,6 +256,7 @@ object Lexicon {
     (Seq("for each", "for every") -> Seq(
       (Adj/NP, λ {c: Collection => Count(c)}),  // e.g. "Draw a card for each X"
       ((NP\NP)/NP, λ {c: Collection => λ {a: AttributeOperation => a.copy(op = a.op.times(Count(c)))}}),  // e.g. "+X attack for every Y"
+      ((Adv\Adv)/NP, λ {c: Collection => λ {op: Operation => op.times(Count(c))}}),  // e.g. "1 less for every X"
       ((S\S)/NP, λ {c: Collection => λ {a: Action => ForEach(c, a) }})  // "(do something) for each X"
     )) +
     ("everything" -> (N, AllObjects: Sem)) +

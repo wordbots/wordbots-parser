@@ -501,6 +501,8 @@ class ParserSpec extends FlatSpec with Matchers {
     // alpha v0.13
     parse("All robot cards cost 1 less energy to play") shouldEqual
       AttributeAdjustment(AllC(CardsInHand(Self,Robot)), Cost, Minus(Scalar(1)))
+    parse("Robots you play cost 1 less for every robot in play") shouldEqual
+      AttributeAdjustment(AllC(CardsInHand(Self, Robot, Seq())), Cost, Minus(Times(Scalar(1), Count(ObjectsMatchingConditions(Robot, Seq())))))
   }
 
   it should "parse activated abilities for robots" in {
