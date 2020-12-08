@@ -87,6 +87,7 @@ object Lexicon {
       ((S/S)\S, λ {a: TriggeredAbility => λ {b: TriggeredAbility => MultipleAbilities(Seq(a, b))}}),
       ((N/N)\N, λ {a1: Attribute => λ {a2: Attribute => MultipleAttributes(Seq(a1, a2))}}),
       (((N\N)\N)/N, λ {a1: Attribute => λ {a2: Attribute => λ {a3: Attribute => MultipleAttributes(Seq(a1, a2, a3))}}}),
+      ((NP/NP)\NP, λ {t1: TargetObject => λ {t2: TargetObject => UnionO(Seq(t1, t2))}}),
       // General.
       (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
       (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),

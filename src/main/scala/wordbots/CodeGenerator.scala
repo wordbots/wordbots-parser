@@ -150,6 +150,7 @@ object CodeGenerator {
       case ChooseO(collection) => s"targets['choose'](${g(collection)})"
       case AllO(collection) => s"targets['all'](${g(collection)})"
       case RandomO(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
+      case UnionO(targets) => s"targets['union']([ ${targets.map(g).mkString(", ")} ])"
       case ThisObject => "targets['thisRobot']()"
       case ItO => "targets['it']()"
       case ItP => "targets['itP']()"

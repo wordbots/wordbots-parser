@@ -241,6 +241,13 @@ class ParserSpec extends FlatSpec with Matchers {
       MoveCardsToHand(AllC(CardsInDiscardPile(Self, Event, Seq(AttributeComparison(Cost, GreaterThan(Scalar(2)))))), Self)
     parse("Move all event cards with >2 cost from your discard pile to your hand") shouldEqual
       MoveCardsToHand(AllC(CardsInDiscardPile(Self, Event, Seq(AttributeComparison(Cost, GreaterThan(Scalar(2)))))), Self)
+
+    // alpha v0.14
+    parse("Deal 3 damage to a robot and all adjacent robots") shouldEqual
+      DealDamage(
+        UnionO(Seq(ChooseO(ObjectsInPlay(Robot)), ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject))))),
+        Scalar(3)
+      )
   }
 
   it should "treat 'with' as 'that has'" in {

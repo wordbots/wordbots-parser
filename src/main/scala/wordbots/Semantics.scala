@@ -129,6 +129,7 @@ object Semantics {
       case class ChooseO(collection: ObjectCollection) extends TargetObject
       case class AllO(collection: ObjectCollection) extends TargetObject
       case class RandomO(num: Number, collection: ObjectCollection) extends TargetObject
+      case class UnionO(targets: Seq[TargetObject]) extends TargetObject
       case object ThisObject extends TargetObject
       case object ItO extends TargetObject  // (Salient object)
       case object That extends TargetObject  // (Salient object, but preferring the undergoer of the action over the agent)
