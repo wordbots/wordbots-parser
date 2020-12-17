@@ -76,6 +76,7 @@ object Semantics {
     }
     case class SwapAttributes(target: TargetObject, attr1: Attribute, attr2: Attribute) extends Action
     case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
+    case class WinGame(player: TargetPlayer) extends Action
 
     case class SaveTarget(target: Target) extends Action
 
@@ -93,6 +94,7 @@ object Semantics {
     }
     case class ApplyEffect(target: TargetObjectOrCard, effect: Effect) extends PassiveAbility
     case class AttributeAdjustment(target: TargetObjectOrCard, attribute: Attribute, operation: Operation) extends PassiveAbility
+    case class ConditionalAction(condition: GlobalCondition, action: Action) extends PassiveAbility
     case class FreezeAttribute(target: Target, attribute: Attribute) extends PassiveAbility
     case class HasAbility(target: TargetObjectOrCard, ability: Ability) extends PassiveAbility
 
@@ -179,6 +181,7 @@ object Semantics {
     case class CollectionCountComparison(coll: Collection, comparison: Comparison) extends GlobalCondition
     case class CollectionExists(coll: Collection) extends GlobalCondition
     case class TargetHasProperty(target: TargetObject, property: Property) extends GlobalCondition
+    case class TargetMeetsCondition(target: TargetObject, condition: ObjectCondition) extends GlobalCondition
 
   sealed trait Operation extends AstNode {
     def times(factor: Number): Operation = this match {

@@ -107,6 +107,7 @@ object CodeGenerator {
       case SpawnObject(card, dest, owner) => s"(function () { actions['spawnObject'](${g(card)}, ${g(dest)}, ${g(owner)}); })"
       case SwapAttributes(target, attr1, attr2) => s"(function () { actions['swapAttributes'](${g(target)}, ${g(attr1)}, ${g(attr2)}); })"
       case TakeControl(player, target) => s"(function () { actions['takeControl'](${g(player)}, ${g(target)}); })"
+      case WinGame(player) => s"(function () { actions['winGame'](${g(player)}); })"
 
       // Actions: Utility
       case SaveTarget(target) => s"(function () { save('target', ${g(target)}); })"
@@ -122,6 +123,8 @@ object CodeGenerator {
         s"(function () { setAbility(abilities['applyEffect'](function () { return ${g(target)}; }, ${g(effect)})); })"
       case AttributeAdjustment(target, attr, op) =>
         s"(function () { setAbility(abilities['attributeAdjustment'](function () { return ${g(target)}; }, ${g(attr)}, ${g(op)})); })"
+      case ConditionalAction(condition, action) =>
+        s"(function () { setAbility(abilities['conditionalAction'](function () { return ${g(condition)}; }, ${escape(g(action))})); })"
       case FreezeAttribute(target, attr) =>
         s"(function () { setAbility(abilities['freezeAttribute'](function () { return ${g(target)}; }, ${g(attr)})); })"
       case HasAbility(target, ability) =>
@@ -194,6 +197,7 @@ object CodeGenerator {
       case CollectionCountComparison(coll, comp) => s"globalConditions['collectionCountComparison'](${g(coll)}, ${g(comp)})"
       case CollectionExists(coll) => s"globalConditions['collectionExists'](${g(coll)})"
       case TargetHasProperty(target, property) => s"globalConditions['targetHasProperty'](${g(target)}, ${g(property)})"
+      case TargetMeetsCondition(target, condition) => s"globalConditions['targetMeetsCondition'](${g(target)}, ${g(condition)})"
 
       // Arithmetic operations
       case Constant(num) => s"function (x) { return ${g(num)}; }"

@@ -512,6 +512,14 @@ class ParserSpec extends FlatSpec with Matchers {
       AttributeAdjustment(AllC(CardsInHand(Self, Robot, Seq())), Cost, Minus(Times(Scalar(1), Count(ObjectsMatchingConditions(Robot, Seq())))))
   }
 
+  it should "parse passively triggered actions for robots" in {
+    parse("When this object has 20 or more health, you win the game") shouldEqual
+      ConditionalAction(
+        TargetMeetsCondition(ThisObject, AttributeComparison(Health, GreaterThanOrEqualTo(Scalar(20)))),
+        WinGame(Self)
+      )
+  }
+
   it should "parse activated abilities for robots" in {
     parse("Activate: Destroy this robot") shouldEqual
       ActivatedAbility(Destroy(ThisObject))

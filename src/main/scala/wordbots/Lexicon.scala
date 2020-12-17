@@ -317,7 +317,8 @@ object Lexicon {
       ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  // "... +X attack and [ability]"
         MultipleAbilities(Seq(AttributeAdjustment(t, a._1.attr, a._1.op), HasAbility(t, a._2)))}}),
       ((S/S)\NP, λ {t: TargetObject => λ {a: (Ability, AttributeOperation) =>  // "... [ability] and +X attack"
-        MultipleAbilities(Seq(AttributeAdjustment(t, a._2.attr, a._2.op), HasAbility(t, a._1)))}})
+        MultipleAbilities(Seq(AttributeAdjustment(t, a._2.attr, a._2.op), HasAbility(t, a._1)))}}),
+      ((S/NP)\NP, λ {t: TargetObject => λ {ac: AttributeComparison => TargetMeetsCondition(t, ac)}}) // "... >X attack" as a condition
     )) +
     (Seq("health", "life") -> Seq(
       (N, Health: Sem),
@@ -511,9 +512,11 @@ object Lexicon {
     )) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
     ("until" -> ((S|S)|NP, λ {d: Duration => λ {a: Action => Until(d, a)}})) +
-    (Seq("when", "whenever", "after", "immediately after", "each time", "every time") ->
-      ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})
-    ) +
+    (Seq("when", "whenever", "after", "immediately after", "each time", "every time") -> Seq(
+      ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}}),  // triggered ability: When [trigger], [action]
+      ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => ConditionalAction(c, a)}})  // passive ability: When [condition], [action]
+    )) +
+    (("win".s ++ Seq("win the game", "wins the game")) -> ((S\NP, λ {p: TargetPlayer => WinGame(p)}))) +
     ("with" -> Seq(  // "with" = "that" + "has"
       (Adj/NP, identity),
       ((NP\N)/NP, λ {s: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(s))}}),
