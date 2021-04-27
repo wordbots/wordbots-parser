@@ -247,7 +247,7 @@ object Lexicon {
       (Adj/PP, λ {num: Number => EqualTo(num)})
     )) +
     ("even" -> (NP/N, λ {attr: Attribute => AttributeComparison(attr, IsEven)})) +
-    (("event".s ++ "event card".s) -> Seq(
+    (("event".s ++ "event card".s ++ "action".s ++ "action card".s) -> Seq(
       (N, Event: Sem),
       (NP/PP, λ {hand: Hand => CardsInHand(hand.player, Event)}),  // e.g. "All events in your hand"
       ((NP/PP)/Adj, λ {condition: CardCondition => λ {hand: Hand => CardsInHand(hand.player, Event, Seq(condition))}}),
