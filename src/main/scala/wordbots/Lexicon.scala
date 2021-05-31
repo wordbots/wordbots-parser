@@ -139,7 +139,10 @@ object Lexicon {
     ("can't activate" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotActivate)})) +
     ("can't attack" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotAttack)})) +
     ("can't defend" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotFightBack)})) +
-    ("can't move" -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotMove)})) +
+    ("can't move" -> Seq(
+      (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotMove)}),  // "X can't move"
+      ((S\NP)/PP, λ {c: ObjectCondition => λ {t: TargetObject => ApplyEffect(t, CannotMoveTo(TilesMatchingConditions(Seq(c))))}})  // e.g. "X can't move adjacent to this object"
+    )) +
     ("can't be changed" -> (S\NP, λ {t: TargetAttribute => FreezeAttribute(t.target, t.attr)})) +
     (("card".s :+ "a card") -> Seq(
       (N, AnyCard: Sem),
@@ -155,6 +158,7 @@ object Lexicon {
       ((NP/PP)/Adj, λ {condition: CardCondition => λ {hand: Hand => CardsInHand(hand.player, AnyCard, Seq(condition))}}),
       ((NP/PP)/Adj, λ {condition: CardCondition => λ {d: DiscardPile => CardsInDiscardPile(d.player, AnyCard, Seq(condition))}})
     )) +
+    ("choose" -> (S/NP, λ {t: TargetObject => SaveTarget(t)})) +
     ("control".s -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(p)))}})) +
     (Seq("control a", "control an", "has a", "has an", "have a", "have an") ->
       ((S/NP)\NP,
@@ -167,6 +171,7 @@ object Lexicon {
       (NP/Adj, λ {comp : Comparison => AttributeComparison(Cost, comp)}), // needed for "cost > x "
       (NP\Adj, λ {comp : Comparison => AttributeComparison(Cost, comp)}),  // needed for "> x cost"
       (NP/Num, λ {n: Number => AttributeComparison(Cost, EqualTo(n))}), // "...with cost X"(implied "equal to" in there)
+      (NP/PP, λ {target: TargetObjectOrCard => AttributeValue(target, Cost)}),  // e.g. "[X equal to the] energy cost of a card in your hand"
       ((S\NP)/Num, λ {i: Scalar => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, Constant(i))}}),
       ((S\NP)/Adv, λ {o: Operation => λ {t: TargetObjectOrCard => AttributeAdjustment(t, Cost, o)}}),
       ((S\NP)/Num, λ {i: Scalar => λ {cp: CardPlay => AttributeAdjustment(AllC(CardsInHand(cp.player, cp.cardType)), Cost, Constant(i))}}),
@@ -205,7 +210,10 @@ object Lexicon {
       ((S/NP)\NP, λ {p: TargetPlayer => λ {c: Cards => Draw(p, c.num)}}),
       ((S/N)\NP, λ {t: TargetPlayer => λ {c: CardType => AfterCardDraw(t, c)}})  // e.g. "[whenever] you draw a robot, [do something]"
     )) +
-    ("discard" -> (S/NP, λ {t: TargetCard => Discard(t)})) +
+    ("discard" -> Seq(
+      (S/NP, λ {t: TargetCard => Discard(t)}),  // e.g. "Discard a random card in your hand"
+      (S/NP, λ {h: Hand => if (h.player == Self) Discard(AllC(CardsInHand(Self))) else Fail("You can only discard your own cards.") })  // "Discard your hand"
+    )) +
     ("discards" -> Seq(
       ((S/NP)\NP, λ {_: TargetPlayer => λ {_: CardsInHand => Fail("Cards can't force a player to make a decision (try \"random card(s)\" instead)")}}),
       ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})
@@ -335,12 +343,16 @@ object Lexicon {
       ((S|S)|S, λ {c: GlobalCondition => λ {a: PassiveAbility => a.conditionOn(c)}})   // "if" for abilities
     )) +
     (Seq("in", "on", "of", "from", "into") -> (PP/NP, identity)) +
+    ("increase" -> ((S/PP)/N, λ {a: TargetAttribute => λ {i: Scalar => ModifyAttribute(a.target, a.attr, Plus(i))}})) +  // e.g. "increase its attack by X"
     ("instead" -> (S|S, λ {a: Action => Instead(a)})) +
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     ("is" -> (X|X, identity)) +
     ("it" -> (NP, ItO: Sem)) +
-    ("its" -> (Num/N, λ {a: SingleAttribute => AttributeValue(ItO, a)})) +
+    ("its" -> Seq(
+      (Num/N, λ {a: SingleAttribute => AttributeValue(ItO, a)}),
+      (N/N, λ {a: SingleAttribute => TargetAttribute(ItO, a)})
+    )) +
     ("its controller" -> (NP, ControllerOf(ItO): Sem)) +
     (Seq("its owner 's hand", "its controller 's hand", "their owner 's hands", "their controller 's hands") -> (NP, ItsOwnersHand: Sem)) +
     (("kernel".s ++ "core".s) -> (N, Kernel: Sem)) +
@@ -359,6 +371,10 @@ object Lexicon {
     ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
     ("move" -> Seq(
       ((S/PP)/NP, λ {t: TargetObject => λ {dest: TargetTile => MoveObject(t, dest)}}),  // e.g. "Move a robot to X"
+      ((S/NP)/NP, λ {t: TargetObject => λ {s: Spaces => MultipleActions(Seq(  // e.g. "Move a robot X spaces"
+        SaveTarget(t),
+        MoveObject(SavedTargetObject, ChooseT(TilesMatchingConditions(Seq(ExactDistanceFrom(s.num, SavedTargetObject), Unoccupied)))))
+      )}}),
       ((S/NP)/NP, λ {t: TargetObject => λ {d: WithinDistance => MultipleActions(Seq(  // e.g. "Move a robot up to X spaces"
         SaveTarget(t),
         MoveObject(SavedTargetObject, ChooseT(TilesMatchingConditions(Seq(WithinDistanceOf(d.spaces, SavedTargetObject), Unoccupied)))))
@@ -474,6 +490,9 @@ object Lexicon {
       ((S/N)/NP, λ {t: TargetObject => λ {attrs: Seq[Attribute] => SwapAttributes(t, attrs(0), attrs(1))}}),
       ((S/PP)/N, λ {attrs: Seq[Attribute] => λ {t: TargetObject => SwapAttributes(t, attrs(0), attrs(1))}})
     )) +
+    ("swap the position".s ->
+      (S/PP, λ {t: Seq[TargetObject] => if (t.length == 2) SwapPositions(t(0), t(1)) else Fail("Must swap the positions of two objects")})
+    ) +
     ("take control" -> (S/PP, λ {t: TargetObject => TakeControl(Self, t)})) +
     ("takes control" -> ((S\NP)/PP, λ {t: TargetObject => λ {p: TargetPlayer => TakeControl(p, t)}})) +
     ("takes damage" -> Seq(
@@ -496,6 +515,7 @@ object Lexicon {
       ((NP\NP)/NP, λ {e: Energy => λ {c: CardsInDiscardPile => CardsInDiscardPile(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, EqualTo(e.amount)))}}),
       ((NP\NP)/NP, λ {ec: EnergyComparison => λ {c: CardsInDiscardPile => CardsInDiscardPile(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, ec.comp))}})
     )) +
+    ("that much" -> (Num, ThatMuch: Sem)) +
     (Seq("that player", "they") -> (NP, ItP: Sem)) +
     ("the" -> (X/X, identity)) +
     ("their" -> Seq(
@@ -511,6 +531,7 @@ object Lexicon {
       ((S/PP)/NP, λ {source: TargetObject => λ {target: GeneratedCard => Become(source, target)}}) // only used in such things as "becomes a robot with 1 attack and...".
     )) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
+    ("two" -> (NP/N, λ {o: ObjectType => Seq(ChooseO(ObjectsInPlay(o)), ChooseO(ObjectsInPlay(o)))})) +
     ("until" -> ((S|S)|NP, λ {d: Duration => λ {a: Action => Until(d, a)}})) +
     (Seq("when", "whenever", "after", "immediately after", "each time", "every time") -> Seq(
       ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}}),  // triggered ability: When [trigger], [action]

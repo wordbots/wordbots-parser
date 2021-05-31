@@ -106,6 +106,7 @@ object CodeGenerator {
       case ShuffleCardsIntoDeck(target, player) => s"(function () { actions['shuffleCardsIntoDeck'](${g(target)}, ${g(player)}); })"
       case SpawnObject(card, dest, owner) => s"(function () { actions['spawnObject'](${g(card)}, ${g(dest)}, ${g(owner)}); })"
       case SwapAttributes(target, attr1, attr2) => s"(function () { actions['swapAttributes'](${g(target)}, ${g(attr1)}, ${g(attr2)}); })"
+      case SwapPositions(target1, target2) => s"(function () { actions['swapPositions'](${g(target1)}, ${g(target2)}); })"
       case TakeControl(player, target) => s"(function () { actions['takeControl'](${g(player)}, ${g(target)}); })"
       case WinGame(player) => s"(function () { actions['winGame'](${g(player)}); })"
 
@@ -132,6 +133,7 @@ object CodeGenerator {
 
       // Effects
       case CanOnlyAttack(target) => s"'canonlyattack', {target: ${g(target)}}"
+      case CannotMoveTo(tiles) => s"'cannotmoveto', {tiles: ${g(tiles)}}"
 
       // Triggers
       case AfterAttack(targetObj, objectType) => s"triggers['afterAttack'](function () { return ${g(targetObj)}; }, ${g(objectType)})"
@@ -223,6 +225,7 @@ object CodeGenerator {
       case Count(collection) => s"count(${g(collection)})"
       case EnergyAmount(player) => s"energyAmount(${g(player)})"
       case MaximumEnergyAmount(player) => s"maximumEnergyAmount(${g(player)})"
+      case ThatMuch => "load('amount')"
       case Times(n1, n2) => s"((${g(n1)}) * (${g(n2)}))"
 
       // Collections

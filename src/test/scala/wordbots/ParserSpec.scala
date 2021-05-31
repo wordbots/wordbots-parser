@@ -248,6 +248,25 @@ class ParserSpec extends FlatSpec with Matchers {
         UnionO(Seq(ChooseO(ObjectsInPlay(Robot)), ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject))))),
         Scalar(3)
       )
+
+    // alpha v0.16
+    parse("Choose a robot") shouldEqual SaveTarget(ChooseO(ObjectsInPlay(Robot)))
+    parse("Discard your hand") shouldEqual parse("Discard all cards in your hand")
+    parse("Discard your opponent's hand") shouldEqual Nonsense // You can only discard your own cards.
+    parse("Deal damage to a robot equal to the energy cost of a card in your hand") shouldEqual
+      DealDamage(
+        ChooseO(ObjectsInPlay(Robot)),
+        AttributeValue(ChooseC(CardsInHand(Self)), Cost)
+      )
+    parse("Move a robot 3 spaces") shouldEqual
+      MultipleActions(Seq(
+        SaveTarget(ChooseO(ObjectsInPlay(Robot))),
+        MoveObject(SavedTargetObject, ChooseT(TilesMatchingConditions(Seq(ExactDistanceFrom(Scalar(3), SavedTargetObject), Unoccupied))))
+      ))
+    parse("Swap the positions of two robots") shouldEqual
+      SwapPositions(ChooseO(ObjectsInPlay(Robot)), ChooseO(ObjectsInPlay(Robot)))
+    parse("Swap the position of your kernel and your opponent's kernel") shouldEqual
+      SwapPositions(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Opponent))))
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -449,6 +468,18 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Opponent)))), Draw(Self, Scalar(1))))
     parse("At the start of your turn, if an enemy robot is adjacent to this robot, draw a card") shouldEqual
       TriggeredAbility(BeginningOfTurn(Self), If(CollectionExists(ObjectsMatchingConditions(Robot, Seq(AdjacentTo(ThisObject), ControlledBy(Opponent)))), Draw(Self, Scalar(1))))
+
+    // alpha v0.16
+    parse("Whenever a robot takes damage, increase its power by 1 instead") shouldEqual
+      TriggeredAbility(
+        AfterDamageReceived(AllO(ObjectsInPlay(Robot))),
+        Instead(ModifyAttribute(ItO, Attack, Plus(Scalar(1))))
+      )
+    parse("Whenever a robot takes damage, it gains that much attack and speed") shouldEqual
+      TriggeredAbility(
+        AfterDamageReceived(AllO(ObjectsInPlay(Robot))),
+        ModifyAttribute(ItO, MultipleAttributes(List(Attack, Speed)), Plus(ThatMuch))
+      )
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -510,6 +541,13 @@ class ParserSpec extends FlatSpec with Matchers {
       AttributeAdjustment(AllC(CardsInHand(Self,Robot)), Cost, Minus(Scalar(1)))
     parse("Robots you play cost 1 less for every robot in play") shouldEqual
       AttributeAdjustment(AllC(CardsInHand(Self, Robot, Seq())), Cost, Minus(Times(Scalar(1), Count(ObjectsMatchingConditions(Robot, Seq())))))
+
+    // alpha v0.16:
+    parse("Enemy robots can't move adjacent to this structure") shouldEqual
+      ApplyEffect(
+        ObjectsMatchingConditions(Robot, Seq(ControlledBy(Opponent))),
+        CannotMoveTo(TilesMatchingConditions(Seq(AdjacentTo(ThisObject))))
+      )
   }
 
   it should "parse passively triggered actions for robots" in {

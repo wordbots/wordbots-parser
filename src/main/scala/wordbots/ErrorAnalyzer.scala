@@ -135,12 +135,21 @@ object ErrorAnalyzer {
       if isSyntacticallyValid(candidate)
     } yield Delete(i)
 
-    val replacements: Stream[Edit] = for {
-      i <- words.indices.toStream
-      (cat, pos) <- categories.toStream
-      candidate = words.slice(0, i).mkString(" ") + s" $cat " + words.slice(i + 1, words.length).mkString(" ")
-      if isSyntacticallyValid(candidate)
-    } yield Replace(i, pos)
+    val replacements: Stream[Edit] = {
+      // Don't look for replacements if there are any (syntactically and semantically) valid deletions!!
+      // This is because the token being deleted could be replaced with any identity term, resulting in a lot of nonsense candidates.
+      // e.g. "Discard your opponent's hand" -> "Discard your hand" -> "Discard your it deals hand", "Discard your takes hand", etc.
+      if (deletions.flatMap(_(words)).toSet.filter(isSemanticallyValid).size > 0) {
+        Stream.empty
+      } else {
+        for {
+          i <- words.indices.toStream
+          (cat, pos) <- categories.toStream
+          candidate = words.slice(0, i).mkString(" ") + s" $cat " + words.slice(i + 1, words.length).mkString(" ")
+          if isSyntacticallyValid(candidate)
+        } yield Replace(i, pos)
+      }
+    }
 
     insertions ++ deletions ++ replacements
   }

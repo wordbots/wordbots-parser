@@ -75,6 +75,7 @@ object Semantics {
       }
     }
     case class SwapAttributes(target: TargetObject, attr1: Attribute, attr2: Attribute) extends Action
+    case class SwapPositions(target1: TargetObject, target2: TargetObject) extends Action
     case class TakeControl(player: TargetPlayer, target: TargetObject) extends Action
     case class WinGame(player: TargetPlayer) extends Action
 
@@ -105,6 +106,7 @@ object Semantics {
     case object CannotFightBack extends Effect with Label
     case object CannotMove extends Effect with Label
     case class CanOnlyAttack(target: TargetObject) extends Effect
+    case class CannotMoveTo(tiles: TileCollection) extends Effect
 
   sealed trait Trigger extends AstNode
     case class AfterAttack(target: TargetObject, attackedObjectType: ObjectType = AllObjects) extends Trigger
@@ -209,10 +211,11 @@ object Semantics {
   sealed trait Number extends AstNode
     case class Scalar(num: Int) extends Number
     case class AttributeSum(collection: ObjectOrCardCollection, attribute: SingleAttribute) extends Number
-    case class AttributeValue(obj: TargetObject, attribute: SingleAttribute) extends Number
+    case class AttributeValue(obj: TargetObjectOrCard, attribute: SingleAttribute) extends Number
     case class Count(collection: Collection) extends Number
     case class EnergyAmount(player: TargetPlayer) extends Number
     case class MaximumEnergyAmount(player: TargetPlayer) extends Number
+    case object ThatMuch extends Number  // salient amount
 
     case class Times(num1: Number, num2: Number) extends Number
 
