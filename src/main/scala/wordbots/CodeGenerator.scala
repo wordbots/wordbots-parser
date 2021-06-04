@@ -225,7 +225,7 @@ object CodeGenerator {
       case Count(collection) => s"count(${g(collection)})"
       case EnergyAmount(player) => s"energyAmount(${g(player)})"
       case MaximumEnergyAmount(player) => s"maximumEnergyAmount(${g(player)})"
-      case ThatMuch => "load('amount')"
+      case ThatMuch => "thatMuch()"
       case Times(n1, n2) => s"((${g(n1)}) * (${g(n2)}))"
 
       // Collections
