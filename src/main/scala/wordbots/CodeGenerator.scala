@@ -102,6 +102,7 @@ object CodeGenerator {
       case RestoreAttribute(target, Health, Some(num)) => s"(function () { actions['restoreHealth'](${g(target)}, ${g(num)}); })"
       case RestoreAttribute(target, Health, None) => s"(function () { actions['restoreHealth'](${g(target)}); })"
       case ReturnToHand(target, player) => s"(function () { actions['returnToHand'](${g(target)}, ${g(player)}); })"
+      case RewriteText(target, textReplacements) => s"(function () { actions['rewriteText'](${g(target)}, ${textReplacements.map(t => s"'${t._1}': '${t._2}'").mkString("{ ", ", ", " }")}); })"
       case SetAttribute(target, attr, num) => s"(function () { actions['setAttribute'](${g(target)}, ${g(attr)}, ${deferred(g(num))}); })"
       case ShuffleCardsIntoDeck(target, player) => s"(function () { actions['shuffleCardsIntoDeck'](${g(target)}, ${g(player)}); })"
       case SpawnObject(card, dest, owner) => s"(function () { actions['spawnObject'](${g(card)}, ${g(dest)}, ${g(owner)}); })"
@@ -178,7 +179,7 @@ object CodeGenerator {
         val attributesObjStr = Seq(Attack, Health, Speed).map { attr =>
           s"'${attr.name}': ${card.getAttributeAmount(attr).headOption.map(g).getOrElse("null")}"
         }.mkString("{", ", ", "}")
-        s"targets['generateCard'](${g(cardType)}, $attributesObjStr, ${name.map(n => s"'$n'")getOrElse("null")})"
+        s"targets['generateCard'](${g(cardType)}, $attributesObjStr, ${name.map(n => s"'$n'").getOrElse("null")})"
 
       // Target players
       case Self => "targets['self']()"

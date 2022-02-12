@@ -65,6 +65,7 @@ object Semantics {
         case _ => throw new ClassCastException(s"Can't restore $attribute")
       }
     }
+    case class RewriteText(target: TargetCard, textReplacements: Map[String, String]) extends Action
     case class SetAttribute(target: TargetObjectCardOrPlayer, attribute: Attribute, num: Number) extends Action
     case class ShuffleCardsIntoDeck(target: TargetCard, player: TargetPlayer) extends Action
     case class SpawnObject(target: TargetCard, dest: TargetTile, owner: TargetPlayer = Self) extends Action {
@@ -294,6 +295,7 @@ object Semantics {
   case class Life(amount: Number) extends IntermediateNode
   case class Name(name: String) extends IntermediateNode
   case class Spaces(num: Number) extends IntermediateNode
+  case class Text(text: String) extends IntermediateNode
   case class Turn(player: TargetPlayer) extends IntermediateNode
   case class WithinDistance(spaces: Number) extends IntermediateNode
 
@@ -306,4 +308,5 @@ object Semantics {
       throw new ClassCastException(s"expected Health, got $attr")
     }
   }
+  case class TextReplacement(from: Text, to: Text) extends IntermediateNode
 }

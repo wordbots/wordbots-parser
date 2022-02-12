@@ -73,7 +73,17 @@ object NameConverters {
 object NameMatcher extends TokenMatcher[String] {
   def apply(str: String): Seq[String] = {
     if (str.startsWith("name:") && !str.contains(' ')) {
-      Seq(NameConverters.decodeBase36(str.replace("name:", "")))
+      Try(Seq(NameConverters.decodeBase36(str.replace("name:", "")))).getOrElse(Nil)
+    } else {
+      Nil
+    }
+  }
+}
+/** Ditto for text replacement blocks (see NameConverters above). */
+object TextMatcher extends TokenMatcher[String] {
+  def apply(str: String): Seq[String] = {
+    if (str.startsWith("text:") && !str.contains(' ')) {
+      Try(Seq(NameConverters.decodeBase36(str.replace("text:", "")))).getOrElse(Nil)
     } else {
       Nil
     }

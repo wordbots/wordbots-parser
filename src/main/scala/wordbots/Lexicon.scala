@@ -91,11 +91,13 @@ object Lexicon {
       // General.
       (conj, λ {b: ParseNode => λ {a: Seq[ParseNode] => a :+ b}}),
       (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
-      (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode =>  // e.g. "1 attack, 2 health, and 3 speed"
-        if (a.isInstanceOf[Attribute] && b.isInstanceOf[Attribute] && c.isInstanceOf[Attribute]) Fail("") else Seq(a, b, c)}}}  // the conditional Fail() is to force the specific 3-Attribute rule above
-      ),
       ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}}),  // e.g. "+1 attack and Haste"
-      ((S/NP)\S, λ {a: ParseNode => λ {b: ParseNode => (a, b)}})  // e.g. "Haste and +1 attack"
+      ((S/NP)\S, λ {a: ParseNode => λ {b: ParseNode => (a, b)}}),  // e.g. "Haste and +1 attack"
+      // Support arity-3 conjugations of AttributeAmounts (e.g. "1 attack, 2 health, and 3 speed") (using conditional Fail() to enforce types):
+      (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if (Seq(a, b, c).forall(_.isInstanceOf[AttributeAmount])) Seq(a, b, c) else Fail("") }}}),
+      // Support arity-3 and arity-4 conjugations of TextReplacements:
+      (((NP\NP)\NP)/NP, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if (Seq(a, b, c).forall(_.isInstanceOf[TextReplacement])) Seq(a, b, c) else Fail("") }}}),
+      ((((NP\NP)\NP)\NP)/NP, λ {d: ParseNode => λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if ((Seq(a, b, c, d).forall(_.isInstanceOf[TextReplacement]))) Seq(a, b, c, d) else Fail("") }}}})
     )) +
     ("any card" -> (N, AnyCard: Sem)) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
@@ -426,6 +428,10 @@ object Lexicon {
       (((S/PP)/PP)/N, λ {a: Attribute => λ {c: CardsInHand => λ {num: Number => ModifyAttribute(AllC(c), a, Minus(num))}}})  // e.g. "Reduce the cost of robot cards in your hand by 1"
     )) +
     ("remove all abilities" -> (S/PP, λ {t: TargetObject => RemoveAllAbilities(t)})) +
+    ("replace" -> Seq(
+      ((S/PP)/NP, λ {r: TextReplacement => λ {t: TargetCard => RewriteText(t, Map(r.from.text -> r.to.text))}}),
+      ((S/PP)/NP, λ {rs: Seq[TextReplacement] => λ {t: TargetCard => RewriteText(t, rs.map(r => (r.from.text -> r.to.text)).toMap)}})
+    )) +
     ("restore" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObjectOrPlayer => RestoreAttribute(t, a, None)}}),  // e.g. "Restore health to X"
       (((S/PP)/N)/Num, λ {n: Number => λ {a: Attribute => λ {t: TargetObjectOrPlayer => RestoreAttribute(t, a, Some(n))}}}),  // e.g. "Restore N health to X"
@@ -542,7 +548,8 @@ object Lexicon {
       (Adj/NP, identity),
       ((NP\N)/NP, λ {s: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(s))}}),
       ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}}),
-      ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => GeneratedCard(o, attrs)}})
+      ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => GeneratedCard(o, attrs)}}),
+      ((NP\S)/S, λ {toText: Text => λ {fromText: Text => TextReplacement(fromText, toText)}})  // i.e. "Replace \"<from>\" with \"<to>\" on ..."
     )) +
     ("within" -> Seq(
       (PP/NP, λ {s: Spaces => WithinDistanceOf(s.num, ThisObject)}),
@@ -581,7 +588,8 @@ object Lexicon {
       λ {o: ObjectType =>
         GeneratedCard(o, Seq(AttributeAmount(Scalar(s.attack), Attack), AttributeAmount(Scalar(s.health), Health), AttributeAmount(Scalar(s.speed), Speed)))}
     })) +
-    (NameMatcher -> (NP, {str: String => Name(str): Sem}))
+    (NameMatcher -> (NP, {str: String => Name(str): Sem})) +  // i.e. for object spawn effects
+    (TextMatcher -> (S, {str: String => Text(str): Sem}))  // i.e. for card rewrite effects
 
   /** Like [[lexicon]], but with null semantics (i.e. all semantic values set to [[Ignored]]),
     * and with added dummy entries for each syntactic category (in [[categoriesMap]].

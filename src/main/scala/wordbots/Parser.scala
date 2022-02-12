@@ -46,7 +46,8 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
 
   override val tokenizer: String => IndexedSeq[String] = { str: String =>
     str
-      .replaceAllWith("""named "(.*)"""", m => s"named name:${NameConverters.encodeBase36(m.group(1))}")  // e.g. 'robot named "Test Bot"' => 'robot named name:1a7bu6u4ve1ro'
+      .replaceAllWith("""named "(.*)"""", m => s"named name:${encB36(m.group(1))}")  // e.g. 'robot named "Test Bot"' => 'robot named name:1a7bu6u4ve1ro'
+      .replaceAllWith(""""([^"]*)" with "([^"]*)"""", m => s"text:${encB36(m.group(1))} with text:${encB36(m.group(2))}")  // e.g. 'Replace "a robot" with "all robots"'
       .trim
       .toLowerCase
       .replaceAll("[\u202F\u00A0]", " ")  // treat special space characters as spaces
@@ -56,6 +57,8 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
       .split("""\s+|[.?!,()]""")  // tokenize by splitting on spaces and punctuation
       .filter("" !=)  // ignore empty tokens
   }
+
+  private def encB36(str: String): String = NameConverters.encodeBase36(str)
 
   implicit class RichString(str: String) {
     def replaceAllWith(regex: String, replacer: Match => String): String = regex.r.replaceAllIn(str, replacer)

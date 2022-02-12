@@ -267,6 +267,14 @@ class ParserSpec extends FlatSpec with Matchers {
       SwapPositions(ChooseO(ObjectsInPlay(Robot)), ChooseO(ObjectsInPlay(Robot)))
     parse("Swap the position of your kernel and your opponent's kernel") shouldEqual
       SwapPositions(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Opponent))))
+
+    // alpha v0.18 - rewrite effects (up to 4 rewrite rules per action)
+    parse("Replace \"a robot\" with \"all robots\" on all cards in your hand") shouldEqual
+      RewriteText(AllC(CardsInHand(Self)), Map("a robot" -> "all robots"))
+    parse("Replace \"robot\" with \"structure\" and \"structure\" with \"robot\" on all cards in your hand") shouldEqual
+      RewriteText(AllC(CardsInHand(Self)), Map("robot" -> "structure", "structure" -> "robot"))
+    parse("Replace \"1\" with \"2\", \"2\" with \"4\", \"3\" with \"6\", and \"4\" with \"8\" on all cards in your hand") shouldEqual
+      RewriteText(AllC(CardsInHand(Self)), Map("1" -> "2", "2" -> "4", "3" -> "6", "4" -> "8"))
   }
 
   it should "treat 'with' as 'that has'" in {
