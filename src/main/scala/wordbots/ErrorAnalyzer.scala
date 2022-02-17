@@ -6,12 +6,13 @@ import com.workday.montague.semantics.{Form, Lambda, Nonsense}
 
 import scala.util.{Failure, Success}
 
-case class ParserError(description: String, suggestions: Set[String] = Set())
+case class ParserError(description: String, suggestions: Set[String] = Set.empty)
 
 object ErrorAnalyzer {
   import Semantics._
 
-  def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]])
+  // Note: "fast mode" disables finding syntax/semantics suggestions and just does to bare minimum to diagnose the error
+  def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]], isFastMode: Boolean = false)
                    (implicit validationMode: ValidationMode = ValidateUnknownCard): Option[ParserError] = {
     parseResult.map(_.semantic) match {
       case Some(Form(ast: AstNode)) =>
@@ -26,13 +27,13 @@ object ErrorAnalyzer {
         Some(ParserError(s"Parse failed (missing $firstArgType)"))
       case Some(Nonsense(_)) =>
         // Handle successful syntactic parse but failed semantic parse.
-        Some(diagnoseSemanticsError(input, parseResult))
+        Some(diagnoseSemanticsError(input, parseResult, isFastMode))
       case _ =>
         // Handle failed parse.
         if (findUnrecognizedTokens(input).nonEmpty) {
           Some(ParserError(s"Unrecognized word(s): ${findUnrecognizedTokens(input).mkString(", ")}"))
         } else {
-          Some(diagnoseSyntaxError(input))
+          Some(diagnoseSyntaxError(input, isFastMode))
         }
     }
   }
@@ -65,15 +66,19 @@ object ErrorAnalyzer {
     }
   }
 
-  private def diagnoseSyntaxError(input: String): ParserError = {
-    val words = input.split(" ")
-    val edits = findValidEdits(words)
-    val error: Option[String] = edits.headOption.map(_.description(words))
+  private def diagnoseSyntaxError(input: String, isFastMode: Boolean = false): ParserError = {
+    if (isFastMode) {
+      ParserError(s"Parse failed (syntax error)")
+    } else {
+      val words = input.split(" ")
+      val edits = findValidEdits(words)
+      val error: Option[String] = edits.headOption.map(_.description(words))
 
-    ParserError(s"Parse failed (${error.getOrElse("syntax error")})", getSyntacticSuggestions(input))
+      ParserError(s"Parse failed (${error.getOrElse("syntax error")})", getSyntacticSuggestions(input))
+    }
   }
 
-  private def diagnoseSemanticsError(input: String, parseResult: Option[SemanticParseNode[CcgCat]]): ParserError = {
+  private def diagnoseSemanticsError(input: String, parseResult: Option[SemanticParseNode[CcgCat]], isFastMode: Boolean = false): ParserError = {
     val exceptions: Set[String] = parseResult.map(_.exs).getOrElse(Set()).map(
       _.getMessage
         .replace("cannot be cast to", "is not a")
@@ -83,8 +88,14 @@ object ErrorAnalyzer {
     )
     val errorMsg = if (exceptions.nonEmpty) exceptions.mkString(" - ", ", ", "") else ""
 
-    val semanticSuggestions = getSemanticSuggestions(input)
-    val suggestions = if (semanticSuggestions.isEmpty) getSyntacticSuggestions(input) else semanticSuggestions
+    val suggestions: Set[String] = {
+      if (isFastMode) {
+        val semanticSuggestions = getSemanticSuggestions(input)
+        if (semanticSuggestions.isEmpty) getSyntacticSuggestions(input) else semanticSuggestions
+      } else {
+        Set.empty
+      }
+    }
 
     ParserError(s"Parse failed (semantics mismatch$errorMsg)", suggestions)
   }

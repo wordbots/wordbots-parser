@@ -25,24 +25,24 @@ object MemoParser {
   /** Parse the given input string in the given mode,
     * memoizing results along the way,
     * returning a [[ParserOutput]]. */
-  def apply(input: String, mode: Option[String]): ParserOutput = {
+  def apply(input: String, mode: Option[String], fastErrorAnalysisMode: Boolean = false): ParserOutput = {
     // scalastyle:off regex
-    print(s"> ${input.trim}")
+    print(s">${if (fastErrorAnalysisMode) "*" else ""} ${input.trim}")
 
-    val output = parseMemoize(input, mode)
+    val output = parseMemoize(input, mode, fastErrorAnalysisMode)
     println()
     output
     // scalastyle:on regex
   }
 
-  private val parseMemoize: ((String, Option[String])) => ParserOutput = {
-    Memo.mutableHashMapMemo { args: (String, Option[String]) =>
-      parse(args._1, args._2)
+  private val parseMemoize: ((String, Option[String], Boolean)) => ParserOutput = {
+    Memo.mutableHashMapMemo { args: (String, Option[String], Boolean) =>
+      parse(args._1, args._2, args._3)
     }
   }
 
-  private def parse(input: String, mode: Option[String]): ParserOutput = {
-    print("  (not in cache, parsing ...)")
+  private def parse(input: String, mode: Option[String], fastErrorAnalysisMode: Boolean = false): ParserOutput = {
+    print(s"  (not in cache, parsing ...)")
 
     implicit val validationMode: ValidationMode = mode match {
       case Some("object") => ValidateObject
@@ -60,7 +60,7 @@ object MemoParser {
     }
     val unrecognizedTokens = ErrorAnalyzer.findUnrecognizedTokens(input)
 
-    ErrorAnalyzer.diagnoseError(input, result) match {
+    ErrorAnalyzer.diagnoseError(input, result, fastErrorAnalysisMode) match {
       case Some(error) => FailedParse(error, unrecognizedTokens)
       case None =>
         result.map(_.semantic) match {
@@ -88,7 +88,8 @@ object Server extends ServerApp {
 
   object InputParamMatcher extends QueryParamDecoderMatcher[String]("input")
   object FormatParamMatcher extends OptionalQueryParamDecoderMatcher[String]("format")
-  object ModeParamMatcher extends OptionalQueryParamDecoderMatcher[String]("mode")
+  object ModeParamMatcher extends OptionalQueryParamDecoderMatcher[String]("mode")  // "object" (i.e. object or structure), "event" (i.e. action), or unspecified
+  object FastModeParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("fast")
 
   val host = "0.0.0.0"
   val defaultPort = 8080
@@ -98,8 +99,8 @@ object Server extends ServerApp {
     case OPTIONS -> Root / "parse" =>
       Ok("", headers())
 
-    case GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) +& ModeParamMatcher(mode) =>
-      MemoParser(input, mode) match {
+    case GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) +& ModeParamMatcher(validationMode) +& FastModeParamMatcher(fastMode) =>
+      MemoParser(input, validationMode, fastMode.getOrElse(false)) match {
         case SuccessfulParse(parse, ast, parsedTokens) =>
           format match {
             case Some("js") =>
@@ -118,7 +119,7 @@ object Server extends ServerApp {
 
       request.as(jsonOf[Seq[ParseRequest]]).flatMap { parseRequests: Seq[ParseRequest] =>
         val responseBody: Json = parseRequests.map { req: ParseRequest =>
-          val parseResponse: Response = MemoParser(req.input, Option(req.mode)) match {
+          val parseResponse: Response = MemoParser(req.input, Option(req.mode), fastErrorAnalysisMode = true) match {
             case SuccessfulParse(_, ast, parsedTokens) =>
               CodeGenerator.generateJS(ast) match {
                 case Success(js: String) => SuccessfulParseResponse(js, parsedTokens)
