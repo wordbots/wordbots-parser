@@ -15,7 +15,7 @@ case object ValidateUnknownCard extends ValidationMode
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val baseRules: Seq[AstRule] = Seq(
     NoUnimplementedRules,
-    NoChooseInTriggeredAction,
+    NoChooseOrRewriteInTriggeredAction,
     NoModifyingCostOfObjects,
     OnlyRestoreHealth,
     OnlyThisObjectPlayed,
@@ -78,12 +78,18 @@ object NoUnimplementedRules extends AstRule {
   }
 }
 
-object NoChooseInTriggeredAction extends AstRule {
-  object NoChooseTarget extends AstRule {
+/**
+ * Disallow the following behaviors within a triggered ability (excepted AfterPlayed, which can be treated more like an action):
+ *    * choosing targets (because there's no UI support for having a player choose targets during event execution)
+ *    * rewriting card text (because calling the parser is expensive and should only happen from direct player interaction)
+ */
+object NoChooseOrRewriteInTriggeredAction extends AstRule {
+  object NoChooseTargetOrRewrite extends AstRule {
     override def validate(node: AstNode): Try[Unit] = {
       node match {
         case ChooseC(_) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
         case ChooseO(_) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
+        case RewriteText(_, _) => Failure(ValidationError("Rewriting text not allowed for triggered actions."))
         case n: AstNode => validateChildren(this, n)
       }
     }
@@ -91,8 +97,8 @@ object NoChooseInTriggeredAction extends AstRule {
 
   override def validate(node: AstNode): Try[Unit] = {
     node match {
-      case TriggeredAbility(AfterPlayed(_), action) => Success()  // Choosing targets *is* allowed for AfterPlayed triggers.
-      case TriggeredAbility(_, action) => validateChildren(NoChooseTarget, node)
+      case TriggeredAbility(AfterPlayed(_), _) => Success()  // Choosing targets and rewriting text *is* allowed for AfterPlayed triggers.
+      case TriggeredAbility(_, _) => validateChildren(NoChooseTargetOrRewrite, node)  // (but not for any other trigger).
       case n: AstNode => validateChildren(this, n)
     }
   }
