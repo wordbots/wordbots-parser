@@ -90,10 +90,10 @@ object ErrorAnalyzer {
 
     val suggestions: Set[String] = {
       if (isFastMode) {
+        Set.empty
+      } else {
         val semanticSuggestions = getSemanticSuggestions(input)
         if (semanticSuggestions.isEmpty) getSyntacticSuggestions(input) else semanticSuggestions
-      } else {
-        Set.empty
       }
     }
 
