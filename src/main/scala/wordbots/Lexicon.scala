@@ -12,7 +12,7 @@ import scala.language.postfixOps
 case class LexiconDefinition(syntax: String, semantics: String)
 
 object Fail {
-  def apply(str: String): Unit = throw new ClassCastException(str)
+  def apply(str: String = ""): Unit = throw new ClassCastException(str)
 }
 
 /**
@@ -94,10 +94,10 @@ object Lexicon {
       ((S/S)\NP, λ {a: ParseNode => λ {b: ParseNode => (a, b)}}),  // e.g. "+1 attack and Haste"
       ((S/NP)\S, λ {a: ParseNode => λ {b: ParseNode => (a, b)}}),  // e.g. "Haste and +1 attack"
       // Support arity-3 conjugations of AttributeAmounts (e.g. "1 attack, 2 health, and 3 speed") (using conditional Fail() to enforce types):
-      (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if (Seq(a, b, c).forall(_.isInstanceOf[AttributeAmount])) Seq(a, b, c) else Fail("") }}}),
+      (((N\N)\N)/N, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if (Seq(a, b, c).forall(_.isInstanceOf[AttributeAmount])) Seq(a, b, c) else Fail() }}}),
       // Support arity-3 and arity-4 conjugations of TextReplacements:
-      (((NP\NP)\NP)/NP, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if (Seq(a, b, c).forall(_.isInstanceOf[TextReplacement])) Seq(a, b, c) else Fail("") }}}),
-      ((((NP\NP)\NP)\NP)/NP, λ {d: ParseNode => λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if ((Seq(a, b, c, d).forall(_.isInstanceOf[TextReplacement]))) Seq(a, b, c, d) else Fail("") }}}})
+      (((NP\NP)\NP)/NP, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if (Seq(a, b, c).forall(_.isInstanceOf[TextReplacement])) Seq(a, b, c) else Fail() }}}),
+      ((((NP\NP)\NP)\NP)/NP, λ {d: ParseNode => λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if ((Seq(a, b, c, d).forall(_.isInstanceOf[TextReplacement]))) Seq(a, b, c, d) else Fail() }}}})
     )) +
     ("any card" -> (N, AnyCard: Sem)) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +

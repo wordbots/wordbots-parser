@@ -25,7 +25,7 @@ enablePlugins(BuildInfoPlugin)
 
 mainClass in Compile := Some("wordbots.Server")
 
-initialCommands in console := "import wordbots._"
+initialCommands in console := "import wordbots._; import wordbots.Semantics._; import com.workday.montague.semantics._;"
 
 buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
 buildInfoPackage := "wordbots"
