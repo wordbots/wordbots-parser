@@ -5,5 +5,5 @@ object Build extends SbtBuild {
 
   lazy val root = Project("root", file(".")) dependsOn montague
 
-  lazy val montague = RootProject(uri(s"git://github.com/AlexNisnevich/upshot-montague.git#$MONTAGUE_COMMIT_SHA"))
+  lazy val montague = RootProject(uri(s"https://github.com/AlexNisnevich/upshot-montague.git#$MONTAGUE_COMMIT_SHA"))
 }
