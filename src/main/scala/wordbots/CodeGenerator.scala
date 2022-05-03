@@ -54,7 +54,6 @@ object CodeGenerator {
   def generateJS(node: AstNode): Try[String] = Try {
     escapeLevel = 0
     val jsString = g(node)
-    println(jsString)
     JavaScriptValidator.assertIsValidJS(jsString)
     jsString
   }
