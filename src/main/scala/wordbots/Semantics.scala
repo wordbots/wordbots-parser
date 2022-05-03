@@ -111,10 +111,11 @@ object Semantics {
 
   sealed trait Trigger extends AstNode
     case class AfterAttack(target: TargetObject, attackedObjectType: ObjectType = AllObjects) extends Trigger
+    case class AfterAttackedBy(target: TargetObject, attackerObjectType: ObjectType = AllObjects) extends Trigger
     case class AfterCardDraw(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
     case class AfterCardEntersDiscardPile(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
     case class AfterCardPlay(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger  // When a given card type is played.
-    case class AfterDamageReceived(target: TargetObject) extends Trigger
+    case class AfterDamageReceived(target: TargetObject, causingCardType: CardType = AnyCard) extends Trigger
     case class AfterDestroysOtherObject(targetObject: TargetObject, objectType: ObjectType = AllObjects) extends Trigger
     case class AfterDestroyed(target: TargetObject, cause: TriggerEvent = AnyEvent) extends Trigger
     case class AfterMove(Target: TargetObject) extends Trigger

@@ -275,6 +275,12 @@ class ParserSpec extends FlatSpec with Matchers {
       RewriteText(AllC(CardsInHand(Self)), Map("robot" -> "structure", "structure" -> "robot"))
     parse("Replace \"1\" with \"2\", \"2\" with \"4\", \"3\" with \"6\", and \"4\" with \"8\" on all cards in your hand") shouldEqual
       RewriteText(AllC(CardsInHand(Self)), Map("1" -> "2", "2" -> "4", "3" -> "6", "4" -> "8"))
+
+    // alpha v0.18
+    parse("Swap the positions of 2 robots") shouldEqual parse("Swap the positions of a robot and a robot")
+    parse("Swap the positions of a robot with your kernel") shouldEqual parse("Swap the positions of a robot and your kernel")
+    // "Replace \"Defender\" with \"Jump\" ..." <- Make sure that there's not an invalid JS error produced due to the apostrophe in the definition of "Defender":
+    parse("Replace \"This robot can't attack\" with \"This robot can move over other objects\" on all robots in your hand") shouldNot be (a[Failure[_]])
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -487,6 +493,34 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(
         AfterDamageReceived(AllO(ObjectsInPlay(Robot))),
         ModifyAttribute(ItO, MultipleAttributes(List(Attack, Speed)), Plus(ThatMuch))
+      )
+
+    // alpha v0.18
+    parse("Whenever this kernel takes damage, draw a card") shouldEqual parse("Whenever this object takes damage, draw a card")
+    parse("Whenever a robot deals damage to this kernel, that robot takes that much damage") shouldEqual
+      TriggeredAbility(AfterDamageReceived(ThisObject, Robot), DealDamage(That, ThatMuch))
+    parse("Whenever a robot attacks this structure, draw a card") shouldEqual
+      TriggeredAbility(AfterAttackedBy(ThisObject, Robot), Draw(Self, Scalar(1)))
+    parse("Whenever a robot attacks this structure, that robot gains \"This robot can move over other objects\" and +1 attack") shouldEqual
+      TriggeredAbility(
+        AfterAttackedBy(ThisObject, Robot),
+        MultipleActions(
+          Seq(
+            SaveTarget(That),
+            ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
+            GiveAbility(SavedTargetObject ,ApplyEffect(ThisObject,CanMoveOverObjects))
+          )
+        )
+      )
+    parse("Whenever your opponent draws a card, their kernel takes one damage") shouldEqual
+      TriggeredAbility(AfterCardDraw(Opponent, AnyCard), DealDamage(ObjectsMatchingConditions(Kernel, List(ControlledBy(TheyP))), Scalar(1)))
+    parse("Whenever a robot is destroyed, spawn a 1/1/1 robot named \"Zombie\" on a random empty tile adjacent to this robot") shouldEqual
+      TriggeredAbility(
+        AfterDestroyed(AllO(ObjectsInPlay(Robot)), AnyEvent),
+        SpawnObject(
+          GeneratedCard(Robot, List(AttributeAmount(Scalar(1), Attack), AttributeAmount(Scalar(1), Health), AttributeAmount(Scalar(1), Speed)), Some("Zombie")),
+          RandomT(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ThisObject), Unoccupied))), Self
+        )
       )
   }
 
