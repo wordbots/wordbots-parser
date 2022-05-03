@@ -295,6 +295,7 @@ object Semantics {
   case class Hand(player: TargetPlayer) extends IntermediateNode
   case class Life(amount: Number) extends IntermediateNode
   case class Name(name: String) extends IntermediateNode
+  case class RelativeTo(obj: TargetObject) extends IntermediateNode
   case class Spaces(num: Number) extends IntermediateNode
   case class Text(text: String) extends IntermediateNode
   case class Turn(player: TargetPlayer) extends IntermediateNode

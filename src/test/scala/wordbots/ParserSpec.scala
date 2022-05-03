@@ -508,7 +508,7 @@ class ParserSpec extends FlatSpec with Matchers {
           Seq(
             SaveTarget(That),
             ModifyAttribute(SavedTargetObject, Attack, Plus(Scalar(1))),
-            GiveAbility(SavedTargetObject ,ApplyEffect(ThisObject,CanMoveOverObjects))
+            GiveAbility(SavedTargetObject, ApplyEffect(ThisObject, CanMoveOverObjects))
           )
         )
       )
@@ -520,6 +520,17 @@ class ParserSpec extends FlatSpec with Matchers {
         SpawnObject(
           GeneratedCard(Robot, List(AttributeAmount(Scalar(1), Attack), AttributeAmount(Scalar(1), Health), AttributeAmount(Scalar(1), Speed)), Some("Zombie")),
           RandomT(Scalar(1), TilesMatchingConditions(List(AdjacentTo(ThisObject), Unoccupied))), Self
+        )
+      )
+    parse("At the end of your turn, if your opponent has more life than you, draw a card") shouldEqual
+      TriggeredAbility(
+        EndOfTurn(Self),
+        If(
+          TargetMeetsCondition(
+            ObjectsMatchingConditions(Kernel, List(ControlledBy(Opponent))),
+            AttributeComparison(Health, GreaterThan(AttributeValue(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self))), Health)))
+          ),
+          Draw(Self, Scalar(1))
         )
       )
   }

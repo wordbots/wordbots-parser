@@ -366,7 +366,10 @@ object Lexicon {
     ("its controller" -> (NP, ControllerOf(ItO): Sem)) +
     (Seq("its owner 's hand", "its controller 's hand", "their owner 's hands", "their controller 's hands") -> (NP, ItsOwnersHand: Sem)) +
     (("kernel".s ++ "core".s) -> (N, Kernel: Sem)) +
-    ("less" -> (Adv\Num, λ {num: Number => Minus(num)})) +
+    ("less" -> Seq(
+      (Adv\Num, λ {num: Number => Minus(num)}),
+      ((NP/PP)/N, λ {attr: SingleAttribute => λ { rel: RelativeTo => AttributeComparison(attr, LessThan(AttributeValue(rel.obj, attr)))}})  // i.e. "less health than this robot"
+    )) +
     (Seq("less than", "<") -> (Adj/Num, λ {num: Number => LessThan(num)})) +
     ("lose" -> Seq(
       (S/NP, λ {e: Energy => ModifyEnergy(Self, Minus(e.amount))}),  // Lose X energy.
@@ -378,7 +381,10 @@ object Lexicon {
       ((S/NP)\NP, λ {p: TargetPlayer => λ {e: Energy => ModifyEnergy(p, Minus(e.amount))}}),  // Y loses X energy.
       (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})  // Y loses X (attribute).
     )) +
-    ("more" -> (Adv\Num, λ {num: Number => Plus(num)})) +
+    ("more" -> Seq(
+      (Adv\Num, λ {num: Number => Plus(num)}),
+      ((NP/PP)/N, λ {attr: SingleAttribute => λ { rel: RelativeTo => AttributeComparison(attr, GreaterThan(AttributeValue(rel.obj, attr)))}})  // i.e. "more health than this robot"
+    )) +
     ("move" -> Seq(
       ((S/PP)/NP, λ {t: TargetObject => λ {dest: TargetTile => MoveObject(t, dest)}}),  // e.g. "Move a robot to X"
       ((S/NP)/NP, λ {t: TargetObject => λ {s: Spaces => MultipleActions(Seq(  // e.g. "Move a robot X spaces"
@@ -518,6 +524,7 @@ object Lexicon {
       (PP/NP, identity),
       (PP/Num, identity)
     )) +
+    ("than" -> (PP/NP, λ {t: TargetObject => RelativeTo(t)})) +
     ("that" -> Seq(
       ((NP\N)/S, λ {c: ObjectCondition => λ { o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}}),
       ((NP\N)/S, λ {cs: Seq[ObjectCondition] => λ { o: ObjectType => ObjectsMatchingConditions(o, cs)}})
@@ -567,7 +574,10 @@ object Lexicon {
       ((PP/PP)/NP, λ {s: Spaces => λ {t: TargetObject => WithinDistanceOf(s.num, t)}}),
       ((NP\NP)/NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ WithinDistanceOf(s.num, ThisObject))}})
     )) +
-    (Seq("you", "yourself") -> (NP, Self: Sem)) +
+    (Seq("you", "yourself") -> Seq(
+      (NP, Self: Sem),
+      (NP, ObjectsMatchingConditions(Kernel, List(ControlledBy(Self))): Sem)  // in a pinch, "you" == "your kernel"
+    )) +
     ("your" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ControlledBy(Self))}),
@@ -575,7 +585,10 @@ object Lexicon {
     )) +
     ("your energy" -> (NP, EnergyAmount(Self): Sem)) +
     ("your maximum energy" -> (NP, MaximumEnergyAmount(Self): Sem)) +
-    (Seq("your opponent", "the opponent") -> (NP, Opponent: Sem)) +
+    (Seq("your opponent", "the opponent") -> Seq(
+      (NP, Opponent: Sem),
+      (NP, ObjectsMatchingConditions(Kernel, List(ControlledBy(Opponent))): Sem)  // in a pinch, "your opponent" == "your opponent's kernel"
+    )) +
     ("your opponent 's energy" -> (NP, EnergyAmount(Opponent): Sem)) +
     ("your opponent 's maximum energy" -> (NP, MaximumEnergyAmount(Opponent): Sem)) +
     (Seq("your opponent 's", "the opponent 's", "all of your opponent 's") -> Seq(
