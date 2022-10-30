@@ -99,6 +99,7 @@ object Lexicon {
       (((NP\NP)\NP)/NP, λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if (Seq(a, b, c).forall(_.isInstanceOf[TextReplacement])) Seq(a, b, c) else Fail() }}}),
       ((((NP\NP)\NP)\NP)/NP, λ {d: ParseNode => λ {c: ParseNode => λ {b: ParseNode => λ {a: ParseNode => if ((Seq(a, b, c, d).forall(_.isInstanceOf[TextReplacement]))) Seq(a, b, c, d) else Fail() }}}})
     )) +
+    ("another" -> (NP/N, λ {o: ObjectType => ChooseO(Other(ObjectsInPlay(o)))})) +
     ("any card" -> (N, AnyCard: Sem)) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +
@@ -409,7 +410,7 @@ object Lexicon {
     (("object".s :+ "objects '") -> (N, AllObjects: Sem)) +
     ("odd" -> (NP/N, λ {attr: Attribute => AttributeComparison(attr, IsOdd)})) +
     ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
-    (Seq("other", "another") -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
+    ("other" -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
     (Seq("or", "and") -> ((N/N)\N, λ {o1: ObjectType => λ {o2: ObjectType => MultipleObjectTypes(Seq(o1, o2))}})) +
     ("or less" -> Seq(
       (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)}),
