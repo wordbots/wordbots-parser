@@ -285,7 +285,11 @@ object Lexicon {
     )) +
     ("gain" -> Seq(
       (S/NP, λ {e: Energy => ModifyEnergy(Self, Plus(e.amount))}),  // Gain X energy.
-      (S/NP, λ {l: Life => ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(l.amount))})  // Gain X life.
+      (S/NP, λ {l: Life => ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(l.amount))}),  // Gain X life.
+      (S/NP, λ {ao: AttributeOperation => ao match {  // For backwards compatibility: "Gain +X life" == "Gain X life"
+        case AttributeOperation(Plus(amount), Health) => ModifyAttribute(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))), Health, Plus(amount))
+        case _ => Fail("You can only gain life")
+      }})
     )) +
     ("gain".s -> Seq( // "[All robots] gain ..."
       ((S\NP)/NP, λ {aa: AttributeAmount => λ {t: TargetObject => ModifyAttribute(t, aa.attr, Plus(aa.amount))}}),  // " ... X attack"
