@@ -102,7 +102,10 @@ object Lexicon {
     ("another" -> (NP/N, λ {o: ObjectType => ChooseO(Other(ObjectsInPlay(o)))})) +
     ("any card" -> (N, AnyCard: Sem)) +
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
-    (Seq("at most", "up to") -> (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)})) +
+    (Seq("at most", "up to") -> Seq(
+      (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)}),
+      (PP/PP, λ {dist: ExactDistanceFrom => WithinDistanceOf(dist.distance, dist.obj)})
+    )) +
     (Seq("attack", "power") -> Seq(
       (N, Attack: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)}),

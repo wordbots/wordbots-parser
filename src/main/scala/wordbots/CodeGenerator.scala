@@ -96,7 +96,7 @@ object CodeGenerator {
       case ModifyAttribute(target, attr, op) => s"(function () { actions['modifyAttribute'](${g(target)}, ${g(attr)}, ${g(op)}); })"
       case ModifyEnergy(target, op) => s"(function () { actions['modifyEnergy'](${g(target)}, ${g(op)}); })"
       case MoveCardsToHand(target, player) => s"(function () { actions['moveCardsToHand'](${g(target)}, ${g(player)}); })"
-      case MoveObject(target, dest) => s"(function () { actions['moveObject'](${g(target)}, ${g(dest)}); })"
+      case MoveObject(target, dest) => s"(function () { actions['moveObject'](${g(target)}, function () { return ${g(dest)}; }); })"
       case PayEnergy(target, amount) => s"(function () { actions['payEnergy'](${g(target)}, ${g(amount)}); })"
       case RemoveAllAbilities(target) => s"(function () { actions['removeAllAbilities'](${g(target)}); })"
       case RestoreAttribute(target, Health, Some(num)) => s"(function () { actions['restoreHealth'](${g(target)}, ${g(num)}); })"
