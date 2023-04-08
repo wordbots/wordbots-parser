@@ -123,7 +123,7 @@ object Lexicon {
     ("attacked last turn" -> (S, HasProperty(AttackedLastTurn): Sem)) +
     ("attacked this turn" -> (S, HasProperty(AttackedThisTurn): Sem)) +
     ("away" -> Seq(
-      (PP\NP, λ {s: Spaces => ExactDistanceFrom(s.num, ThisObject)}),  // "X spaces away"
+      (PP\NP, λ {s: Spaces => ExactDistanceFrom(s.num, ItO)}),  // "X spaces away" (ItO rather than CurrentObject to allow this to be used in Action cards - semantically this will still work the same)
       ((PP/PP)\NP, λ {s: Spaces => λ {t: TargetObject => ExactDistanceFrom(s.num, t)}}),  // "X spaces away from this robot"
       ((NP\N)\NP, λ {s: Spaces => λ {t: ObjectType => ObjectsMatchingConditions(t, Seq(ExactDistanceFrom(s.num, ThisObject)))}}), // "a robot X spaces away"
       ((NP\NP)\NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ ExactDistanceFrom(s.num, ThisObject))}})
