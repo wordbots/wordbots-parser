@@ -70,6 +70,10 @@ object Lexicon {
       ((S\N)/NP, λ {o: TargetObject => λ {e: EnemyObject => CollectionExists(ObjectsMatchingConditions(e.objectType, Seq(AdjacentTo(o), ControlledBy(Opponent))))}}),
       ((S\NP)/NP, λ {c: ObjectsMatchingConditions => λ {o: TargetObject => CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ AdjacentTo(o)))}})
     )) +
+    ("is not" /?/ Seq("adjacent to", "adjacent to a", "adjacent to an") -> Seq(
+      ((S\N)/NP, λ {o: TargetObject => λ {e: EnemyObject => NotGC(CollectionExists(ObjectsMatchingConditions(e.objectType, Seq(AdjacentTo(o), ControlledBy(Opponent)))))}}),
+      ((S\NP)/NP, λ {c: ObjectsMatchingConditions => λ {o: TargetObject => NotGC(CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ AdjacentTo(o))))}})
+    )) +
     ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisObject, AllObjects), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
       (NP/N, λ {o: ObjectType => ObjectsInPlay(o)}),
@@ -325,6 +329,10 @@ object Lexicon {
     )) +
  // ("greater than" : see "more than")+
     ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
+    ("half" -> Seq(  // (Ordinarily takes Rounding, but defaults to RoundedDown.)
+      (NP/NP, λ {num: Number => Half(num, RoundedDown) }),
+      ((NP/Adv)/NP, λ {num: Number => λ {r: Rounding => Half(num, r) }})
+    )) +
     ("halve" -> Seq(  // (Ordinarily takes Rounding, but defaults to RoundedDown.)
       ((S/NP)/Adv, λ {r: Rounding => λ {ta: TargetAttribute => ModifyAttribute(ta.target, ta.attr, Divide(Scalar(2), r))}}),
       (S/NP, λ {ta: TargetAttribute => ModifyAttribute(ta.target, ta.attr, Divide(Scalar(2), RoundedDown))}),
@@ -413,6 +421,10 @@ object Lexicon {
     )) +
     ("must" -> (X/X, identity)) +
     ("named" -> ((NP/NP)\NP, λ {c: GeneratedCard => λ {n: Name => GeneratedCard(c.cardType, c.attributes, Some(n.name))}})) +
+    ("not" -> Seq(
+      (PP/PP, λ {c: ObjectCondition => NotC(c)}),
+      (PP/PP, λ {c: GlobalCondition => NotGC(c)})
+    )) +
     ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
     (("object".s :+ "objects '") -> (N, AllObjects: Sem)) +
     ("odd" -> (NP/N, λ {attr: Attribute => AttributeComparison(attr, IsOdd)})) +

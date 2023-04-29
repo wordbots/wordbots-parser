@@ -281,6 +281,10 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Swap the positions of a robot with your kernel") shouldEqual parse("Swap the positions of a robot and your kernel")
     // "Replace \"Defender\" with \"Jump\" ..." <- Make sure that there's not an invalid JS error produced due to the apostrophe in the definition of "Defender":
     parse("Replace \"This robot can't attack\" with \"This robot can move over other objects\" on all robots in your hand") shouldNot be (a[Failure[_]])
+
+    // beta v0.20
+    parse("Draw cards equal to half your energy") shouldEqual Draw(Self, Half(EnergyAmount(Self), RoundedDown))
+    parse("Draw cards equal to half your energy, rounded up") shouldEqual Draw(Self, Half(EnergyAmount(Self), RoundedUp))
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -531,6 +535,16 @@ class ParserSpec extends FlatSpec with Matchers {
             AttributeComparison(Health, GreaterThan(AttributeValue(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self))), Health)))
           ),
           Draw(Self, Scalar(1))
+        )
+      )
+
+    // beta v0.20
+    parse("When this structure is played, if this structure is not adjacent to your kernel, destroy it") shouldEqual
+      TriggeredAbility(
+        AfterPlayed(ThisObject),
+        If(
+          NotGC(CollectionExists(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self), AdjacentTo(ThisObject))))),
+          Destroy(ItO)
         )
       )
   }

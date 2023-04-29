@@ -195,12 +195,14 @@ object CodeGenerator {
       case ControlledBy(player) => s"conditions['controlledBy'](${g(player)})"
       case ExactDistanceFrom(distance, obj) => s"conditions['exactDistanceFrom'](${g(distance)}, ${g(obj)})"
       case HasProperty(property) => s"conditions['hasProperty'](${g(property)})"
+      case NotC(cond) => s"conditions['not'](${g(cond)})"
       case Unoccupied => s"conditions['unoccupied']()"
       case WithinDistanceOf(distance, obj) => s"conditions['withinDistanceOf'](${g(distance)}, ${g(obj)})"
 
       // Global conditions
       case CollectionCountComparison(coll, comp) => s"globalConditions['collectionCountComparison'](${g(coll)}, ${g(comp)})"
       case CollectionExists(coll) => s"globalConditions['collectionExists'](${g(coll)})"
+      case NotGC(cond) => s"!(${g(cond)})"
       case TargetHasProperty(target, property) => s"globalConditions['targetHasProperty'](${g(target)}, ${g(property)})"
       case TargetMeetsCondition(target, condition) => s"globalConditions['targetMeetsCondition'](${g(target)}, ${g(condition)})"
 
@@ -227,6 +229,8 @@ object CodeGenerator {
       case AttributeValue(obj, attr) => s"attributeValue(${g(obj)}, ${g(attr)})"
       case Count(collection) => s"count(${g(collection)})"
       case EnergyAmount(player) => s"energyAmount(${g(player)})"
+      case Half(num, RoundedDown) => s"(Math.floor(${g(num)} / 2))"
+      case Half(num, RoundedUp) => s"(Math.ceil(${g(num)} / 2))"
       case MaximumEnergyAmount(player) => s"maximumEnergyAmount(${g(player)})"
       case ThatMuch => "thatMuch()"
       case Times(n1, n2) => s"((${g(n1)}) * (${g(n2)}))"

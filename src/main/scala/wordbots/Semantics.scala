@@ -178,12 +178,14 @@ object Semantics {
       case class ControlledBy(player: TargetPlayer) extends ObjectCondition
       case class ExactDistanceFrom(distance: Number, obj: TargetObject) extends ObjectCondition
       case class HasProperty(property: Property) extends ObjectCondition
+      case class NotC(cond: ObjectCondition) extends ObjectCondition
       case object Unoccupied extends ObjectCondition
       case class WithinDistanceOf(distance: Number, obj: TargetObject) extends ObjectCondition
 
   sealed trait GlobalCondition extends AstNode
     case class CollectionCountComparison(coll: Collection, comparison: Comparison) extends GlobalCondition
     case class CollectionExists(coll: Collection) extends GlobalCondition
+    case class NotGC(cond: GlobalCondition) extends GlobalCondition
     case class TargetHasProperty(target: TargetObject, property: Property) extends GlobalCondition
     case class TargetMeetsCondition(target: TargetObject, condition: ObjectCondition) extends GlobalCondition
 
@@ -216,9 +218,9 @@ object Semantics {
     case class AttributeValue(obj: TargetObjectOrCard, attribute: SingleAttribute) extends Number
     case class Count(collection: Collection) extends Number
     case class EnergyAmount(player: TargetPlayer) extends Number
+    case class Half(num: Number, rounding: Rounding) extends Number
     case class MaximumEnergyAmount(player: TargetPlayer) extends Number
     case object ThatMuch extends Number  // salient amount
-
     case class Times(num1: Number, num2: Number) extends Number
 
   sealed trait Collection extends AstNode
