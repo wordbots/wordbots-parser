@@ -13,7 +13,7 @@ class ErrorAnalyzerSpec extends FlatSpec with Matchers {
   }
 
   it should "not suggest replacements when a valid deletion is possible" in {
-    // We don't want to see spurious suggestions replacing "opponent's" with identity terms like "it deals", "takes", etc
-    analyze("Discard your opponent's hand").get.suggestions shouldEqual Set("Discard your hand")
+    // We don't want to see spurious suggestions replacing "that" with identity terms like "it deals", "takes", etc
+    analyze("Destroy all that robots").get.suggestions shouldEqual Set("Destroy all robots")
   }
 }

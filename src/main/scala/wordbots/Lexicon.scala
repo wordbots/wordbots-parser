@@ -328,7 +328,10 @@ object Lexicon {
         MultipleActions(Seq(SaveTarget(t), ModifyAttribute(SavedTargetObject, a._1.attr, a._1.op), GiveAbility(SavedTargetObject, a._2)))}})
     )) +
  // ("greater than" : see "more than")+
-    ("hand" -> (NP\Adj, λ {p: TargetPlayer => Hand(p)})) +
+    ("hand" -> Seq(
+      (NP\Adj, λ {p: TargetPlayer => Hand(p)}),
+      (NP\Adj, λ {p: TargetPlayer => CardsInHand(p)})
+    )) +
     ("half" -> Seq(  // (Ordinarily takes Rounding, but defaults to RoundedDown.)
       (NP/NP, λ {num: Number => Half(num, RoundedDown) }),
       ((NP/Adv)/NP, λ {num: Number => λ {r: Rounding => Half(num, r) }})
@@ -382,11 +385,11 @@ object Lexicon {
     ("its controller" -> (NP, ControllerOf(ItO): Sem)) +
     (Seq("its owner 's hand", "its controller 's hand", "their owner 's hands", "their controller 's hands") -> (NP, ItsOwnersHand: Sem)) +
     (("kernel".s ++ "core".s) -> (N, Kernel: Sem)) +
-    ("less" -> Seq(
+    (Seq("less", "fewer") -> Seq(
       (Adv\Num, λ {num: Number => Minus(num)}),
       ((NP/PP)/N, λ {attr: SingleAttribute => λ { rel: RelativeTo => AttributeComparison(attr, LessThan(AttributeValue(rel.obj, attr)))}})  // i.e. "less health than this robot"
     )) +
-    (Seq("less than", "<") -> (Adj/Num, λ {num: Number => LessThan(num)})) +
+    (Seq("less than", "fewer than", "<") -> (Adj/Num, λ {num: Number => LessThan(num)})) +
     ("lose" -> Seq(
       (S/NP, λ {e: Energy => ModifyEnergy(Self, Minus(e.amount))}),  // Lose X energy.
       (S/NP, λ {_: AllEnergy.type => ModifyEnergy(Self, Constant(Scalar(0)))})  // Lose all energy.
@@ -431,7 +434,7 @@ object Lexicon {
     ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
     ("other" -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
     (Seq("or", "and") -> ((N/N)\N, λ {o1: ObjectType => λ {o2: ObjectType => MultipleObjectTypes(Seq(o1, o2))}})) +
-    ("or less" -> Seq(
+    (Seq("or less", "or fewer") -> Seq(
       (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)}),
       (NP\N, λ {aa: AttributeAmount => AttributeComparison(aa.attr, LessThanOrEqualTo(aa.amount))})
     )) +

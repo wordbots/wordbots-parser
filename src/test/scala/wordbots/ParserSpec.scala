@@ -285,6 +285,9 @@ class ParserSpec extends FlatSpec with Matchers {
     // beta v0.20
     parse("Draw cards equal to half your energy") shouldEqual Draw(Self, Half(EnergyAmount(Self), RoundedDown))
     parse("Draw cards equal to half your energy, rounded up") shouldEqual Draw(Self, Half(EnergyAmount(Self), RoundedUp))
+
+    // post-v0.20 playtesting
+    parse("If your hand has 1 or fewer cards, draw a card") shouldEqual If(CollectionCountComparison(CardsInHand(Self), LessThanOrEqualTo(Scalar(1))), Draw(Self, Scalar(1)))
   }
 
   it should "treat 'with' as 'that has'" in {
