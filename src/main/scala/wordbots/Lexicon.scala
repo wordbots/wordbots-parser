@@ -286,6 +286,10 @@ object Lexicon {
     )) +
     ("everything" -> (N, AllObjects: Sem)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => AllO(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
+    (Seq("four", "4") -> Seq(
+      (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o), Scalar(4))}),
+      (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(4))})
+    )) +
     ("friendly" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Self)) ++ c.conditions)})
@@ -571,13 +575,21 @@ object Lexicon {
     (Seq("there is", "there is a", "there is an") -> (S/NP, λ {c: Collection => CollectionExists(c)})) +
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
     ("this" / Seq("robot", "creature", "structure", "object", "kernel") -> (NP, ThisObject: Sem)) +
+    (Seq("three", "3") -> Seq(
+      (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o), Scalar(3))}),
+      (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(3))})
+    )) +
     ("total" -> ((Num/PP)/N, λ {a: SingleAttribute => λ {c: ObjectOrCardCollection => AttributeSum(c, a)}})) +
     ("transform" -> Seq(
       ((S/PP)/NP, λ {source: TargetObject => λ {target: TargetCard => Become(source, target)}}), // used with aCopyOf
       ((S/PP)/NP, λ {source: TargetObject => λ {target: GeneratedCard => Become(source, target)}}) // only used in such things as "becomes a robot with 1 attack and...".
     )) +
     ("turn".s -> (NP\Adj, λ {p: TargetPlayer => Turn(p)})) +
-    (Seq("two", "2") -> (NP/N, λ {o: ObjectType => Seq(ChooseO(ObjectsInPlay(o)), ChooseO(ObjectsInPlay(o)))})) +
+    (Seq("two", "2") -> Seq(
+      (NP/N, λ {o: ObjectType => Seq(ChooseO(ObjectsInPlay(o)), ChooseO(ObjectsInPlay(o)))}),
+      (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o), Scalar(2))}),
+      (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(2))})
+    )) +
     ("until" -> ((S|S)|NP, λ {d: Duration => λ {a: Action => Until(d, a)}})) +
     (Seq("when", "whenever", "after", "immediately after", "each time", "every time") -> Seq(
       ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}}),  // triggered ability: When [trigger], [action]

@@ -288,6 +288,7 @@ class ParserSpec extends FlatSpec with Matchers {
 
     // post-v0.20 playtesting
     parse("If your hand has 1 or fewer cards, draw a card") shouldEqual If(CollectionCountComparison(CardsInHand(Self), LessThanOrEqualTo(Scalar(1))), Draw(Self, Scalar(1)))
+    parse("Discard 2 cards") shouldEqual Discard(ChooseC(CardsInHand(Self, AnyCard), Scalar(2)))
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -663,9 +664,9 @@ class ParserSpec extends FlatSpec with Matchers {
 
   it should "generate JS code for actions" in {
     generateJS("Draw a card") should be ("(function () { actions['draw'](targets['self'](), 1); })")
-    generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsMatchingConditions('robot', []))); })")
+    generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsMatchingConditions('robot', []), 1)); })")
     generateJS("Gain 2 energy") should be ("(function () { actions['modifyEnergy'](targets['self'](), function (x) { return x + 2; }); })")
-    generateJS("Give a robot +1 speed") should be ("(function () { actions['modifyAttribute'](targets['choose'](objectsMatchingConditions('robot', [])), 'speed', function (x) { return x + 1; }); })")
+    generateJS("Give a robot +1 speed") should be ("(function () { actions['modifyAttribute'](targets['choose'](objectsMatchingConditions('robot', []), 1), 'speed', function (x) { return x + 1; }); })")
   }
 
   it should "not allow invalid JS code to be returned" in {

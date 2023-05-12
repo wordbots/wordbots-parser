@@ -154,7 +154,7 @@ object CodeGenerator {
       case ConditionTargetOn(target, condition) => s"targets['conditionOn'](${g(target)}, function () { return ${g(condition)}; })"
 
       // Target objects
-      case ChooseO(collection) => s"targets['choose'](${g(collection)})"
+      case ChooseO(collection, num) => s"targets['choose'](${g(collection)}, ${g(num)})"
       case AllO(collection) => s"targets['all'](${g(collection)})"
       case RandomO(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
       case UnionO(targets) => s"targets['union']([ ${targets.map(g).mkString(", ")} ])"
@@ -167,12 +167,12 @@ object CodeGenerator {
       case SavedTargetObject => "load('target')"
 
       // Target tiles
-      case ChooseT(collection) => s"targets['choose'](${g(collection)})"
+      case ChooseT(collection, num) => s"targets['choose'](${g(collection)}, ${g(num)})"
       case AllT(collection) => s"targets['all'](${g(collection)})"
       case RandomT(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
 
       // Target cards
-      case ChooseC(collection) => s"targets['choose'](${g(collection)})"
+      case ChooseC(collection, num) => s"targets['choose'](${g(collection)}, ${g(num)})"
       case AllC(collection) => s"targets['all'](${g(collection)})"
       case RandomC(num, collection) => s"targets['random'](${g(num)}, ${g(collection)})"
       case CopyOfC(objToCopy) => s"targets['copyOf'](${g(objToCopy)})"
