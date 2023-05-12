@@ -5,6 +5,7 @@ import com.workday.montague.parser.ParserDict
 import com.workday.montague.semantics._
 import com.workday.montague.semantics.FunctionReaderMacro.λ
 import io.circe.Json
+import wordbots.Semantics.TileCollection
 
 import scala.language.implicitConversions
 import scala.language.postfixOps
@@ -247,7 +248,7 @@ object Lexicon {
     )) +
     (Seq("each player", "every player", "all players") -> (S/S, λ {a: Action => ForEach(AllPlayers, a)})) +
     ("empty" -> (NP/NP, λ {t: TilesMatchingConditions => t.copy(conditions = t.conditions :+ Unoccupied)})) +
-    ("empty tile" -> (NP, TilesMatchingConditions(Seq(Unoccupied)): Sem)) +
+    ("empty tile".s -> (NP, TilesMatchingConditions(Seq(Unoccupied)): Sem)) +
     ("end" -> (NP/PP, λ {turn: Turn => EndOfTurn(turn.player)})) +
     (Seq("end of turn", "end of the turn") -> (NP, TurnsPassed(1): Sem)) +
     (Seq("end of next turn", "end of the next turn") -> (NP, TurnsPassed(2): Sem)) +
@@ -288,7 +289,8 @@ object Lexicon {
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => AllO(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
     (Seq("four", "4") -> Seq(
       (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o), Scalar(4))}),
-      (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(4))})
+      (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(4))}),
+      (NP/NP, λ {t: TileCollection => ChooseT(t, Scalar(4))})
     )) +
     ("friendly" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
@@ -577,7 +579,8 @@ object Lexicon {
     ("this" / Seq("robot", "creature", "structure", "object", "kernel") -> (NP, ThisObject: Sem)) +
     (Seq("three", "3") -> Seq(
       (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o), Scalar(3))}),
-      (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(3))})
+      (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(3))}),
+      (NP/NP, λ {t: TileCollection => ChooseT(t, Scalar(3))})
     )) +
     ("total" -> ((Num/PP)/N, λ {a: SingleAttribute => λ {c: ObjectOrCardCollection => AttributeSum(c, a)}})) +
     ("transform" -> Seq(
@@ -588,7 +591,8 @@ object Lexicon {
     (Seq("two", "2") -> Seq(
       (NP/N, λ {o: ObjectType => Seq(ChooseO(ObjectsInPlay(o)), ChooseO(ObjectsInPlay(o)))}),
       (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o), Scalar(2))}),
-      (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(2))})
+      (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(2))}),
+      (NP/NP, λ {t: TileCollection => ChooseT(t, Scalar(2))})
     )) +
     ("until" -> ((S|S)|NP, λ {d: Duration => λ {a: Action => Until(d, a)}})) +
     (Seq("when", "whenever", "after", "immediately after", "each time", "every time") -> Seq(

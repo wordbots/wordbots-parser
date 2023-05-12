@@ -289,6 +289,8 @@ class ParserSpec extends FlatSpec with Matchers {
     // post-v0.20 playtesting
     parse("If your hand has 1 or fewer cards, draw a card") shouldEqual If(CollectionCountComparison(CardsInHand(Self), LessThanOrEqualTo(Scalar(1))), Draw(Self, Scalar(1)))
     parse("Discard 2 cards") shouldEqual Discard(ChooseC(CardsInHand(Self, AnyCard), Scalar(2)))
+    parse("Spawn a 1/1/1 robot named \"Zombie\" on 4 empty tiles") shouldEqual
+      SpawnObject(GeneratedCard(Robot, attrs(1, 1, 1), Some("Zombie")), ChooseT(TilesMatchingConditions(List(Unoccupied)), Scalar(4)))
   }
 
   it should "treat 'with' as 'that has'" in {
