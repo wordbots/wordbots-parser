@@ -575,6 +575,7 @@ class ParserSpec extends FlatSpec with Matchers {
         EndOfTurn(Self),
         If(NotGC(TargetHasProperty(ItO,MovedThisTurn)),Destroy(ThisObject))
       )
+    parse("When this robot deals damage, draw a card") shouldEqual TriggeredAbility(AfterDealsDamage(ThisObject), Draw(Self, Scalar(1)))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

@@ -84,6 +84,7 @@ object CodeGenerator {
 
       // Actions: Normal
       case Become(source, target) => s"(function () { actions['become'](${g(source)}, ${g(target)}); })"
+      case CanActivateAgain(target) => s"(function () { actions['canActivateAgain'](${g(target)}); })"
       case CanAttackAgain(target) => s"(function () { actions['canAttackAgain'](${g(target)}); })"
       case CanMoveAgain(target) => s"(function () { actions['canMoveAgain'](${g(target)}); })"
       case CanMoveAndAttackAgain(target) => s"(function () { actions['canMoveAndAttackAgain'](${g(target)}); })"
@@ -143,6 +144,7 @@ object CodeGenerator {
       case AfterCardEntersDiscardPile(targetPlayer, cardType) => s"triggers['afterCardEntersDiscardPile'](function () { return ${g(targetPlayer)}; }, ${g(cardType)})"
       case AfterCardPlay(targetPlayer, cardType) => s"triggers['afterCardPlay'](function () { return ${g(targetPlayer)}; }, ${g(cardType)})"
       case AfterDamageReceived(targetObj, cardType) => s"triggers['afterDamageReceived'](function () { return ${g(targetObj)}; }, ${g(cardType)})"
+      case AfterDealsDamage(targetObj, objectType) => s"triggers['afterDealsDamage'](function () { return ${g(targetObj)}; }, ${g(objectType)})"
       case AfterDestroysOtherObject(targetObj, objectType) => s"triggers['afterDestroysOtherObject'](function () { return ${g(targetObj)}; }, ${g(objectType)})"
       case AfterDestroyed(targetObj, cause) => s"triggers['afterDestroyed'](function () { return ${g(targetObj)}; }, ${g(cause)})"
       case AfterMove(targetObj) => s"triggers['afterMove'](function () { return ${g(targetObj)}; })"

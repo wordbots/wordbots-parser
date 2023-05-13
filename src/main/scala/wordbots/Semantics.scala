@@ -43,6 +43,7 @@ object Semantics {
     case class Until(duration: Duration, action: Action) extends Action
 
     case class Become(source: TargetObject, target: TargetCard) extends Action
+    case class CanActivateAgain(target: TargetObject) extends Action
     case class CanAttackAgain(target: TargetObject) extends Action
     case class CanMoveAgain(target: TargetObject) extends Action
     case class CanMoveAndAttackAgain(target: TargetObject) extends Action
@@ -116,6 +117,7 @@ object Semantics {
     case class AfterCardEntersDiscardPile(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger
     case class AfterCardPlay(target: TargetPlayer, cardType: CardType = AnyCard) extends Trigger  // When a given card type is played.
     case class AfterDamageReceived(target: TargetObject, damageSourceCardType: CardType = AnyCard) extends Trigger
+    case class AfterDealsDamage(target: TargetObject, objectType: ObjectType = AllObjects) extends Trigger
     case class AfterDestroysOtherObject(targetObject: TargetObject, objectType: ObjectType = AllObjects) extends Trigger
     case class AfterDestroyed(target: TargetObject, cause: TriggerEvent = AnyEvent) extends Trigger
     case class AfterMove(Target: TargetObject) extends Trigger

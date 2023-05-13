@@ -144,6 +144,7 @@ object Lexicon {
     )) +
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
+    (Seq("can activate", "can activate again") -> (S\NP, λ {t: TargetObject => CanActivateAgain(t)})) +
     (Seq("can move", "can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
     (Seq("can attack", "can attack again") -> (S\NP, λ {t: TargetObject => CanAttackAgain(t)})) +
     (Seq("can move and attack", "can move and attack again") -> (S\NP, λ {t: TargetObject => CanMoveAndAttackAgain(t)})) +
@@ -201,9 +202,12 @@ object Lexicon {
     )) +
     ("damaged" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(HasProperty(IsDamaged)))})) +
     (Seq("deal", "deals", "it deals", "this robot deals", "this object deals", "take", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
-    ("deals damage" ->
-      ((S\N)/PP, λ {target: TargetObject => λ {objType: ObjectType => AfterDamageReceived(target, objType)}})
-    ) +
+    ("deals damage" -> Seq(
+      ((S\N)/PP, λ {target: TargetObject => λ {objType: ObjectType => AfterDamageReceived(target, objType)}}),
+      (S\NP, λ {c: ChooseO => AfterDealsDamage(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {t: TargetObject => AfterDealsDamage(t, AllObjects)})
+    )) +
+    ("deals damage to a" -> ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterDealsDamage(t, o)}})) +
     ("deck".s -> (NP\Adj, λ {p: TargetPlayer => Deck(p)})) +
     ("defending robot" -> (NP, That: Sem)) +  // This works within AfterAttack because That refers to the undergoer (patient) of an action
     ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
