@@ -134,7 +134,7 @@ object CodeGenerator {
 
       // Effects
       case CanOnlyAttack(target) => s"'canonlyattack', {target: ${g(target)}}"
-      case CannotMoveTo(tiles) => s"'cannotmoveto', {tiles: ${g(tiles)}}"
+      case CannotMoveTo(tiles) => s"'cannotmoveto', {tiles: ${deferred(g(tiles))}}"
 
       // Triggers
       case AfterAttack(targetObj, objectType) => s"triggers['afterAttack'](function () { return ${g(targetObj)}; }, ${g(objectType)})"
