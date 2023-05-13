@@ -295,11 +295,13 @@ object Lexicon {
     )) +
     ("everything" -> (N, AllObjects: Sem)) +
     ("everything adjacent to" -> (NP/NP, λ {t: TargetObject => AllO(ObjectsMatchingConditions(AllObjects, Seq(AdjacentTo(t))))})) +
+    //scalastyle:off magic.number
     (Seq("four", "4") -> Seq(
       (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o), Scalar(4))}),
       (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(4))}),
       (NP/NP, λ {t: TileCollection => ChooseT(t, Scalar(4))})
     )) +
+    //scalastyle:on magic.number
     ("friendly" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Self)))}),
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Self)) ++ c.conditions)})
