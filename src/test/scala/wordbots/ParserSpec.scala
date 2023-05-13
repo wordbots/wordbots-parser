@@ -286,8 +286,11 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Draw cards equal to half your energy") shouldEqual Draw(Self, Half(EnergyAmount(Self), RoundedDown))
     parse("Draw cards equal to half your energy, rounded up") shouldEqual Draw(Self, Half(EnergyAmount(Self), RoundedUp))
 
-    // post-v0.20 playtesting
+    // beta v0.20.1
     parse("If your hand has 1 or fewer cards, draw a card") shouldEqual If(CollectionCountComparison(CardsInHand(Self), LessThanOrEqualTo(Scalar(1))), Draw(Self, Scalar(1)))
+    parse("Deal 3 damage to an enemy robot up to 3 tiles away from your kernel") shouldEqual
+      DealDamage(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent), WithinDistanceOf(Scalar(3), ObjectsMatchingConditions(Kernel ,List(ControlledBy(Self))))))), Scalar(3))
+    parse("Pay all your energy") shouldEqual PayEnergy(Self, EnergyAmount(Self))
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -549,6 +552,28 @@ class ParserSpec extends FlatSpec with Matchers {
           NotGC(CollectionExists(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self), AdjacentTo(ThisObject))))),
           Destroy(ItO)
         )
+      )
+
+    // beta v0.20.1
+    parse("When this robot is destroyed, give a random other friendly robot +2 attack") shouldEqual
+      TriggeredAbility(
+        AfterDestroyed(ThisObject),
+        ModifyAttribute(RandomO(Scalar(1), Other(ObjectsMatchingConditions(Robot, List(ControlledBy(Self))))), Attack, Plus(Scalar(2)))
+      )
+    parse("When this robot is played, this robot loses attack equal to your kernel's health") shouldEqual
+      TriggeredAbility(
+        AfterPlayed(ThisObject),
+        ModifyAttribute(ThisObject, Attack, Minus(AttributeValue(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self))), Health)))
+      )
+    parse("At the end of your turn, if this robot didn't move, restore 2 health to this robot") shouldEqual
+      TriggeredAbility(
+        EndOfTurn(Self),
+        If(NotGC(TargetHasProperty(ThisObject, MovedThisTurn)), RestoreAttribute(ThisObject, Health, Some(Scalar(2))))
+      )
+    parse("At the end of your turn, destroy this robot unless it moved this turn") shouldEqual
+      TriggeredAbility(
+        EndOfTurn(Self),
+        If(NotGC(TargetHasProperty(ItO,MovedThisTurn)),Destroy(ThisObject))
       )
   }
 
