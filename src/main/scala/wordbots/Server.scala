@@ -61,11 +61,17 @@ object MemoParser {
     val unrecognizedTokens = ErrorAnalyzer.findUnrecognizedTokens(input)
 
     ErrorAnalyzer.diagnoseError(input, result, fastErrorAnalysisMode) match {
-      case Some(error) => FailedParse(error, unrecognizedTokens)
+      case Some(error) =>
+        print("  [F]")
+        FailedParse(error, unrecognizedTokens)
       case None =>
         result.map(_.semantic) match {
-          case Some(Form(ast: AstNode)) => SuccessfulParse(result.get, ast, parsedTokens)
-          case _ => FailedParse(ParserError("Unspecified parser error"), unrecognizedTokens)
+          case Some(Form(ast: AstNode)) =>
+            print("  [S]")
+            SuccessfulParse(result.get, ast, parsedTokens)
+          case _ =>
+            print("  [F]")
+            FailedParse(ParserError("Unspecified parser error"), unrecognizedTokens)
         }
     }
   }
@@ -86,6 +92,8 @@ object Server extends ServerApp {
     }
   }
 
+  case class VersionResponse(version: String, sha: String)
+
   object InputParamMatcher extends QueryParamDecoderMatcher[String]("input")
   object FormatParamMatcher extends OptionalQueryParamDecoderMatcher[String]("format")
   object ModeParamMatcher extends OptionalQueryParamDecoderMatcher[String]("mode")  // "object" (i.e. object or structure), "event" (i.e. action), or unspecified
@@ -96,6 +104,9 @@ object Server extends ServerApp {
   val port: Int = (Option(System.getenv("PORT")) orElse Option(System.getenv("HTTP_PORT"))).map(_.toInt).getOrElse(defaultPort)
 
   val service: HttpService = HttpService {
+    case GET -> Root / "version" =>
+      Ok(VersionResponse(Parser.VERSION, sys.env.get("HEROKU_SLUG_COMMIT").getOrElse("local")).asJson, headers())
+
     case OPTIONS -> Root / "parse" =>
       Ok("", headers())
 
