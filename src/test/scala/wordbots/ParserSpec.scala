@@ -288,6 +288,9 @@ class ParserSpec extends FlatSpec with Matchers {
 
     // beta v0.20.1
     parse("If your hand has 1 or fewer cards, draw a card") shouldEqual If(CollectionCountComparison(CardsInHand(Self), LessThanOrEqualTo(Scalar(1))), Draw(Self, Scalar(1)))
+    parse("Discard 2 cards") shouldEqual Discard(ChooseC(CardsInHand(Self, AnyCard), Scalar(2)))
+    parse("Spawn a 1/1/1 robot named \"Zombie\" on 4 empty tiles") shouldEqual
+      SpawnObject(GeneratedCard(Robot, attrs(1, 1, 1), Some("Zombie")), ChooseT(TilesMatchingConditions(List(Unoccupied)), Scalar(4)))
     parse("Deal 3 damage to an enemy robot up to 3 tiles away from your kernel") shouldEqual
       DealDamage(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent), WithinDistanceOf(Scalar(3), ObjectsMatchingConditions(Kernel ,List(ControlledBy(Self))))))), Scalar(3))
     parse("Pay all your energy") shouldEqual PayEnergy(Self, EnergyAmount(Self))
@@ -689,9 +692,9 @@ class ParserSpec extends FlatSpec with Matchers {
 
   it should "generate JS code for actions" in {
     generateJS("Draw a card") should be ("(function () { actions['draw'](targets['self'](), 1); })")
-    generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsMatchingConditions('robot', []))); })")
+    generateJS("Destroy a robot") should be ("(function () { actions['destroy'](targets['choose'](objectsMatchingConditions('robot', []), 1)); })")
     generateJS("Gain 2 energy") should be ("(function () { actions['modifyEnergy'](targets['self'](), function (x) { return x + 2; }); })")
-    generateJS("Give a robot +1 speed") should be ("(function () { actions['modifyAttribute'](targets['choose'](objectsMatchingConditions('robot', [])), 'speed', function (x) { return x + 1; }); })")
+    generateJS("Give a robot +1 speed") should be ("(function () { actions['modifyAttribute'](targets['choose'](objectsMatchingConditions('robot', []), 1), 'speed', function (x) { return x + 1; }); })")
   }
 
   it should "not allow invalid JS code to be returned" in {

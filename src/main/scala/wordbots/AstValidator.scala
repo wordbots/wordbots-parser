@@ -87,8 +87,8 @@ object NoChooseOrRewriteInTriggeredAction extends AstRule {
   object NoChooseTargetOrRewrite extends AstRule {
     override def validate(node: AstNode): Try[Unit] = {
       node match {
-        case ChooseC(_) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
-        case ChooseO(_) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
+        case ChooseC(_, _) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
+        case ChooseO(_, _) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
         case RewriteText(_, _) => Failure(ValidationError("Rewriting text not allowed for triggered actions."))
         case n: AstNode => validateChildren(this, n)
       }

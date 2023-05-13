@@ -134,7 +134,7 @@ object Semantics {
     case class ConditionTargetOn(target: TargetObjectOrCard, condition: GlobalCondition) extends TargetObjectOrCard
 
     sealed trait TargetObject extends TargetObjectOrCard with TargetObjectOrPlayer with TargetObjectOrTile
-      case class ChooseO(collection: ObjectCollection) extends TargetObject
+      case class ChooseO(collection: ObjectCollection, numChosen: Number = Scalar(1)) extends TargetObject
       case class AllO(collection: ObjectCollection) extends TargetObject
       case class RandomO(num: Number, collection: ObjectCollection) extends TargetObject
       case class UnionO(targets: Seq[TargetObject]) extends TargetObject
@@ -145,7 +145,7 @@ object Semantics {
       case object SavedTargetObject extends TargetObject
     sealed trait TargetCard extends TargetObjectOrCard
       case class CopyOfC(objToCopy: TargetObject) extends TargetCard
-      case class ChooseC(collection: CardCollection) extends TargetCard
+      case class ChooseC(collection: CardCollection, numChosen: Number = Scalar(1)) extends TargetCard
       case class AllC(collection: CardCollection) extends TargetCard
       case class RandomC(num: Number, collection: CardCollection) extends TargetCard
       case class GeneratedCard(
@@ -161,7 +161,7 @@ object Semantics {
         }
       }
     sealed trait TargetTile extends TargetObjectOrTile
-      case class ChooseT(collection: TileCollection) extends TargetTile
+      case class ChooseT(collection: TileCollection, numChosen: Number = Scalar(1)) extends TargetTile
       case class AllT(collection: TileCollection) extends TargetTile
       case class RandomT(num: Number, collection: TileCollection) extends TargetTile
     sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
