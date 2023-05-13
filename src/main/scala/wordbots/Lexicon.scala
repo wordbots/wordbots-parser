@@ -86,6 +86,7 @@ object Lexicon {
     ("all" /?/ Seq("attributes", "stats") -> (N, AllAttributes: Sem)) +
     ("all energy" -> (NP, AllEnergy: Sem)) +
     (Seq("all players", "each player", "every player", "either player", "a player", "both players") -> (NP, AllPlayers: Sem)) +
+    ("all your energy" -> (NP, Energy(EnergyAmount(Self)): Sem)) +
     (Seq("all your other", "all of your other", "your other") -> (NP/N, λ {o: ObjectType => Other(ObjectsMatchingConditions(o, Seq(ControlledBy(Self))))})) +
     ("and" -> Seq(
       // Specific.
@@ -109,7 +110,8 @@ object Lexicon {
     ("at" -> ((S|S)/NP, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}})) +
     (Seq("at most", "up to") -> Seq(
       (Adj/Num, λ {num: Number => LessThanOrEqualTo(num)}),
-      (PP/PP, λ {dist: ExactDistanceFrom => WithinDistanceOf(dist.distance, dist.obj)})
+      (PP/PP, λ {dist: ExactDistanceFrom => WithinDistanceOf(dist.distance, dist.obj)}),
+      (((NP\NP)/PP), λ {dist: ExactDistanceFrom => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ WithinDistanceOf(dist.distance, dist.obj))}})  // "an enemy robot up to X tiles away"
     )) +
     (Seq("attack", "power") -> Seq(
       (N, Attack: Sem),
@@ -143,6 +145,7 @@ object Lexicon {
     )) +
     (Seq("beginning", "start") -> (NP/PP, λ {turn: Turn => BeginningOfTurn(turn.player)})) +
     ("by" -> (PP/Num, identity)) +
+    (Seq("can activate", "can activate again") -> (S\NP, λ {t: TargetObject => CanActivateAgain(t)})) +
     (Seq("can move", "can move again", "gains a second move action") -> (S\NP, λ {t: TargetObject => CanMoveAgain(t)})) +
     (Seq("can attack", "can attack again") -> (S\NP, λ {t: TargetObject => CanAttackAgain(t)})) +
     (Seq("can move and attack", "can move and attack again") -> (S\NP, λ {t: TargetObject => CanMoveAndAttackAgain(t)})) +
@@ -200,9 +203,12 @@ object Lexicon {
     )) +
     ("damaged" -> (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(HasProperty(IsDamaged)))})) +
     (Seq("deal", "deals", "it deals", "this robot deals", "this object deals", "take", "takes") -> (X|X, identity)) +  // e.g. deals X damage, takes X damage
-    ("deals damage" ->
-      ((S\N)/PP, λ {target: TargetObject => λ {objType: ObjectType => AfterDamageReceived(target, objType)}})
-    ) +
+    ("deals damage" -> Seq(
+      ((S\N)/PP, λ {target: TargetObject => λ {objType: ObjectType => AfterDamageReceived(target, objType)}}),
+      (S\NP, λ {c: ChooseO => AfterDealsDamage(AllO(c.collection), AllObjects)}), // For this and other triggers, replace Choose targets w/ All targets.
+      (S\NP, λ {t: TargetObject => AfterDealsDamage(t, AllObjects)})
+    )) +
+    ("deals damage to a" -> ((S\NP)/N, λ {o: ObjectType => λ {t: TargetObject => AfterDealsDamage(t, o)}})) +
     ("deck".s -> (NP\Adj, λ {p: TargetPlayer => Deck(p)})) +
     ("defending robot" -> (NP, That: Sem)) +  // This works within AfterAttack because That refers to the undergoer (patient) of an action
     ("destroy" -> (S/NP, λ {t: TargetObject => Destroy(t)})) +
@@ -219,6 +225,8 @@ object Lexicon {
       (S\NP, λ {t: TargetObject => AfterDestroyed(t)}),
       (S\NP, λ {o: TargetObject => TargetHasProperty(o, IsDestroyed)}) // Condition form (e.g. "If that robot is destroyed, [...]"
     )) +
+    ("didn't move last turn" -> (S\NP, λ {t: TargetObject => NotGC(TargetHasProperty(t, MovedLastTurn))})) +
+    (Seq("didn't move this turn", "didn't move") -> (S\NP, λ {t: TargetObject => NotGC(TargetHasProperty(t, MovedThisTurn))})) +
     (Seq("doesn't deal damage when attacked", "only deals damage when attacking") -> (S\NP, λ {t: TargetObject => ApplyEffect(t, CannotFightBack)})) +
     ("draw" -> (S/NP, λ {c: Cards => Draw(Self, c.num)})) +
     ("draw".s -> Seq(
@@ -404,6 +412,7 @@ object Lexicon {
     ("lose".s -> Seq(
       ((S/NP)\NP, λ {p: TargetPlayer => λ {_: AllEnergy.type => ModifyEnergy(p, Constant(Scalar(0)))}}),  // Y loses all energy.
       ((S/NP)\NP, λ {p: TargetPlayer => λ {e: Energy => ModifyEnergy(p, Minus(e.amount))}}),  // Y loses X energy.
+      ((S\NP)/NP, λ {aa: AttributeAmount => λ {t: TargetObject => ModifyAttribute(t, aa.attr, Minus(aa.amount))}}),  // " ... X attack"
       (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})  // Y loses X (attribute).
     )) +
     ("more" -> Seq(
@@ -422,8 +431,14 @@ object Lexicon {
       )}})
     )) +
     (Seq("more than", "greater than", ">") -> (Adj/Num, λ {num: Number => GreaterThan(num)})) +
-    ("moved last turn" -> (S, HasProperty(MovedLastTurn): Sem)) +
-    ("moved this turn" -> (S, HasProperty(MovedThisTurn): Sem)) +
+    ("moved last turn" -> Seq(
+      (S, HasProperty(MovedLastTurn): Sem),
+      (S\NP, λ {t: TargetObject => TargetHasProperty(t, MovedLastTurn)})
+    )) +
+    (Seq("moved this turn", "moved") -> Seq(
+      (S, HasProperty(MovedThisTurn): Sem),
+      (S\NP, λ {t: TargetObject => TargetHasProperty(t, MovedThisTurn)})
+    )) +
     ("moves" -> Seq(
       (S\NP, λ {c: ChooseO => AfterMove(AllO(c.collection))}), // For this and other triggers, replace Choose targets w/ All targets.
       (S\NP, λ {t: TargetObject => AfterMove(t)})
@@ -438,7 +453,10 @@ object Lexicon {
     (("object".s :+ "objects '") -> (N, AllObjects: Sem)) +
     ("odd" -> (NP/N, λ {attr: Attribute => AttributeComparison(attr, IsOdd)})) +
     ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
-    ("other" -> (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))})) +
+    ("other" -> Seq(
+      (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))}),
+      (NP/NP, λ {oc: ObjectCollection => Other(oc)})
+    )) +
     (Seq("or", "and") -> ((N/N)\N, λ {o1: ObjectType => λ {o2: ObjectType => MultipleObjectTypes(Seq(o1, o2))}})) +
     (Seq("or less", "or fewer") -> Seq(
       (Adj\Num, λ {num: Number => LessThanOrEqualTo(num)}),
@@ -594,6 +612,10 @@ object Lexicon {
       (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(2))}),
       (NP/NP, λ {t: TileCollection => ChooseT(t, Scalar(2))})
     )) +
+    ("unless" -> Seq(
+      ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(NotGC(c), a)}}),  // "if" for actions
+      ((S|S)|S, λ {c: GlobalCondition => λ {a: PassiveAbility => a.conditionOn(NotGC(c))}})   // "if" for abilities
+    )) +
     ("until" -> ((S|S)|NP, λ {d: Duration => λ {a: Action => Until(d, a)}})) +
     (Seq("when", "whenever", "after", "immediately after", "each time", "every time") -> Seq(
       ((S|S)|S, λ {t: Trigger => λ {a: Action => TriggeredAbility(t, a)}}),  // triggered ability: When [trigger], [action]
@@ -657,7 +679,7 @@ object Lexicon {
   /** Like [[lexicon]], but with null semantics (i.e. all semantic values set to [[Ignored]]),
     * and with added dummy entries for each syntactic category (in [[categoriesMap]].
     * Used by [[ErrorAnalyzer.syntacticParse]] to diagnose whether a given error is syntactic or semantic. */
-  lazy val syntaxOnlyLexicon: ParserDict[CcgCat] = {
+  val syntaxOnlyLexicon: ParserDict[CcgCat] = {
     ParserDict[CcgCat](
       lexicon.map.mapValues(_.map {case (syn, _) => (syn, Ignored(""))}),
       lexicon.funcs.map(func => {str: String => func(str).map {case (syn, _) => (syn, Ignored(""))}}),
