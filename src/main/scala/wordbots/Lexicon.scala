@@ -50,6 +50,7 @@ object Lexicon {
       (NP/NP, λ {c: GeneratedCard => c}),  // e.g. "a 1/1/1 robot"
       (NP/NP, λ {c: ObjectCollection => ChooseO(c)}),  // e.g. "a robot you control"
       (NP/NP, λ {c: CardCollection => ChooseC(c)}),  // e.g. "(discard) a card"
+      (NP/NP, λ {c: TileCollection => ChooseT(c)}),
       (Num, Scalar(1): Sem)  // e.g. "(draw) a card"
     )) +
     ("a player" -> (NP, ChooseO(ObjectsInPlay(Kernel)): Sem)) +

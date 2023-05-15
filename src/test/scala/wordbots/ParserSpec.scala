@@ -294,6 +294,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Deal 3 damage to an enemy robot up to 3 tiles away from your kernel") shouldEqual
       DealDamage(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent), WithinDistanceOf(Scalar(3), ObjectsMatchingConditions(Kernel ,List(ControlledBy(Self))))))), Scalar(3))
     parse("Pay all your energy") shouldEqual PayEnergy(Self, EnergyAmount(Self))
+    parse("Spawn a copy of this object on an adjacent tile") shouldEqaul SpawnObject(CopyOfC(ThisObject), ChooseT(TilesMatchingConditions(List(AdjacentTo(They))), Scalar(1)), Self)
   }
 
   it should "treat 'with' as 'that has'" in {
