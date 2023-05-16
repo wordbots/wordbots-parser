@@ -1,5 +1,6 @@
 package wordbots
 
+import com.roundeights.hasher.Implicits._
 import com.workday.montague.ccg.CcgCat
 import com.workday.montague.parser.SemanticParseNode
 import com.workday.montague.semantics.{Form, SemanticState}
@@ -84,19 +85,50 @@ object Server extends ServerApp {
 
   sealed trait Response
   case class ErrorResponse(error: String) extends Response
-  case class SuccessfulParseResponse(js: String, tokens: Seq[String], version: String = Parser.VERSION) extends Response
-  case class FailedParseResponse(error: String, suggestions: Seq[String], unrecognizedTokens: Seq[String]) extends Response
+
+  // TODO factor out probably
+  case class Hashes(input: String, output: String, hmac: String)
+  object Hashes {
+    val key: String = sys.env.get("HMAC_PRIVATE_KEY").get
+
+    def apply(input: String, output: String): Hashes = {
+      val inputHash = input.md5.hex
+      val outputHash = output.md5.hex
+      //println(s"${inputHash}.${outputHash}")
+      //println(s"${inputHash}.${outputHash}".hmac(key).sha512)
+      //println(s"${inputHash}.${outputHash}".hmac(key).sha512.hex)
+      val hmac = s"${inputHash}.${outputHash}".hmac(key).sha512.hex
+      Hashes(inputHash, outputHash, hmac)
+    }
+
+    def verify(hashes: Hashes): Boolean = {
+      //println(s"${hashes.input}.${hashes.output}")
+      //println(s"${hashes.input}.${hashes.output}".hmac(key).sha512)
+      //println(hashes.hmac)
+      s"${hashes.input}.${hashes.output}".hmac(key).sha512 hash= hashes.hmac
+    }
+  }
+
+  case class SuccessfulParseResponse(input: String, js: String, tokens: Seq[String], hashes: Hashes, version: String) extends Response
+  object SuccessfulParseResponse {
+    def apply(input: String, js: String, tokens: Seq[String]): SuccessfulParseResponse = {
+      SuccessfulParseResponse(input, js, tokens, Hashes(input, js), Parser.VERSION)
+    }
+  }
+
+  case class FailedParseResponse(error: String, suggestions: Seq[String], unrecognizedTokens: Seq[String], version: String) extends Response
   object FailedParseResponse {
-    def apply(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): FailedParseResponse = {
-      FailedParseResponse(error.description, error.suggestions.toSeq, unrecognizedTokens)
+    def apply(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq.empty): FailedParseResponse = {
+      FailedParseResponse(error.description, error.suggestions.toSeq, unrecognizedTokens, Parser.VERSION)
     }
   }
 
   case class VersionResponse(version: String, sha: String)
+  case class VerifyHashesResponse(input: String, valid: Boolean)
 
   object InputParamMatcher extends QueryParamDecoderMatcher[String]("input")
   object FormatParamMatcher extends OptionalQueryParamDecoderMatcher[String]("format")
-  object ModeParamMatcher extends OptionalQueryParamDecoderMatcher[String]("mode")  // "object" (i.e. object or structure), "event" (i.e. action), or unspecified
+  object ModeParamMatcher extends OptionalQueryParamDecoderMatcher[String]("mode")  // "object" (i.e. robot/structure), "event" (i.e. action), or unspecified
   object FastModeParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("fast")
 
   val host = "0.0.0.0"
@@ -109,6 +141,8 @@ object Server extends ServerApp {
 
     case OPTIONS -> Root / "parse" =>
       Ok("", headers())
+    case OPTIONS -> Root / "verify-hashes" =>
+      Ok("", headers())
 
     case GET -> Root / "parse" :? InputParamMatcher(input) +& FormatParamMatcher(format) +& ModeParamMatcher(validationMode) +& FastModeParamMatcher(fastMode) =>
       MemoParser(input, validationMode, fastMode.getOrElse(false)) match {
@@ -116,7 +150,7 @@ object Server extends ServerApp {
           format match {
             case Some("js") =>
               CodeGenerator.generateJS(ast) match {
-                case Success(js: String) => successResponse(js, parsedTokens)
+                case Success(js: String) => successResponse(input, js, parsedTokens)
                 case Failure(ex: Throwable) => errorResponse(ParserError(s"Invalid JavaScript produced: ${ex.getMessage}. Contact the developers."))
               }
             case Some("svg") => Ok(parse.toSvg, headers(Some("image/svg+xml")))
@@ -133,13 +167,21 @@ object Server extends ServerApp {
           val parseResponse: Response = MemoParser(req.input, Option(req.mode), fastErrorAnalysisMode = true) match {
             case SuccessfulParse(_, ast, parsedTokens) =>
               CodeGenerator.generateJS(ast) match {
-                case Success(js: String) => SuccessfulParseResponse(js, parsedTokens)
+                case Success(js: String) => SuccessfulParseResponse(req.input, js, parsedTokens)
                 case Failure(ex: Throwable) => FailedParseResponse(ParserError(s"Invalid JavaScript produced: ${ex.getMessage}. Contact the developers."))
               }
             case FailedParse(error, unrecognizedTokens) => FailedParseResponse(error, unrecognizedTokens)
           }
           req.input -> parseResponse
         }.asJson
+        Ok(responseBody, headers())
+      }
+
+    case request @ POST -> Root / "verify-hashes" =>
+      implicit val hashesDecoder: Decoder[Hashes] = Decoder.forProduct3("input", "output", "hmac")(Hashes.apply)
+
+      request.as(jsonOf[Seq[Hashes]]).flatMap { hashes: Seq[Hashes] =>
+        val responseBody: Json = hashes.map { h => VerifyHashesResponse(h.input, Hashes.verify(h)) }.asJson
         Ok(responseBody, headers())
       }
 
@@ -151,8 +193,8 @@ object Server extends ServerApp {
       }
   }
 
-  def successResponse(js: String, parsedTokens: Seq[String] = Seq()): Task[H4sResponse] = {
-    Ok(SuccessfulParseResponse(js, parsedTokens).asJson, headers())
+  def successResponse(input: String, js: String, parsedTokens: Seq[String] = Seq()): Task[H4sResponse] = {
+    Ok(SuccessfulParseResponse(input, js, parsedTokens).asJson, headers())
   }
 
   def errorResponse(error: ParserError = ParserError("Parse failed"), unrecognizedTokens: Seq[String] = Seq()): Task[H4sResponse] = {
