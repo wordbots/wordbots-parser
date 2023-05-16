@@ -94,17 +94,11 @@ object Server extends ServerApp {
     def apply(input: String, output: String): Hashes = {
       val inputHash = input.md5.hex
       val outputHash = output.md5.hex
-      //println(s"${inputHash}.${outputHash}")
-      //println(s"${inputHash}.${outputHash}".hmac(key).sha512)
-      //println(s"${inputHash}.${outputHash}".hmac(key).sha512.hex)
       val hmac = s"${inputHash}.${outputHash}".hmac(key).sha512.hex
       Hashes(inputHash, outputHash, hmac)
     }
 
     def verify(hashes: Hashes): Boolean = {
-      //println(s"${hashes.input}.${hashes.output}")
-      //println(s"${hashes.input}.${hashes.output}".hmac(key).sha512)
-      //println(hashes.hmac)
       s"${hashes.input}.${hashes.output}".hmac(key).sha512 hash= hashes.hmac
     }
   }
