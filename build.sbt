@@ -1,5 +1,5 @@
 name := "wordbots-parser"
-version := "0.20.1-beta-SNAPSHOT" // wordbots-parser versions should correspond to the current wordbots-core release.
+version := "0.20.2-beta-SNAPSHOT" // wordbots-parser versions should correspond to the current wordbots-core release.
 
 val http4sVersion = "0.15.3"
 val circeVersion = "0.6.1"
@@ -10,6 +10,7 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.fu
 
 libraryDependencies ++= Seq(
   "com.danielasfregola" %% "random-data-generator" % "2.3",
+  "com.outr" %% "hasher" % "1.2.1",
   "io.circe" %% "circe-generic" % circeVersion,
   "org.http4s" %% "http4s-blaze-client" % http4sVersion,
   "org.http4s" %% "http4s-blaze-server" % http4sVersion,
