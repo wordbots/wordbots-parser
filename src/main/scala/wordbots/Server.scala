@@ -175,6 +175,9 @@ object Server extends ServerApp {
       implicit val hashesDecoder: Decoder[Hashes] = Decoder.forProduct3("input", "output", "hmac")(Hashes.apply)
 
       request.as(jsonOf[Seq[Hashes]]).flatMap { hashes: Seq[Hashes] =>
+        // scalastyle:off regex
+        println(s"Verifying ${hashes.length} hashes ...")
+        // scalastyle:on regex
         val responseBody: Json = hashes.map { h => VerifyHashesResponse(h.input, Hashes.verify(h)) }.asJson
         Ok(responseBody, headers())
       }
