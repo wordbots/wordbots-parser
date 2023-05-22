@@ -182,7 +182,7 @@ object Semantics {
       case class HasProperty(property: Property) extends ObjectCondition
       case class NotC(cond: ObjectCondition) extends ObjectCondition
       case object Unoccupied extends ObjectCondition
-      case class WithinDistanceOf(distance: Number, obj: TargetObject) extends ObjectCondition
+      case class WithinDistanceOf(distance: Number, obj: TargetObjectOrTile) extends ObjectCondition
 
   sealed trait GlobalCondition extends AstNode
     case class CollectionCountComparison(coll: Collection, comparison: Comparison) extends GlobalCondition

@@ -16,6 +16,7 @@ case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val baseRules: Seq[AstRule] = Seq(
     NoUnimplementedRules,
     NoChooseOrRewriteInTriggeredAction,
+    NoPayEnergyInTriggeredAction,
     NoModifyingCostOfObjects,
     OnlyRestoreHealth,
     OnlyThisObjectPlayed,
@@ -89,6 +90,7 @@ object NoChooseOrRewriteInTriggeredAction extends AstRule {
       node match {
         case ChooseC(_, _) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
         case ChooseO(_, _) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
+        case ChooseT(_, _) => Failure(ValidationError("Choosing targets not allowed for triggered actions."))
         case RewriteText(_, _) => Failure(ValidationError("Rewriting text not allowed for triggered actions."))
         case n: AstNode => validateChildren(this, n)
       }
@@ -99,6 +101,28 @@ object NoChooseOrRewriteInTriggeredAction extends AstRule {
     node match {
       case TriggeredAbility(AfterPlayed(_), _) => Success()  // Choosing targets and rewriting text *is* allowed for AfterPlayed triggers.
       case TriggeredAbility(_, _) => validateChildren(NoChooseTargetOrRewrite, node)  // (but not for any other trigger).
+      case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+/**
+ * Disallow paying energy within triggered abilities,
+ * because there's no gameplay support for "rolling back" the action triggered if there's not enough energy to pay.
+ */
+object NoPayEnergyInTriggeredAction extends AstRule {
+  object NoPayEnergy extends AstRule {
+    override def validate(node: AstNode): Try[Unit] = {
+      node match {
+        case PayEnergy(_, _) => Failure(ValidationError("Paying energy is not supported within triggered abilities."))
+        case n: AstNode => validateChildren(this, n)
+      }
+    }
+  }
+
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case TriggeredAbility(_, _) => validateChildren(NoPayEnergy, node)
       case n: AstNode => validateChildren(this, n)
     }
   }

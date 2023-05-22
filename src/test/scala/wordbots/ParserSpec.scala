@@ -295,6 +295,9 @@ class ParserSpec extends FlatSpec with Matchers {
       DealDamage(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent), WithinDistanceOf(Scalar(3), ObjectsMatchingConditions(Kernel ,List(ControlledBy(Self))))))), Scalar(3))
     parse("Pay all your energy") shouldEqual PayEnergy(Self, EnergyAmount(Self))
     parse("Spawn a copy of this object on an adjacent tile") shouldEqual SpawnObject(CopyOfC(ThisObject), ChooseT(TilesMatchingConditions(List(AdjacentTo(They))), Scalar(1)), Self)
+
+    // beta v0.20.2
+    parse("Deal 1 damage to all objects within 1 space of a tile") shouldEqual DealDamage(ObjectsMatchingConditions(AllObjects, Seq(WithinDistanceOf(Scalar(1), ChooseT(AllTiles)))), Scalar(1))
   }
 
   it should "treat 'with' as 'that has'" in {
@@ -715,6 +718,11 @@ class ParserSpec extends FlatSpec with Matchers {
 
   it should "disallow choosing targets after a random target has been selected" in {
     parse("Move a random robot 1 space") shouldBe a[Failure[_]]  // Failure[ValidationError]
+  }
+
+  it should "disallow paying energy inside an ability" in {
+    parse("When this object deals damage, pay 1 energy to draw a card") shouldEqual
+      Failure(ValidationError("Paying energy is not supported within triggered abilities."))
   }
 }
 // scalastyle:on line.size.limit

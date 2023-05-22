@@ -82,7 +82,8 @@ object Lexicon {
       (NP/N, λ {c: CardType => AllC(CardsInHand(AllPlayers, c))}),
       (NP/NP, λ {c: CardCollection => AllC(c)}),
       (NP/NP, λ {c: Collection => c}),
-      (NP/PP, λ {c: Collection => c})
+      (NP/PP, λ {c: Collection => c}),
+      ((NP/PP)/N, λ {o: ObjectType => λ {c: ObjectCondition => ObjectsMatchingConditions(o, Seq(c))}})
     )) +
     ("all" /?/ Seq("attributes", "stats") -> (N, AllAttributes: Sem)) +
     ("all energy" -> (NP, AllEnergy: Sem)) +
@@ -635,7 +636,7 @@ object Lexicon {
     )) +
     ("within" -> Seq(
       (PP/NP, λ {s: Spaces => WithinDistanceOf(s.num, ThisObject)}),
-      ((PP/PP)/NP, λ {s: Spaces => λ {t: TargetObject => WithinDistanceOf(s.num, t)}}),
+      ((PP/PP)/NP, λ {s: Spaces => λ {t: TargetObjectOrTile => WithinDistanceOf(s.num, t)}}),
       ((NP\NP)/NP, λ {s: Spaces => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ WithinDistanceOf(s.num, ThisObject))}})
     )) +
     (Seq("you", "yourself") -> Seq(
