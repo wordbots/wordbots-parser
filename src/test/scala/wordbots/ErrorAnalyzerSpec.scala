@@ -16,4 +16,9 @@ class ErrorAnalyzerSpec extends FlatSpec with Matchers {
     // We don't want to see spurious suggestions replacing "that" with identity terms like "it deals", "takes", etc
     analyze("Destroy all that robots").get.suggestions shouldEqual Set("Destroy all robots")
   }
+
+  it should "try single-word replacement as a last-ditch effort when all else fails" in {
+    // We don't want to see spurious suggestions replacing "that" with identity terms like "it deals", "takes", etc
+    analyze("After the end of your turn draw 4 cards").get.suggestions shouldEqual Set("At the end of your turn draw 4 cards")
+  }
 }

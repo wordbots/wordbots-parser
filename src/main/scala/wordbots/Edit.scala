@@ -28,6 +28,15 @@ case class Replace(idx: Int, pos: CcgCat) extends Edit {
   }
 }
 
+case class ExactReplace(idx: Int, term: String) extends Edit {
+  def apply(words: Seq[String]): Seq[String] = Seq(words.patch(idx, Seq(term), 1).mkString(" ").capitalize)
+
+  def description(words: Seq[String]): String = {
+    val context = if (idx > 0) s"after '${words(idx - 1)}'" else s"before '${words(idx + 1)}'"
+    s"syntax error - expected '$term' $context but got '${words(idx)}' instead"
+  }
+}
+
 case class Insert(idx: Int, pos: CcgCat) extends Edit {
   def apply(words: Seq[String]): Seq[String] = Lexicon.termsInCategory(pos).map(term => words.patch(idx, Seq(term), 0).mkString(" ").capitalize)
 

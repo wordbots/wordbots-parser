@@ -165,7 +165,20 @@ object ErrorAnalyzer {
       }
     }
 
-    insertions ++ deletions ++ replacements
+    val singleWordReplacements: Stream[Edit] = {
+      // If no valid edits have been found so far AND the string is short enough (<10 words) ...
+      // as a last-ditch effort, also try just replacing one word at a time with a single-word token
+      if (words.length < 10 && (insertions ++ deletions ++ replacements).flatMap(_(words)).toSet.filter(isSemanticallyValid).size == 0) {
+        for {
+          i <- words.indices.toStream
+          term <- Lexicon.listOfTerms.filter((t) => t.split(" ").length == 1).toStream
+        } yield ExactReplace(i, term)
+      } else {
+        Stream.empty
+      }
+    }
+
+    insertions ++ deletions ++ replacements ++ singleWordReplacements
   }
 
   private def isSyntacticallyValid(candidate: String): Boolean = {
