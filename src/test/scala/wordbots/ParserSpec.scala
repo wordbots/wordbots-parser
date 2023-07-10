@@ -583,6 +583,11 @@ class ParserSpec extends FlatSpec with Matchers {
         If(NotGC(TargetHasProperty(ItO,MovedThisTurn)),Destroy(ThisObject))
       )
     parse("When this robot deals damage, draw a card") shouldEqual TriggeredAbility(AfterDealsDamage(ThisObject), Draw(Self, Scalar(1)))
+    parse("Lose 3 energy and return an enemy robot to your hand") shouldEqual
+      And(
+        ModifyEnergy(Self, Minus(Scalar(3))),
+        ReturnToHand(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent))), Scalar(1)), Some(Self))
+      )
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

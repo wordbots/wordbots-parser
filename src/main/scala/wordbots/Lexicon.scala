@@ -93,6 +93,7 @@ object Lexicon {
     ("and" -> Seq(
       // Specific.
       ((S/S)\S, λ {a: TriggeredAbility => λ {b: TriggeredAbility => MultipleAbilities(Seq(a, b))}}),
+      ((S/S)\S, λ {a: Action => λ {b: Action => MultipleActions(Seq(a, b))}}),
       ((N/N)\N, λ {a1: Attribute => λ {a2: Attribute => MultipleAttributes(Seq(a1, a2))}}),
       (((N\N)\N)/N, λ {a1: Attribute => λ {a2: Attribute => λ {a3: Attribute => MultipleAttributes(Seq(a1, a2, a3))}}}),
       ((NP/NP)\NP, λ {t1: TargetObject => λ {t2: TargetObject => UnionO(Seq(t1, t2))}}),
