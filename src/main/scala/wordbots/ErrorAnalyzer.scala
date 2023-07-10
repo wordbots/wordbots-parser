@@ -120,6 +120,7 @@ object ErrorAnalyzer {
     terminalNodes.flatMap(semanticReplacements).toSet.filter(isSemanticallyValid)
   }
 
+  //scalastyle:off
   private def findValidEdits(words: Seq[String]): Stream[Edit] = {
     // The time complexity of findValidEdits() is O(W*C) where W is the # of words and C is the # of CCG categories to try.
     // So ...
