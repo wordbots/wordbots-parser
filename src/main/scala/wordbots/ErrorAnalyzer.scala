@@ -20,7 +20,10 @@ object ErrorAnalyzer {
         handleSuccessfulParse(input, parseResult, ast)
       case Some(f: Form[_]) =>
         // Handle a semantic parse that finishes but produces an unexpected result.
-        Some(ParserError(s"Parser did not produce a valid expression - expected an AstNode, got: $f"))
+        Some(
+          ParserError(s"Parser did not produce a valid expression - expected an AstNode, got: $f",
+          if (isFastMode) Set.empty else getSyntacticSuggestions(input))
+        )
       case Some(l: Lambda[_]) =>
         // Handle successful syntactic parse but incomplete semantic parse.
         val firstArgType = l.k.toString.split(": ")(1).split(" =>")(0)

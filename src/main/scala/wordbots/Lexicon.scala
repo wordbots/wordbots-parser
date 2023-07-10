@@ -582,7 +582,7 @@ object Lexicon {
       ((NP\N)/S, λ {c: ObjectCondition => λ { o: ObjectType => ObjectsMatchingConditions(o, Seq(c))}}),
       ((NP\N)/S, λ {cs: Seq[ObjectCondition] => λ { o: ObjectType => ObjectsMatchingConditions(o, cs)}})
     )) +
-    ("that" / Seq("robot", "creature", "structure", "object") -> (NP, That: Sem)) +
+    ("that" / Seq("robot", "structure", "object") -> (NP, That: Sem)) +
     (("that cost".s ++ "which costs".s) -> Seq(
       ((NP\NP)/NP, λ {e: Energy => λ {c: CardsInHand => CardsInHand(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, EqualTo(e.amount)))}}),
       ((NP\NP)/NP, λ {ec: EnergyComparison => λ {c: CardsInHand => CardsInHand(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, ec.comp))}}),
@@ -600,7 +600,7 @@ object Lexicon {
     )) +
     (Seq("there is", "there is a", "there is an") -> (S/NP, λ {c: Collection => CollectionExists(c)})) +
     (Seq("then", "and", "to") -> ((S/S)\S, λ {a1: Action => λ {a2: Action => And(a1, a2)}})) +
-    ("this" / Seq("robot", "creature", "structure", "object", "kernel") -> (NP, ThisObject: Sem)) +
+    ("this" / Seq("robot", "structure", "object", "kernel") -> (NP, ThisObject: Sem)) +
     (Seq("three", "3") -> Seq(
       (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o), Scalar(3))}),
       (NP/N, λ {c: CardType => ChooseC(CardsInHand(Self, c), Scalar(3))}),
