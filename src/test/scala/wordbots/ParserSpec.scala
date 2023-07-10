@@ -697,6 +697,15 @@ class ParserSpec extends FlatSpec with Matchers {
         GeneratedCard(Robot, attrs(1, 2, 1), Some("Reinforcements")),
         TilesMatchingConditions(Seq(AdjacentTo(ObjectsMatchingConditions(Kernel, Seq(ControlledBy(Self))))))
       )
+
+    // beta v0.20.1
+    parse("Activate: spawn a 1/1/2 robot named \"Iceado\" on an adjacent empty tile") shouldEqual
+      ActivatedAbility(
+        SpawnObject(
+          GeneratedCard(Robot, attrs(1, 1, 2), Some("Iceado")),
+          ChooseT(TilesMatchingConditions(List(AdjacentTo(ThisObject), Unoccupied)), Scalar(1)), Self
+        )
+      )
   }
 
   it should "generate JS code for actions" in {

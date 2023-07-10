@@ -59,7 +59,8 @@ object Lexicon {
     ("activate:" -> (S/S, λ {a: Action => ActivatedAbility(a)})) +
     ("adjacent" -> Seq(
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(AdjacentTo(ThisObject)))}),
-      (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
+      (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)}),
+      (NP/NP, λ {c: TilesMatchingConditions => TilesMatchingConditions(Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
     ("adjacent tile" -> (NP, TilesMatchingConditions(Seq(AdjacentTo(They))): Sem)) +  // e.g. "Move each robot to a random adjacent tile."
     ("adjacent to" -> Seq(
