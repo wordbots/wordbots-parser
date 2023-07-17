@@ -17,6 +17,7 @@ case class ErrorAnalyzerStats(
     timeSpentSyntacticParsingNs: Long = 0L,
     timeSpentSemanticParsingNs: Long = 0L
 ) {
+  // scalastyle:off method.name
   def +(other: ErrorAnalyzerStats): ErrorAnalyzerStats = ErrorAnalyzerStats(
     syntacticParsesTried + other.syntacticParsesTried,
     syntacticParsesSucceeded + other.syntacticParsesSucceeded,
@@ -25,6 +26,7 @@ case class ErrorAnalyzerStats(
     timeSpentSyntacticParsingNs + other.timeSpentSyntacticParsingNs,
     timeSpentSemanticParsingNs + other.timeSpentSemanticParsingNs
   )
+  // scalastyle:on method.name
 
   override def toString(): String = {
     s"Spent ${timeSpentSyntacticParsingNs / 1000000} ms syntactic parsing ($syntacticParsesSucceeded/$syntacticParsesTried) and ${timeSpentSemanticParsingNs / 1000000} ms semantic parsing ($semanticParsesSucceeded/$semanticParsesTried)"
@@ -43,6 +45,8 @@ case class Suggestions(
 
 object ErrorAnalyzer {
   import Semantics._
+
+  val MAX_NUM_SUGGESTIONS = 10
 
   /** Time a block (as a by-name argument), returning the result as well as the time it took to executed it. */
   def time[R](block: => R): (R, Long) = {
@@ -167,7 +171,7 @@ object ErrorAnalyzer {
     val syntacticStats = validEdits.stats
 
     val phrasesToTry: Stream[String] = validEdits.edits.flatMap(_(words))
-    val validPhrases: Seq[String] = phrasesToTry.filter(checkIfSemanticallyValidAndUpdateStats).take(10).toIndexedSeq
+    val validPhrases: Seq[String] = phrasesToTry.filter(checkIfSemanticallyValidAndUpdateStats).take(MAX_NUM_SUGGESTIONS).toIndexedSeq
 
     val semanticStats = ErrorAnalyzerStats(semanticParsesTried = semanticParsesTried, semanticParsesSucceeded = semanticParsesSucceeded, timeSpentSemanticParsingNs = timeSpentSemanticParsingNs)
     Suggestions(validPhrases, syntacticStats + semanticStats)
@@ -193,7 +197,7 @@ object ErrorAnalyzer {
     }
 
     val terminalNodes: Seq[SemanticParseNode[CcgCat]] = syntacticParse(input).get.terminals
-    val suggestions = terminalNodes.flatMap(semanticReplacements).toStream.filter(checkIfSemanticallyValidAndUpdateStats).take(10).toIndexedSeq
+    val suggestions = terminalNodes.flatMap(semanticReplacements).toStream.filter(checkIfSemanticallyValidAndUpdateStats).take(MAX_NUM_SUGGESTIONS).toIndexedSeq
 
     val semanticStats = ErrorAnalyzerStats(semanticParsesTried = semanticParsesTried, semanticParsesSucceeded = semanticParsesSucceeded, timeSpentSemanticParsingNs = timeSpentSemanticParsingNs)
     Suggestions(suggestions, semanticStats)
