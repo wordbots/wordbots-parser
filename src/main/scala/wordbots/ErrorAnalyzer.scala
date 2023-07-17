@@ -3,13 +3,53 @@ package wordbots
 import com.workday.montague.ccg.CcgCat
 import com.workday.montague.parser.SemanticParseNode
 import com.workday.montague.semantics.{Form, Lambda, Nonsense}
+import scalaz.Memo
 
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
-case class ParserError(description: String, suggestions: Set[String] = Set.empty)
+case class ParserError(description: String, suggestions: Seq[String] = Seq.empty, stats: ErrorAnalyzerStats = ErrorAnalyzerStats())
+
+case class ErrorAnalyzerStats(
+    syntacticParsesTried: Int = 0,
+    syntacticParsesSucceeded: Int = 0,
+    semanticParsesTried: Int = 0,
+    semanticParsesSucceeded: Int = 0,
+    timeSpentSyntacticParsingNs: Long = 0L,
+    timeSpentSemanticParsingNs: Long = 0L
+) {
+  def +(other: ErrorAnalyzerStats): ErrorAnalyzerStats = ErrorAnalyzerStats(
+    syntacticParsesTried + other.syntacticParsesTried,
+    syntacticParsesSucceeded + other.syntacticParsesSucceeded,
+    semanticParsesTried + other.semanticParsesTried,
+    semanticParsesSucceeded + other.semanticParsesSucceeded,
+    timeSpentSyntacticParsingNs + other.timeSpentSyntacticParsingNs,
+    timeSpentSemanticParsingNs + other.timeSpentSemanticParsingNs
+  )
+
+  override def toString(): String = {
+    s"Spent ${timeSpentSyntacticParsingNs / 1000000} ms syntactic parsing ($syntacticParsesSucceeded/$syntacticParsesTried) and ${timeSpentSemanticParsingNs / 1000000} ms semantic parsing ($semanticParsesSucceeded/$semanticParsesTried)"
+  }
+}
+
+case class ValidEdits(
+    edits: Stream[Edit],
+    stats: ErrorAnalyzerStats
+)
+
+case class Suggestions(
+    suggestions: Seq[String] = Seq.empty,
+    stats: ErrorAnalyzerStats = ErrorAnalyzerStats()
+)
 
 object ErrorAnalyzer {
   import Semantics._
+
+  def time[R](block: => R): (R, Long) = {
+    val t0 = System.nanoTime()
+    val result = block    // call-by-name
+    val t1 = System.nanoTime()
+    (result, t1 - t0)
+  }
 
   // Note: "fast mode" disables finding syntax/semantics suggestions and just does to bare minimum to diagnose the error
   def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]], isFastMode: Boolean = false)
@@ -20,9 +60,13 @@ object ErrorAnalyzer {
         handleSuccessfulParse(input, parseResult, ast)
       case Some(f: Form[_]) =>
         // Handle a semantic parse that finishes but produces an unexpected result.
+        val suggestions: Suggestions = if (isFastMode) Suggestions() else getSyntacticSuggestions(input)
         Some(
-          ParserError(s"Parser did not produce a valid expression - expected an AstNode, got: $f",
-          if (isFastMode) Set.empty else getSyntacticSuggestions(input))
+          ParserError(
+            s"Parser did not produce a valid expression - expected an AstNode, got: $f",
+            suggestions.suggestions,
+            suggestions.stats
+          )
         )
       case Some(l: Lambda[_]) =>
         // Handle successful syntactic parse but incomplete semantic parse.
@@ -59,9 +103,9 @@ object ErrorAnalyzer {
         AstValidator(validationMode).validate(ast) match {
           case Success(_) => None
           case Failure(ex: Throwable) =>
-            val suggestions: Set[String] = ex match {
-              case ValidationError("Not a valid passive, triggered, or activated ability.") => Set(s"Startup: $input")
-              case _ => Set()
+            val suggestions: Seq[String] = ex match {
+              case ValidationError("Not a valid passive, triggered, or activated ability.") => Seq(s"Startup: $input")
+              case _ => Seq.empty
             }
             Some(ParserError(ex.getMessage, suggestions))
         }
@@ -74,10 +118,11 @@ object ErrorAnalyzer {
       ParserError(s"Parse failed (syntax error)")
     } else {
       val words = input.split(" ")
-      val edits = findValidEdits(words)
-      val error: Option[String] = edits.headOption.map(_.description(words))
+      val validEdits = findValidEdits(words)
+      val error: Option[String] = validEdits.edits.headOption.map(_.description(words))
+      val suggestions: Suggestions = getSyntacticSuggestions(input, Some(validEdits))
 
-      ParserError(s"Parse failed (${error.getOrElse("syntax error")})", getSyntacticSuggestions(input))
+      ParserError(s"Parse failed (${error.getOrElse("syntax error")})", suggestions.suggestions, suggestions.stats)
     }
   }
 
@@ -91,25 +136,55 @@ object ErrorAnalyzer {
     )
     val errorMsg = if (exceptions.nonEmpty) exceptions.mkString(" - ", ", ", "") else ""
 
-    val suggestions: Set[String] = {
+    val suggestions: Suggestions = {
       if (isFastMode) {
-        Set.empty
+        Suggestions()
       } else {
         val semanticSuggestions = getSemanticSuggestions(input)
-        if (semanticSuggestions.isEmpty) getSyntacticSuggestions(input) else semanticSuggestions
+        if (semanticSuggestions.suggestions.isEmpty) getSyntacticSuggestions(input) else semanticSuggestions
       }
     }
 
-    ParserError(s"Parse failed (semantics mismatch$errorMsg)", suggestions)
+    ParserError(s"Parse failed (semantics mismatch$errorMsg)", suggestions.suggestions, suggestions.stats)
   }
 
-  private def getSyntacticSuggestions(input: String): Set[String] = {
+  private def getSyntacticSuggestions(input: String, precomputedValidEdits: Option[ValidEdits] = None): Suggestions = {
+    var semanticParsesTried = 0
+    var semanticParsesSucceeded = 0
+    var timeSpentSemanticParsingNs = 0L
+
+    def checkIfSemanticallyValidAndUpdateStats(candidate: String): Boolean = {
+      semanticParsesTried += 1
+      val (result, timeInNs) = time { isSemanticallyValid(candidate) }
+      semanticParsesSucceeded += (if (result) 1 else 0)
+      timeSpentSemanticParsingNs += timeInNs
+      result
+    }
+
     val words = input.split(" ")
-    val edits = findValidEdits(words)
-    edits.flatMap(_(words)).toSet.filter(isSemanticallyValid)
+    val validEdits = precomputedValidEdits.getOrElse(findValidEdits(words))
+    val syntacticStats = validEdits.stats
+
+    val phrasesToTry: Stream[String] = validEdits.edits.flatMap(_(words))
+    val validPhrases: Seq[String] = phrasesToTry.filter(checkIfSemanticallyValidAndUpdateStats).take(10).toIndexedSeq
+
+    val semanticStats = ErrorAnalyzerStats(semanticParsesTried = semanticParsesTried, semanticParsesSucceeded = semanticParsesSucceeded, timeSpentSemanticParsingNs = timeSpentSemanticParsingNs)
+    Suggestions(validPhrases, syntacticStats + semanticStats)
   }
 
-  private def getSemanticSuggestions(input: String): Set[String] = {
+  private def getSemanticSuggestions(input: String): Suggestions = {
+    var semanticParsesTried = 0
+    var semanticParsesSucceeded = 0
+    var timeSpentSemanticParsingNs = 0L
+
+    def checkIfSemanticallyValidAndUpdateStats(candidate: String): Boolean = {
+      semanticParsesTried += 1
+      val (result, timeInNs) = time { isSemanticallyValid(candidate) }
+      semanticParsesSucceeded += (if (result) 1 else 0)
+      timeSpentSemanticParsingNs += timeInNs
+      result
+    }
+
     def semanticReplacements(terminal: SemanticParseNode[CcgCat]): Seq[String] = {
       val token = terminal.parseTokenString
       val alternatives = Lexicon.termsInCategory(terminal.syntactic)
@@ -117,11 +192,37 @@ object ErrorAnalyzer {
     }
 
     val terminalNodes: Seq[SemanticParseNode[CcgCat]] = syntacticParse(input).get.terminals
-    terminalNodes.flatMap(semanticReplacements).toSet.filter(isSemanticallyValid)
+    val suggestions = terminalNodes.flatMap(semanticReplacements).toStream.filter(checkIfSemanticallyValidAndUpdateStats).take(10).toIndexedSeq
+
+    val semanticStats = ErrorAnalyzerStats(semanticParsesTried = semanticParsesTried, semanticParsesSucceeded = semanticParsesSucceeded, timeSpentSemanticParsingNs = timeSpentSemanticParsingNs)
+    Suggestions(suggestions, semanticStats)
   }
 
   //scalastyle:off
-  private def findValidEdits(words: Seq[String]): Stream[Edit] = {
+  private def findValidEdits(words: Seq[String]): ValidEdits = {
+    var syntacticParsesTried = 0
+    var syntacticParsesSucceeded = 0
+    var semanticParsesTried = 0
+    var semanticParsesSucceeded = 0
+    var timeSpentSyntacticParsingNs = 0L
+    var timeSpentSemanticParsingNs = 0L
+
+    def checkIfSyntacticallyValidAndUpdateStats(candidate: String): Boolean = {
+      syntacticParsesTried += 1
+      val (result, timeInNs) = time { isSyntacticallyValid(candidate) }
+      syntacticParsesSucceeded += (if (result) 1 else 0)
+      timeSpentSyntacticParsingNs += timeInNs
+      result
+    }
+
+    def checkIfSemanticallyValidAndUpdateStats(candidate: String): Boolean = {
+      semanticParsesTried += 1
+      val (result, timeInNs) = time { isSemanticallyValid(candidate) }
+      semanticParsesSucceeded += (if (result) 1 else 0)
+      timeSpentSemanticParsingNs += timeInNs
+      result
+    }
+
     // The time complexity of findValidEdits() is O(W*C) where W is the # of words and C is the # of CCG categories to try.
     // So ...
     val categories: Map[String, CcgCat] = {
@@ -141,59 +242,66 @@ object ErrorAnalyzer {
       i <- words.indices.inclusive.toStream
       (cat, pos) <- categories.toStream
       candidate = words.slice(0, i).mkString(" ") + s" $cat " + words.slice(i, words.length).mkString(" ")
-      if isSyntacticallyValid(candidate)
+      if checkIfSyntacticallyValidAndUpdateStats(candidate)
     } yield Insert(i, pos)
 
     val deletions: Stream[Edit] = for {
       i <- words.indices.toStream
       candidate = words.slice(0, i).mkString(" ") + " " + words.slice(i + 1, words.length).mkString(" ")
-      if isSyntacticallyValid(candidate)
+      if checkIfSyntacticallyValidAndUpdateStats(candidate)
     } yield Delete(i)
 
     val replacements: Stream[Edit] = {
       // Don't look for replacements if there are any (syntactically and semantically) valid deletions!!
       // This is because the token being deleted could be replaced with any identity term, resulting in a lot of nonsense candidates.
       // e.g. "Discard your opponent's hand" -> "Discard your hand" -> "Discard your it deals hand", "Discard your takes hand", etc.
-      if (deletions.flatMap(_(words)).toSet.filter(isSemanticallyValid).size > 0) {
+      if (deletions.flatMap(_(words)).exists(checkIfSemanticallyValidAndUpdateStats)) {
         Stream.empty
       } else {
         for {
           i <- words.indices.toStream
           (cat, pos) <- categories.toStream
           candidate = words.slice(0, i).mkString(" ") + s" $cat " + words.slice(i + 1, words.length).mkString(" ")
-          if isSyntacticallyValid(candidate)
+          if checkIfSyntacticallyValidAndUpdateStats(candidate)
         } yield Replace(i, pos)
       }
     }
 
     val singleWordReplacements: Stream[Edit] = {
       // If no valid edits have been found so far AND the string is short enough (<10 words) ...
-      // as a last-ditch effort, also try just replacing one word at a time with a single-word token
-      if (words.length < 10 && (insertions ++ deletions ++ replacements).flatMap(_(words)).toSet.filter(isSemanticallyValid).size == 0) {
+      // as a last-ditch effort, also try just replacing one word at a time with a common single-word token
+      if (words.length >= 10 || (insertions ++ deletions ++ replacements).flatMap(_(words)).exists(checkIfSemanticallyValidAndUpdateStats)) {
+        Stream.empty
+      } else {
         for {
           i <- words.indices.toStream
-          term <- Lexicon.listOfTerms.filter((t) => t.split(" ").length == 1).toStream
+          term <- Lexicon.mapOfTermsToUsages.filter(_._2 >= 10).keys.filter((t) => t.split(" ").length == 1).toStream
         } yield ExactReplace(i, term)
-      } else {
-        Stream.empty
       }
     }
 
-    insertions ++ deletions ++ replacements ++ singleWordReplacements
+    ValidEdits(
+      insertions ++ deletions ++ replacements ++ singleWordReplacements,
+      ErrorAnalyzerStats(syntacticParsesTried, syntacticParsesSucceeded, semanticParsesTried, semanticParsesSucceeded, timeSpentSyntacticParsingNs, timeSpentSemanticParsingNs)
+    )
   }
 
-  private def isSyntacticallyValid(candidate: String): Boolean = {
-    candidate.nonEmpty && syntacticParse(candidate).isDefined
+  private val isSyntacticallyValid: String => Boolean = {
+    Memo.mutableHashMapMemo { candidate =>
+      candidate.nonEmpty && syntacticParse(candidate).isDefined
+    }
   }
 
-  private def isSemanticallyValid(candidate: String): Boolean = {
-    val parseResult = Parser.parse(candidate).bestParse
-    parseResult.map(_.semantic) match {
-      // Is the semantic parse successful?
-      case Some(Form(v: AstNode)) =>
-        // Does the parse produce a sentence (CCG category S), and are the semantics valid?
-        parseResult.get.syntactic.category == "S" && AstValidator().validate(v).isSuccess
-      case _ => false
+  private val isSemanticallyValid: String => Boolean = {
+    Memo.mutableHashMapMemo { candidate =>
+      val parseResult = Parser.parse(candidate).bestParse
+      parseResult.map(_.semantic) match {
+        // Is the semantic parse successful?
+        case Some(Form(v: AstNode)) =>
+          // Does the parse produce a sentence (CCG category S), and are the semantics valid?
+          parseResult.get.syntactic.category == "S" && AstValidator().validate(v).isSuccess
+        case _ => false
+      }
     }
   }
 

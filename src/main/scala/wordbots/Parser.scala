@@ -45,17 +45,11 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
   }
 
   override val tokenizer: String => IndexedSeq[String] = { str: String =>
-    str
-      .replaceAllWith("""named "(.*)"""", m => s"named name:${encBase36(m.group(1))}")  // e.g. 'robot named "Test Bot"' => 'robot named name:1a7bu6u4ve1ro'
-      .replaceAllWith(""""([^"]*)" with "([^"]*)"""", m => s"text:${encBase36(m.group(1))} with text:${encBase36(m.group(2))}")  // e.g. 'Replace "a robot" with "all robots"'
-      .trim
-      .toLowerCase
-      .replaceAll("[\u202F\u00A0]", " ")  // treat special space characters as spaces
-      .replaceAllLiterally("\' ", " \' ")  // add spaces before and after <'> to make it a separate token
-      .replaceAllLiterally("\'s", " \'s ")  // add spaces before and after <'s> to make it a separate token
-      .replaceAll("""["<>]""", " $0 ")  // add spaces before and after { " < > }, to make them separate tokens
-      .split("""\s+|[.?!,()]""")  // tokenize by splitting on spaces and punctuation
-      .filter("" !=)  // ignore empty tokens
+    simpleTokenizer(
+      str
+        .replaceAllWith("""named "(.*)"""", m => s"named name:${encBase36(m.group(1))}")  // e.g. 'robot named "Test Bot"' => 'robot named name:1a7bu6u4ve1ro'
+        .replaceAllWith(""""([^"]*)" with "([^"]*)"""", m => s"text:${encBase36(m.group(1))} with text:${encBase36(m.group(2))}")  // e.g. 'Replace "a robot" with "all robots"'
+    )
   }
 
   private def encBase36(str: String): String = NameConverters.encodeBase36(str)
