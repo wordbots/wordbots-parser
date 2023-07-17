@@ -8,6 +8,7 @@ package object wordbots {
     Parser.main(Array(cmd))
   }
 
+  /** A simple tokenizer that normalizes sentneces and treats punctuation appropriately. Used by [[Parser.tokenizer]] and elsewhere. */
   val simpleTokenizer: String => IndexedSeq[String] = { str: String =>
     str
       .trim
