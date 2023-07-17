@@ -44,14 +44,15 @@ case class Suggestions(
 object ErrorAnalyzer {
   import Semantics._
 
+  /** Time a block (as a by-name argument), returning the result as well as the time it took to executed it. */
   def time[R](block: => R): (R, Long) = {
     val t0 = System.nanoTime()
-    val result = block    // call-by-name
+    val result = block
     val t1 = System.nanoTime()
     (result, t1 - t0)
   }
 
-  // Note: "fast mode" disables finding syntax/semantics suggestions and just does to bare minimum to diagnose the error
+  // Note: "fast mode" disables finding syntax/semantics suggestions and just does the bare minimum to diagnose the error
   def diagnoseError(input: String, parseResult: Option[SemanticParseNode[CcgCat]], isFastMode: Boolean = false)
                    (implicit validationMode: ValidationMode = ValidateUnknownCard): Option[ParserError] = {
     parseResult.map(_.semantic) match {
