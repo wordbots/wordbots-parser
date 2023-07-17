@@ -171,7 +171,7 @@ object ErrorAnalyzer {
     val syntacticStats = validEdits.stats
 
     val phrasesToTry: Stream[String] = validEdits.edits.flatMap(_(words))
-    val validPhrases: Seq[String] = phrasesToTry.filter(checkIfSemanticallyValidAndUpdateStats).take(MAX_NUM_SUGGESTIONS).toIndexedSeq
+    val validPhrases: Seq[String] = phrasesToTry.distinct.filter(checkIfSemanticallyValidAndUpdateStats).take(MAX_NUM_SUGGESTIONS).toIndexedSeq
 
     val semanticStats = ErrorAnalyzerStats(semanticParsesTried = semanticParsesTried, semanticParsesSucceeded = semanticParsesSucceeded, timeSpentSemanticParsingNs = timeSpentSemanticParsingNs)
     Suggestions(validPhrases, syntacticStats + semanticStats)
@@ -197,7 +197,7 @@ object ErrorAnalyzer {
     }
 
     val terminalNodes: Seq[SemanticParseNode[CcgCat]] = syntacticParse(input).get.terminals
-    val suggestions = terminalNodes.flatMap(semanticReplacements).toStream.filter(checkIfSemanticallyValidAndUpdateStats).take(MAX_NUM_SUGGESTIONS).toIndexedSeq
+    val suggestions = terminalNodes.flatMap(semanticReplacements).toStream.distinct.filter(checkIfSemanticallyValidAndUpdateStats).take(MAX_NUM_SUGGESTIONS).toIndexedSeq
 
     val semanticStats = ErrorAnalyzerStats(semanticParsesTried = semanticParsesTried, semanticParsesSucceeded = semanticParsesSucceeded, timeSpentSemanticParsingNs = timeSpentSemanticParsingNs)
     Suggestions(suggestions, semanticStats)
