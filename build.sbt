@@ -1,5 +1,5 @@
 name := "wordbots-parser"
-version := "0.20.2-beta-SNAPSHOT" // wordbots-parser versions should correspond to the current wordbots-core release.
+version := "0.20.3-beta-SNAPSHOT" // wordbots-parser versions should correspond to the current wordbots-core release.
 
 val http4sVersion = "0.15.3"
 val circeVersion = "0.6.1"
