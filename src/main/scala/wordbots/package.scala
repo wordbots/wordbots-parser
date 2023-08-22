@@ -14,6 +14,8 @@ package object wordbots {
       .trim
       .toLowerCase
       .replaceAll("[\u202F\u00A0]", " ")  // treat special space characters as spaces
+      .replaceAll("[\u0091\u0092\u2018\u2019]", "'")  // replace "smart quotes" with regular quotes (see http://www.java2s.com/ref/java/java-string-replace-microsoft-smart-quotes-curly-and.html )
+      .replaceAll("[\\u0093\\u0094\\u201c\\u201d]", "\"")  // ibid
       .replaceAllLiterally("\' ", " \' ")  // add spaces before and after <'> to make it a separate token
       .replaceAllLiterally("\'s", " \'s ")  // add spaces before and after <'s> to make it a separate token
       .replaceAll("""["<>]""", " $0 ")  // add spaces before and after { " < > }, to make them separate tokens
