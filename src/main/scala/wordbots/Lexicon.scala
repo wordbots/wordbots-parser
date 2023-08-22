@@ -389,16 +389,14 @@ object Lexicon {
       (NP|Num, λ {amount: Number => Life(amount)}),
       (NP/Adj, λ {amount: Number => Life(amount)})
     )) +
-    ("if" -> Seq(
-      ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}}),  // "if" for actions
-      ((S|S)|S, λ {c: GlobalCondition => λ {a: PassiveAbility => a.conditionOn(c)}})   // "if" for abilities
-    )) +
+    ("if" -> ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}})) +  // "if" for actions
+    (Seq("if", "when", "whenever") -> ((S|S)|S, λ {c: GlobalCondition => λ {a: PassiveAbility => a.conditionOn(c)}})) + // "if" for abilities
     (Seq("in", "on", "of", "from", "into") -> (PP/NP, identity)) +
     ("increase" -> ((S/PP)/N, λ {a: TargetAttribute => λ {i: Scalar => ModifyAttribute(a.target, a.attr, Plus(i))}})) +  // e.g. "increase its attack by X"
     ("instead" -> (S|S, λ {a: Action => Instead(a)})) +
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
-    ("is" -> (X|X, identity)) +
+    (Seq("is", "are") -> (X|X, identity)) +
     ("it" -> (NP, ItO: Sem)) +
     ("its" -> Seq(
       (Num/N, λ {a: SingleAttribute => AttributeValue(ItO, a)}),
