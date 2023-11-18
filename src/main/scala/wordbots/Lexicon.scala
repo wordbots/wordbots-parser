@@ -245,7 +245,8 @@ object Lexicon {
     )) +
     ("discards" -> Seq(
       ((S/NP)\NP, λ {_: TargetPlayer => λ {_: CardsInHand => Fail("Cards can't force a player to make a decision (try \"random card(s)\" instead)")}}),
-      ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})
+      ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}}),
+      ((S/NP)\NP, λ {p: TargetPlayer => λ {h: Hand => if (h.player == TheyP) Discard(AllC(CardsInHand(p))) else Fail("Players can only discard 'their hand', not any other hand.") }})
     )) +
     ("discard pile".s -> Seq(
       (NP\Adj, λ {p: TargetPlayer => DiscardPile(p)}),
