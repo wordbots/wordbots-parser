@@ -633,6 +633,7 @@ object Lexicon {
       (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
       ((NP\N)/NP, λ {s: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(s))}}),
       ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}}),
+      ((NP\N)/N, λ {attr: AttributeAmount => λ { o: ObjectType => GeneratedCard(o, Seq(attr))}}),  // (generated card with 1 attribute, useful only for structures)
       ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => GeneratedCard(o, attrs)}}),
       ((NP\S)/S, λ {toText: Text => λ {fromText: Text => TextReplacement(fromText, toText)}})  // i.e. "Replace \"<from>\" with \"<to>\" on ..."
     )) +
