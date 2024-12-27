@@ -1,4 +1,0 @@
-test:
-  override:
-    - sbt scalastyle
-    - sbt test
