@@ -127,7 +127,7 @@ object CodeGenerator {
       case AttributeAdjustment(target, attr, op) =>
         s"(function () { setAbility(abilities['attributeAdjustment'](function () { return ${g(target)}; }, ${g(attr)}, ${g(op)})); })"
       case ConditionalAction(condition, action) =>
-        s"(function () { setAbility(abilities['conditionalAction'](function () { return ${g(condition)}; }, ${escape(g(action))})); })"
+        s"""(function () { setAbility(abilities['conditionalAction'](function () { return ${g(condition)}; }, "${escape(g(action))}")); })"""
       case FreezeAttribute(target, attr) =>
         s"(function () { setAbility(abilities['freezeAttribute'](function () { return ${g(target)}; }, ${g(attr)})); })"
       case HasAbility(target, ability) =>
