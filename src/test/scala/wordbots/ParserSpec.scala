@@ -556,7 +556,7 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(
         AfterPlayed(ThisObject),
         If(
-          NotGC(CollectionExists(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self), AdjacentTo(ThisObject))))),
+          TargetMeetsCondition(ThisObject,NotC(AdjacentTo(ObjectsMatchingConditions(Kernel,List(ControlledBy(Self)))))),
           Destroy(ItO)
         )
       )
@@ -587,6 +587,16 @@ class ParserSpec extends FlatSpec with Matchers {
       And(
         ModifyEnergy(Self, Minus(Scalar(3))),
         ReturnToHand(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent))), Scalar(1)), Some(Self))
+      )
+
+    // beta v0.20.4
+    parse("At the start of each turn, if this robot is within 2 tiles of the opponent’s kernel, deal 1 damage to the opponent’s kernel") shouldEqual
+      TriggeredAbility(
+        BeginningOfTurn(AllPlayers),
+        If(
+          TargetMeetsCondition(ThisObject, WithinDistanceOf(Scalar(2), ObjectsMatchingConditions(Kernel, List(ControlledBy(Opponent))))),
+          DealDamage(ObjectsMatchingConditions(Kernel, List(ControlledBy(Opponent))), Scalar(1))
+        )
       )
   }
 

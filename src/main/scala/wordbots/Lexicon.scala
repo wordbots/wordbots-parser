@@ -398,6 +398,7 @@ object Lexicon {
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     (Seq("is", "are") -> (X|X, identity)) +
+    ("is" -> ((S\NP)/PP, λ {c: ObjectCondition => λ {o: TargetObject => TargetMeetsCondition(o, c)}})) +
     ("it" -> (NP, ItO: Sem)) +
     ("its" -> Seq(
       (Num/N, λ {a: SingleAttribute => AttributeValue(ItO, a)}),
