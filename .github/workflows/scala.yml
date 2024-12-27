@@ -27,8 +27,6 @@ jobs:
         java-version: '8'
         distribution: 'temurin'
     - uses: sbt/setup-sbt@v1
-    - name: sbt build
-      run: sbt build
     - name: sbt scalastyle
       run: sbt scalastyle
     - name: sbt test
