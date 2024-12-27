@@ -92,7 +92,7 @@ object Server extends ServerApp {
     val key: String = sys.env.get("HMAC_PRIVATE_KEY").get
 
     def apply(input: String, output: String): Hashes = {
-      val inputHash = input.md5.hex
+      val inputHash = input.trim.md5.hex
       val outputHash = output.md5.hex
       val hmac = s"${inputHash}.${outputHash}".hmac(key).sha512.hex
       Hashes(inputHash, outputHash, hmac)

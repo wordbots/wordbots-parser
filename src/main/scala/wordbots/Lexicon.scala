@@ -245,7 +245,8 @@ object Lexicon {
     )) +
     ("discards" -> Seq(
       ((S/NP)\NP, λ {_: TargetPlayer => λ {_: CardsInHand => Fail("Cards can't force a player to make a decision (try \"random card(s)\" instead)")}}),
-      ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}})
+      ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}}),
+      ((S/NP)\NP, λ {p: TargetPlayer => λ {h: Hand => if (h.player == TheyP) Discard(AllC(CardsInHand(p))) else Fail("Players can only discard 'their hand', not any other hand.") }})
     )) +
     ("discard pile".s -> Seq(
       (NP\Adj, λ {p: TargetPlayer => DiscardPile(p)}),
@@ -633,6 +634,7 @@ object Lexicon {
       (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
       ((NP\N)/NP, λ {s: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(s))}}),
       ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}}),
+      ((NP\N)/N, λ {attr: AttributeAmount => λ { o: ObjectType => GeneratedCard(o, Seq(attr))}}),  // (generated card with 1 attribute, useful only for structures)
       ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => GeneratedCard(o, attrs)}}),
       ((NP\S)/S, λ {toText: Text => λ {fromText: Text => TextReplacement(fromText, toText)}})  // i.e. "Replace \"<from>\" with \"<to>\" on ..."
     )) +
