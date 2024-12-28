@@ -390,7 +390,10 @@ object Lexicon {
       (NP|Num, λ {amount: Number => Life(amount)}),
       (NP/Adj, λ {amount: Number => Life(amount)})
     )) +
-    ("if" -> ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}})) +  // "if" for actions
+    ("if" -> Seq(
+      ((S|S)|S, λ {c: GlobalCondition => λ {a: Action => If(c, a)}}),  // "if" for actions: if (condition) (action)
+      (((S/NP)/S)|S, λ {o: TargetObject => λ {c: ObjectCondition => λ {a: Action => If(TargetMeetsCondition(o, c), a)}}})   // if ((object) (condition)) (action)
+    )) +
     (Seq("if", "when", "whenever") -> ((S|S)|S, λ {c: GlobalCondition => λ {a: PassiveAbility => a.conditionOn(c)}})) + // "if" for abilities
     (Seq("in", "on", "of", "from", "into") -> (PP/NP, identity)) +
     ("increase" -> ((S/PP)/N, λ {a: TargetAttribute => λ {i: Scalar => ModifyAttribute(a.target, a.attr, Plus(i))}})) +  // e.g. "increase its attack by X"

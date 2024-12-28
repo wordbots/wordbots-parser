@@ -298,6 +298,10 @@ class ParserSpec extends FlatSpec with Matchers {
 
     // beta v0.20.2
     parse("Deal 1 damage to all objects within 1 space of a tile") shouldEqual DealDamage(ObjectsMatchingConditions(AllObjects, Seq(WithinDistanceOf(Scalar(1), ChooseT(AllTiles)))), Scalar(1))
+
+    // beta v0.20.4
+    parse("Draw a card if your kernel moved this turn") shouldEqual If(TargetHasProperty(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self))), MovedThisTurn), Draw(Self, Scalar(1)))
+    parse("If your kernel moved this turn, draw a card") shouldEqual If(TargetHasProperty(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self))), MovedThisTurn), Draw(Self, Scalar(1)))
   }
 
   it should "treat 'with' as 'that has'" in {
