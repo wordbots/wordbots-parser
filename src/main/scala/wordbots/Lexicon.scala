@@ -65,6 +65,12 @@ object Lexicon {
       (NP/NP, λ {c: TilesMatchingConditions => TilesMatchingConditions(Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
     ("adjacent tile" -> (NP, TilesMatchingConditions(Seq(AdjacentTo(They))): Sem)) +  // e.g. "Move each robot to a random adjacent tile."
+    ("adjacent to" -> Seq(
+      (PP/NP, λ {t: TargetObjectOrTile => AdjacentTo(t)}),
+      (PP/NP, λ {t: TargetObject => ChooseT(TilesMatchingConditions(Seq(AdjacentTo(t))))}),
+      ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObjectOrTile => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}}),
+      (PP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
+    )) +
     ("is" / Seq("adjacent to", "adjacent to a", "adjacent to an") -> Seq(
       ((S\NP)/N, λ {t: ObjectType => λ {o: TargetObject => CollectionExists(ObjectsMatchingConditions(t, Seq(AdjacentTo(o))))}}),
       ((S\N)/NP, λ {o: TargetObject => λ {e: EnemyObject => CollectionExists(ObjectsMatchingConditions(e.objectType, Seq(AdjacentTo(o), ControlledBy(Opponent))))}}),
@@ -74,12 +80,6 @@ object Lexicon {
       ((S\NP)/N, λ {t: ObjectType => λ {o: TargetObject => NotGC(CollectionExists(ObjectsMatchingConditions(t, Seq(AdjacentTo(o)))))}}),
       ((S\N)/NP, λ {o: TargetObject => λ {e: EnemyObject => NotGC(CollectionExists(ObjectsMatchingConditions(e.objectType, Seq(AdjacentTo(o), ControlledBy(Opponent)))))}}),
       ((S\NP)/NP, λ {c: ObjectsMatchingConditions => λ {o: TargetObject => NotGC(CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ AdjacentTo(o))))}})
-    )) +
-    ("adjacent to" -> Seq(
-      (PP/NP, λ {t: TargetObjectOrTile => AdjacentTo(t)}),
-      (PP/NP, λ {t: TargetObject => ChooseT(TilesMatchingConditions(Seq(AdjacentTo(t))))}),
-      ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObjectOrTile => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}}),
-      (PP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
     ("after attacking" -> (S\S, λ {a: Action => TriggeredAbility(AfterAttack(ThisObject, AllObjects), a)})) +
     (Seq("all", "each", "every") -> Seq( // Also see Seq("each", "every") below for definitions that DON'T apply to "all".
