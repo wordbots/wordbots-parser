@@ -5,7 +5,9 @@ import com.workday.montague.parser.SemanticParseNode
 import com.workday.montague.semantics.{Form, Lambda, Nonsense}
 import scalaz.Memo
 
-import scala.util.{ Failure, Success }
+import java.util.Collections
+import scala.util.{Failure, Success}
+import scala.collection.JavaConversions._
 
 case class ParserError(description: String, suggestions: Seq[String] = Seq.empty, stats: ErrorAnalyzerStats = ErrorAnalyzerStats())
 
@@ -256,6 +258,18 @@ object ErrorAnalyzer {
       if checkIfSyntacticallyValidAndUpdateStats(candidate)
     } yield Delete(i)
 
+    // For phrases that are expansions of a single keyword, consider deleting the full expansion as a single "delete" operation
+    val phraseDeletions: Seq[Edit] = for {
+      phrase <- Seq("When this object is played,", "When this object is destroyed,")  // expansions for "Startup:" and "Shutdown:", respectively (see constants.ts in wordbots-core)
+      wordsInPhrase = phrase.split(" ").toSeq
+      startIdx = Collections.indexOfSubList(words, wordsInPhrase)
+      if startIdx > -1
+      endIdx = startIdx + wordsInPhrase.length - 1
+
+      candidate = words.slice(0, startIdx).mkString(" ") + " " + words.slice(endIdx + 1, words.length).mkString(" ")
+      if checkIfSyntacticallyValidAndUpdateStats(candidate)
+    } yield DeleteChunk(startIdx, endIdx)
+
     val replacements: Stream[Edit] = {
       // Don't look for replacements if there are any (syntactically and semantically) valid deletions!!
       // This is because the token being deleted could be replaced with any identity term, resulting in a lot of nonsense candidates.
@@ -286,7 +300,7 @@ object ErrorAnalyzer {
     }
 
     ValidEdits(
-      insertions ++ deletions ++ replacements ++ singleWordReplacements,
+      insertions ++ deletions ++ phraseDeletions ++ replacements ++ singleWordReplacements,
       ErrorAnalyzerStats(syntacticParsesTried, syntacticParsesSucceeded, semanticParsesTried, semanticParsesSucceeded, timeSpentSyntacticParsingNs, timeSpentSemanticParsingNs)
     )
   }
