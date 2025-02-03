@@ -273,8 +273,8 @@ object Lexicon {
     ("enemy" -> Seq(
       (N, EnemyObject(AllObjects): Sem),  // e.g. "whenever X destroys an enemy"
       (NP, ObjectsMatchingConditions(AllObjects, Seq(ControlledBy(Opponent))): Sem),  // e.g. "deal X damage to each enemy"
-      (N/N, λ {o: ObjectType => EnemyObject(o)}),  // e.g. "whenever X destroys an enemy object"
       (NP/N, λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(Opponent)))}),  // e.g. "deal X damage to each enemy robot"
+      (N/N, λ {o: ObjectType => EnemyObject(o)}),  // e.g. "whenever X destroys an enemy object"
       (NP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(ControlledBy(Opponent)) ++ c.conditions)})  // e.g. "enemy robot in Y"
     )) +
     (Seq("energy", "energy to play") -> Seq(
@@ -465,7 +465,10 @@ object Lexicon {
     ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
     (("object".s :+ "objects '") -> (N, AllObjects: Sem)) +
     ("odd" -> (NP/N, λ {attr: Attribute => AttributeComparison(attr, IsOdd)})) +
-    ("of" -> ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}})) +
+    ("of" -> Seq(
+      ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}),
+      ((NP/NP)\Num, λ {num: Number => λ {o: ObjectCollection => ChooseO(o, num)}})  // e.g. "X of your opponent's robots"
+    )) +
     ("other" -> Seq(
       (NP/N, λ {o: ObjectType => Other(ObjectsInPlay(o))}),
       (NP/NP, λ {oc: ObjectCollection => Other(oc)})
@@ -680,7 +683,9 @@ object Lexicon {
       (S\Quoted, identity)
     )) +
     (StrictIntegerMatcher -> (Num, {i: Int => Scalar(i): Sem})) +
+    (StrictIntegerMatcher -> (NP/NP, {i: Int => (λ {o: ObjectCollection => ChooseO(o, Scalar(i)) })})) +  // e.g. "2 enemy robots"
     (NumberWordMatcher -> (Num, {i: Int => Scalar(i): Sem})) +
+    (NumberWordMatcher -> (NP/NP, {i: Int => (λ {o: ObjectCollection => ChooseO(o, Scalar(i)) })})) +  // e.g. "2 enemy robots"
     (PrefixedIntegerMatcher("+") -> (Adj, {i: Int => Plus(Scalar(i)): Sem})) +
     (PrefixedIntegerMatcher("-") -> (Adj, {i: Int => Minus(Scalar(i)): Sem})) +
     (StatsTripleMatcher -> (NP/N, {s: StatsTriple =>

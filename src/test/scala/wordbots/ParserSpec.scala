@@ -224,17 +224,17 @@ class ParserSpec extends FlatSpec with Matchers {
       DealDamage(ChooseO(ObjectsMatchingConditions(Robot, Seq())), MaximumEnergyAmount(Self))
     parse("Play a random robot from your discard pile that costs 3 or less energy on a random tile") shouldEqual
       SpawnObject(
-        RandomC(Scalar(1), CardsInDiscardPile(Self,Robot, Seq(AttributeComparison(Cost,LessThanOrEqualTo(Scalar(3)))))),
+        RandomC(Scalar(1), CardsInDiscardPile(Self, Robot, Seq(AttributeComparison(Cost, LessThanOrEqualTo(Scalar(3)))))),
         RandomT(Scalar(1), AllTiles)
       )
     parse("Your opponent returns a random robot from their discard pile to a random tile") shouldEqual
-      SpawnObject(RandomC(Scalar(1), CardsInDiscardPile(TheyP,Robot, Seq())), RandomT(Scalar(1), AllTiles), Opponent)
+      SpawnObject(RandomC(Scalar(1), CardsInDiscardPile(TheyP, Robot, Seq())), RandomT(Scalar(1), AllTiles), Opponent)
     parse("Reduce the attack, speed, and health of all robots to 1") shouldEqual
       ModifyAttribute(ObjectsMatchingConditions(Robot, Seq()), MultipleAttributes(Seq(Health, Speed, Attack)), Minus(Scalar(1)))
     parse("Return all robots to your hand") shouldEqual
       ReturnToHand(ObjectsMatchingConditions(Robot, Seq()), Some(Self))
     parse("Give all robots \"Activate: Destroy this robot\"", ValidateEvent) shouldEqual
-      GiveAbility(ObjectsInPlay(Robot), ActivatedAbility(Destroy(ThisObject)))  // Test that this doesn't fail the NoThis validator
+      GiveAbility(ObjectsInPlay(Robot), ActivatedAbility(Destroy(ThisObject))) // Test that this doesn't fail the NoThis validator
     parse("Move all event cards from your discard pile that cost 2 or more energy to your hand") shouldEqual
       MoveCardsToHand(AllC(CardsInDiscardPile(Self, Event, Seq(AttributeComparison(Cost, GreaterThanOrEqualTo(Scalar(2)))))), Self)
     parse("Move all event cards with more than 2 cost from your discard pile to your hand") shouldEqual
@@ -280,7 +280,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Swap the positions of 2 robots") shouldEqual parse("Swap the positions of a robot and a robot")
     parse("Swap the positions of a robot with your kernel") shouldEqual parse("Swap the positions of a robot and your kernel")
     // "Replace \"Defender\" with \"Jump\" ..." <- Make sure that there's not an invalid JS error produced due to the apostrophe in the definition of "Defender":
-    parse("Replace \"This robot can't attack\" with \"This robot can move over other objects\" on all robots in your hand") shouldNot be (a[Failure[_]])
+    parse("Replace \"This robot can't attack\" with \"This robot can move over other objects\" on all robots in your hand") shouldNot be(a[Failure[_]])
 
     // beta v0.20
     parse("Draw cards equal to half your energy") shouldEqual Draw(Self, Half(EnergyAmount(Self), RoundedDown))
@@ -292,7 +292,7 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Spawn a 1/1/1 robot named \"Zombie\" on 4 empty tiles") shouldEqual
       SpawnObject(GeneratedCard(Robot, attrs(1, 1, 1), Some("Zombie")), ChooseT(TilesMatchingConditions(List(Unoccupied)), Scalar(4)))
     parse("Deal 3 damage to an enemy robot up to 3 tiles away from your kernel") shouldEqual
-      DealDamage(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent), WithinDistanceOf(Scalar(3), ObjectsMatchingConditions(Kernel ,List(ControlledBy(Self))))))), Scalar(3))
+      DealDamage(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent), WithinDistanceOf(Scalar(3), ObjectsMatchingConditions(Kernel, List(ControlledBy(Self))))))), Scalar(3))
     parse("Pay all your energy") shouldEqual PayEnergy(Self, EnergyAmount(Self))
     parse("Spawn a copy of this object on an adjacent tile") shouldEqual SpawnObject(CopyOfC(ThisObject), ChooseT(TilesMatchingConditions(List(AdjacentTo(They))), Scalar(1)), Self)
 
@@ -302,6 +302,8 @@ class ParserSpec extends FlatSpec with Matchers {
     // beta v0.20.4
     parse("Draw a card if your kernel moved this turn") shouldEqual If(TargetHasProperty(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self))), MovedThisTurn), Draw(Self, Scalar(1)))
     parse("If your kernel moved this turn, draw a card") shouldEqual If(TargetHasProperty(ObjectsMatchingConditions(Kernel, List(ControlledBy(Self))), MovedThisTurn), Draw(Self, Scalar(1)))
+    parse("Deal 2 damage to 2 enemy robots") shouldEqual DealDamage(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent))), Scalar(2)), Scalar(2))
+    parse("Deal 2 damage to 2 of your opponent's robots") shouldEqual DealDamage(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent))), Scalar(2)), Scalar(2))
   }
 
   it should "treat 'with' as 'that has'" in {
