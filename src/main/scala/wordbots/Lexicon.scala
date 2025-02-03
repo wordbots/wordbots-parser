@@ -617,7 +617,7 @@ object Lexicon {
       (NP/NP, λ {t: TileCollection => ChooseT(t, Scalar(3))})
     )) +
     ("total" -> ((Num/PP)/N, λ {a: SingleAttribute => λ {c: ObjectOrCardCollection => AttributeSum(c, a)}})) +
-    ("transform" -> Seq(
+    (Seq("transform", "turn") -> Seq(
       ((S/PP)/NP, λ {source: TargetObject => λ {target: TargetCard => Become(source, target)}}), // used with aCopyOf
       ((S/PP)/NP, λ {source: TargetObject => λ {target: GeneratedCard => Become(source, target)}}) // only used in such things as "becomes a robot with 1 attack and...".
     )) +
