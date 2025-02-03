@@ -602,6 +602,7 @@ class ParserSpec extends FlatSpec with Matchers {
           DealDamage(ObjectsMatchingConditions(Kernel, List(ControlledBy(Opponent))), Scalar(1))
         )
       )
+    parse("At the start of each player's turn, that player discards all cards") shouldEqual parse("At the start of each player's turn, that player discards their hand")
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {

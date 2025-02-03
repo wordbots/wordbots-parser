@@ -243,11 +243,13 @@ object Lexicon {
       (S/NP, λ {t: TargetCard => Discard(t)}),  // e.g. "Discard a random card in your hand"
       (S/NP, λ {h: Hand => if (h.player == Self) Discard(AllC(CardsInHand(Self))) else Fail("You can only discard your own cards.") })  // "Discard your hand"
     )) +
+    ("discard all cards" -> (S, Discard(AllC(CardsInHand(Self))): Sem)) +
     ("discards" -> Seq(
       ((S/NP)\NP, λ {_: TargetPlayer => λ {_: CardsInHand => Fail("Cards can't force a player to make a decision (try \"random card(s)\" instead)")}}),
       ((S/NP)\NP, λ {p: TargetPlayer => λ {c: RandomCards => Discard(RandomC(c.num, CardsInHand(p, c.cardType)))}}),
       ((S/NP)\NP, λ {p: TargetPlayer => λ {h: Hand => if (h.player == TheyP) Discard(AllC(CardsInHand(p))) else Fail("Players can only discard 'their hand', not any other hand.") }})
     )) +
+    ("discards all cards" -> (S \ NP, λ { p: TargetPlayer => Discard(AllC(CardsInHand(p))) })) +
     ("discard pile".s -> Seq(
       (NP\Adj, λ {p: TargetPlayer => DiscardPile(p)}),
       (NP\Adj, λ {p: TargetPlayer => CardsInDiscardPile(p)})
