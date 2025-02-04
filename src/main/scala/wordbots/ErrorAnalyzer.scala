@@ -1,7 +1,7 @@
 package wordbots
 
 import com.workday.montague.ccg.CcgCat
-import com.workday.montague.parser.SemanticParseNode
+import com.workday.montague.parser.{SemanticParseNode, SemanticParseResult}
 import com.workday.montague.semantics.{Form, Lambda, Nonsense}
 import scalaz.Memo
 
@@ -56,6 +56,20 @@ object ErrorAnalyzer {
     val result = block
     val t1 = System.nanoTime()
     (result, t1 - t0)
+  }
+
+  /** If any parses are semantically complete, selects the first one that passes AstValidator. Otherwise, selects bestParse (if any) as determined by the parser. */
+  def bestValidParse(parseResult: SemanticParseResult[CcgCat])(implicit validationMode: ValidationMode = ValidateUnknownCard): Option[SemanticParseNode[CcgCat]] = {
+    val bestValidParses: List[SemanticParseNode[CcgCat]] = for {
+      parse <- parseResult.semanticCompleteParses
+      ast <- parse.semantic match {
+        case Form(ast: AstNode) => Some(ast)
+        case _ => None
+      }
+      if AstValidator(validationMode).validate(ast).isSuccess
+    } yield parse
+
+    bestValidParses.headOption.orElse(parseResult.bestParse)
   }
 
   // Note: "fast mode" disables finding syntax/semantics suggestions and just does the bare minimum to diagnose the error

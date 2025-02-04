@@ -13,7 +13,7 @@ class ParserSpec extends FlatSpec with Matchers {
   //scalastyle:off regex
   def parse(input: String, validationMode: ValidationMode = ValidateUnknownCard): Any = {
     println(s"Parsing $input...")
-    Parser.parse(input).bestParse match {
+    ErrorAnalyzer.bestValidParse(Parser.parse(input)) match {
       case Some(parse) => parse.semantic match {
         case Form(v: AstNode) =>
           println(s"    $v")
@@ -424,8 +424,12 @@ class ParserSpec extends FlatSpec with Matchers {
       TriggeredAbility(AfterDestroyed(ThisObject), DealDamage(ObjectsMatchingConditions(AllObjects, Seq(WithinDistanceOf(Scalar(2), ThisObject))), Scalar(2)))
 
     //scalastyle:off magic.number
-    parse("When this robot is played, if it is adjacent to an enemy robot, it gains 5 health.") shouldEqual
-      TriggeredAbility(AfterPlayed(ThisObject), If(CollectionExists(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent), AdjacentTo(ItO)))), ModifyAttribute(ItO, Health, Plus(Scalar(5)))))
+    // (two possible parses here, both valid and both achieving the same result)
+    parse("When this robot is played, if it is adjacent to an enemy robot, it gains 5 health.") should (
+      equal(TriggeredAbility(AfterPlayed(ThisObject), If(CollectionExists(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent), AdjacentTo(ItO)))), ModifyAttribute(ItO, Health, Plus(Scalar(5))))))
+      or equal(TriggeredAbility(AfterPlayed(ThisObject), If(TargetMeetsCondition(ItO, AdjacentTo(ChooseO(ObjectsMatchingConditions(Robot, List(ControlledBy(Opponent))), Scalar(1)))), ModifyAttribute(ItO, Health, Plus(Scalar(5))))))
+    )
+
     //scalastyle:on magic.number
     parse("When this robot attacks, it can attack again.") shouldEqual
       TriggeredAbility(AfterAttack(ThisObject), CanAttackAgain(ItO))

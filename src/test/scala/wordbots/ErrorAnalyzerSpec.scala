@@ -4,7 +4,7 @@ import org.scalatest._
 
 class ErrorAnalyzerSpec extends FlatSpec with Matchers {
   def analyze(input: String): Option[ParserError] = {
-    val parseResult = Parser.parse(input).bestParse
+    val parseResult = ErrorAnalyzer.bestValidParse(Parser.parse(input))
     ErrorAnalyzer.diagnoseError(input, parseResult)
   }
 

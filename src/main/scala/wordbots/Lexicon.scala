@@ -71,11 +71,13 @@ object Lexicon {
       ((NP/NP)\N, λ {o: ObjectType => λ {t: TargetObjectOrTile => ObjectsMatchingConditions(o, Seq(AdjacentTo(t)))}}),
       (PP/NP, λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, Seq(AdjacentTo(ThisObject)) ++ c.conditions)})
     )) +
-    ("is" /?/ Seq("adjacent to", "adjacent to a", "adjacent to an") -> Seq(
+    ("is" / Seq("adjacent to", "adjacent to a", "adjacent to an") -> Seq(
+      ((S\NP)/N, λ {t: ObjectType => λ {o: TargetObject => CollectionExists(ObjectsMatchingConditions(t, Seq(AdjacentTo(o))))}}),
       ((S\N)/NP, λ {o: TargetObject => λ {e: EnemyObject => CollectionExists(ObjectsMatchingConditions(e.objectType, Seq(AdjacentTo(o), ControlledBy(Opponent))))}}),
       ((S\NP)/NP, λ {c: ObjectsMatchingConditions => λ {o: TargetObject => CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ AdjacentTo(o)))}})
     )) +
-    ("is not" /?/ Seq("adjacent to", "adjacent to a", "adjacent to an") -> Seq(
+    ("is not" / Seq("adjacent to", "adjacent to a", "adjacent to an") -> Seq(
+      ((S\NP)/N, λ {t: ObjectType => λ {o: TargetObject => NotGC(CollectionExists(ObjectsMatchingConditions(t, Seq(AdjacentTo(o)))))}}),
       ((S\N)/NP, λ {o: TargetObject => λ {e: EnemyObject => NotGC(CollectionExists(ObjectsMatchingConditions(e.objectType, Seq(AdjacentTo(o), ControlledBy(Opponent)))))}}),
       ((S\NP)/NP, λ {c: ObjectsMatchingConditions => λ {o: TargetObject => NotGC(CollectionExists(ObjectsMatchingConditions(c.objectType, c.conditions :+ AdjacentTo(o))))}})
     )) +
