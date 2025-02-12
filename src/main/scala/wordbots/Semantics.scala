@@ -164,6 +164,7 @@ object Semantics {
       case class ChooseT(collection: TileCollection, numChosen: Number = Scalar(1)) extends TargetTile
       case class AllT(collection: TileCollection) extends TargetTile
       case class RandomT(num: Number, collection: TileCollection) extends TargetTile
+      case object SavedTargetTile extends TargetTile
     sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
       case object Self extends TargetPlayer
       case object Opponent extends TargetPlayer

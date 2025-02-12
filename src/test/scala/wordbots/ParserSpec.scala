@@ -312,6 +312,7 @@ class ParserSpec extends FlatSpec with Matchers {
         ModifyAttribute(SavedTargetObject,Health,Minus(Scalar(1))),
         ModifyAttribute(SavedTargetObject,Attack,Minus(Scalar(1)))
       ))
+    parse("Choose a tile") shouldEqual SaveTarget(ChooseT(AllTiles,Scalar(1)))
   }
 
   it should "treat 'with' as 'that has'" in {

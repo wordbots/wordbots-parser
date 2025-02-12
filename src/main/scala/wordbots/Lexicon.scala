@@ -181,7 +181,10 @@ object Lexicon {
       ((NP/PP)/Adj, λ {condition: CardCondition => λ {hand: Hand => CardsInHand(hand.player, AnyCard, Seq(condition))}}),
       ((NP/PP)/Adj, λ {condition: CardCondition => λ {d: DiscardPile => CardsInDiscardPile(d.player, AnyCard, Seq(condition))}})
     )) +
-    ("choose" -> (S/NP, λ {t: TargetObject => SaveTarget(t)})) +
+    ("choose" -> Seq(
+      (S/NP, λ {t: ChooseO => SaveTarget(t)}),
+      (S/NP, λ {t: ChooseT => SaveTarget(t)})
+    ))  +
     ("control".s -> ((NP\N)\NP, λ {p: TargetPlayer => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(ControlledBy(p)))}})) +
     (Seq("control a", "control an", "has a", "has an", "have a", "have an") ->
       ((S/NP)\NP,
@@ -599,6 +602,7 @@ object Lexicon {
       ((NP\N)/S, λ {cs: Seq[ObjectCondition] => λ { o: ObjectType => ObjectsMatchingConditions(o, cs)}})
     )) +
     ("that" / Seq("robot", "structure", "object") -> (NP, That: Sem)) +
+    ("that" / Seq("space", "tile", "hex") -> (NP, SavedTargetTile: Sem)) +
     (("that cost".s ++ "which cost".s) -> Seq(
       ((NP\NP)/NP, λ {e: Energy => λ {c: CardsInHand => CardsInHand(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, EqualTo(e.amount)))}}),
       ((NP\NP)/NP, λ {ec: EnergyComparison => λ {c: CardsInHand => CardsInHand(c.player, c.cardType, c.conditions :+ AttributeComparison(Cost, ec.comp))}}),
