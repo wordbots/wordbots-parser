@@ -472,6 +472,7 @@ object Lexicon {
       (PP/PP, λ {c: GlobalCondition => NotGC(c)})
     )) +
     ("number" -> (Num/PP, λ {c: Collection => Count(c)})) +
+    ("number of objects destroyed this turn" -> (NP, NumberOfObjectsDestroyedThisTurn: Sem)) +
     (("object".s :+ "objects '") -> (N, AllObjects: Sem)) +
     ("odd" -> (NP/N, λ {attr: Attribute => AttributeComparison(attr, IsOdd)})) +
     ("of" -> Seq(

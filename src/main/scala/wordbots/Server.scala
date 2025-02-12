@@ -12,7 +12,6 @@ import org.http4s.server.blaze.BlazeBuilder
 import io.circe._
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.log4s.MDC.result
 import scalaz.Memo
 import scalaz.concurrent.Task
 import wordbots.Semantics.AstNode

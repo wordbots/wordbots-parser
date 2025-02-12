@@ -223,6 +223,7 @@ object Semantics {
     case class EnergyAmount(player: TargetPlayer) extends Number
     case class Half(num: Number, rounding: Rounding) extends Number
     case class MaximumEnergyAmount(player: TargetPlayer) extends Number
+    case object NumberOfObjectsDestroyedThisTurn extends Number
     case object ThatMuch extends Number  // salient amount
     case class Times(num1: Number, num2: Number) extends Number
 

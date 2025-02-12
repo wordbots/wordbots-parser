@@ -307,12 +307,13 @@ class ParserSpec extends FlatSpec with Matchers {
     parse("Give 1 health to all robots you control") shouldEqual parse("Give all robots you control 1 health")
     parse("All friendly robots lose 1 speed and 1 health and 1 attack") shouldEqual
       MultipleActions(Seq(
-        SaveTarget(ObjectsMatchingConditions(Robot,List(ControlledBy(Self)))),
-        ModifyAttribute(SavedTargetObject,Speed,Minus(Scalar(1))),
-        ModifyAttribute(SavedTargetObject,Health,Minus(Scalar(1))),
-        ModifyAttribute(SavedTargetObject,Attack,Minus(Scalar(1)))
+        SaveTarget(ObjectsMatchingConditions(Robot, List(ControlledBy(Self)))),
+        ModifyAttribute(SavedTargetObject, Speed, Minus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Health, Minus(Scalar(1))),
+        ModifyAttribute(SavedTargetObject, Attack, Minus(Scalar(1)))
       ))
-    parse("Choose a tile") shouldEqual SaveTarget(ChooseT(AllTiles,Scalar(1)))
+    parse("Choose a tile") shouldEqual SaveTarget(ChooseT(AllTiles, Scalar(1)))
+    parse("Lose life equal to the number of objects destroyed this turn") shouldEqual DealDamage(Self, NumberOfObjectsDestroyedThisTurn)
   }
 
   it should "treat 'with' as 'that has'" in {

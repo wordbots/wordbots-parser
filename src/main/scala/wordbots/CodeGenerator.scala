@@ -235,6 +235,7 @@ object CodeGenerator {
       case Half(num, RoundedDown) => s"(Math.floor(${g(num)} / 2))"
       case Half(num, RoundedUp) => s"(Math.ceil(${g(num)} / 2))"
       case MaximumEnergyAmount(player) => s"maximumEnergyAmount(${g(player)})"
+      case NumberOfObjectsDestroyedThisTurn => s"numberOfObjectsDestroyedThisTurn()"
       case ThatMuch => "thatMuch()"
       case Times(n1, n2) => s"((${g(n1)}) * (${g(n2)}))"
 
