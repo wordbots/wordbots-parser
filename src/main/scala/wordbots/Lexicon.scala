@@ -121,7 +121,7 @@ object Lexicon {
       (PP/PP, λ {dist: ExactDistanceFrom => WithinDistanceOf(dist.distance, dist.obj)}),
       (((NP\NP)/PP), λ {dist: ExactDistanceFrom => λ {c: ObjectsMatchingConditions => ObjectsMatchingConditions(c.objectType, c.conditions :+ WithinDistanceOf(dist.distance, dist.obj))}})  // "an enemy robot up to X tiles away"
     )) +
-    (Seq("attack", "power") -> Seq(
+    (Seq("attack", "power", "damage") -> Seq(
       (N, Attack: Sem),
       (N\Num, λ {i: Scalar => AttributeAmount(i, Attack)}),
       (NP|Adj, λ {amount: Number => AttributeAmount(amount, Attack)}),

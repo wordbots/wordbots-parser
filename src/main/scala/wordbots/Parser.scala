@@ -31,7 +31,7 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     println(s"Input: $input")
     println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
-    println(s"All semantically complete parse results:\n  ${allSemanticallyCompleteParses.mkString("\n  ")}")
+    println(s"All semantically complete parse results:${allSemanticallyCompleteParses.mkString("\n  ", "\n  ", "")}")
     println(s"Error diagnosis: ${ErrorAnalyzer.diagnoseError(input, bestParse)}")
     println(s"Generated JS code: ${code.getOrElse(code.failed.get)}")
     // scalastyle:on regex
