@@ -430,6 +430,8 @@ object Lexicon {
       ((S/NP)\NP, λ {p: TargetPlayer => λ {_: AllEnergy.type => ModifyEnergy(p, Constant(Scalar(0)))}}),  // Y loses all energy.
       ((S/NP)\NP, λ {p: TargetPlayer => λ {e: Energy => ModifyEnergy(p, Minus(e.amount))}}),  // Y loses X energy.
       ((S\NP)/NP, λ {aa: AttributeAmount => λ {t: TargetObject => ModifyAttribute(t, aa.attr, Minus(aa.amount))}}),  // " ... X attack"
+      ((S/N)\NP, λ {t: TargetObject => λ {attrs: Seq[AttributeAmount] =>  // "... X attack and Y speed"
+        MultipleActions(Seq(SaveTarget(t)) ++ attrs.map(a => ModifyAttribute(SavedTargetObject, a.attr, Minus(a.amount))))}}),
       (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})  // Y loses X (attribute).
     )) +
     ("more" -> Seq(
