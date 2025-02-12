@@ -45,6 +45,17 @@ object Lexicon {
 
   implicit def astNodeToSem(node: ParseNode): Sem = Form(node)
 
+  /** Type checks that the given Seq has only elements of the expected case class (using .getClass()).
+   * Sadly necessary because of type erasure ...
+   * The .getClass().toString() approach requires an exact class name match, so this will only work for case classes, not traits.
+   * TODO(AN): Come up with a more general approach that would work for inherited traits as well? */
+  def validatingSeq[T, U](seq: Seq[T], expectedClassName: String)(out: U): U = {
+    if (!seq.forall(_.getClass().toString() == "class wordbots.Semantics$" + expectedClassName)) {
+      Fail(s"Seq parameter failed type check")
+    }
+    out
+  }
+
   val lexicon: ParserDict[CcgCat] = ParserDict[CcgCat]() +
     (Seq("a", "an") -> Seq(
       (N/N, identity),
@@ -331,7 +342,7 @@ object Lexicon {
     ("gain".s -> Seq( // "[All robots] gain ..."
       ((S\NP)/NP, λ {aa: AttributeAmount => λ {t: TargetObject => ModifyAttribute(t, aa.attr, Plus(aa.amount))}}),  // " ... X attack"
       ((S/N)\NP, λ {t: TargetObject => λ {attrs: Seq[AttributeAmount] =>  // "... X attack and Y speed"
-        MultipleActions(Seq(SaveTarget(t)) ++ attrs.map(a => ModifyAttribute(SavedTargetObject, a.attr, Plus(a.amount))))}}),
+        validatingSeq(attrs, "AttributeAmount") { MultipleActions(Seq(SaveTarget(t)) ++ attrs.map(a => ModifyAttribute(SavedTargetObject, a.attr, Plus(a.amount))))}}}),
       ((S/NP)\NP, λ {p: TargetPlayer => λ {e: Energy => ModifyEnergy(p, Plus(e.amount))}}),  // Y gains X energy.
       (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(num))}}})  // Y gains X (attribute).
     )) +
@@ -339,7 +350,7 @@ object Lexicon {
     (("get".s ++ "gain".s) -> Seq( // "[All robots] get/gain ..."
       ((S/NP)\NP, λ {t: TargetObject => λ {op: AttributeOperation => ModifyAttribute(t, op.attr, op.op)}}),  // "... +X attack"
       ((S/NP)\NP, λ {t: TargetObject => λ {ops: Seq[AttributeOperation] =>  // "... +X attack and +Y speed"
-        MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}),
+        validatingSeq(ops, "AttributeOperation") { MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}}),
       ((S/S)\NP, λ {t: TargetObject => λ {a: Ability => GiveAbility(t, a)}}),  // "... [ability]"
       ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  // "... +X attack and [ability]"
         MultipleActions(Seq(SaveTarget(t), ModifyAttribute(SavedTargetObject, a._1.attr, a._1.op), GiveAbility(SavedTargetObject, a._2)))}}),
@@ -352,9 +363,9 @@ object Lexicon {
       (((S/PP)/N)/Num, λ {i: Scalar => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Plus(i))}}}),  // "Give X attack [to a robot]"
       (((S/PP)/N)/Adj, λ {o: Operation => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, o)}}}),  // "Give +X attack [to a robot]"
       ((S/N)/NP, λ {t: TargetObject => λ {attrs: Seq[AttributeAmount] =>  // "... X attack and Y speed"
-        MultipleActions(Seq(SaveTarget(t)) ++ attrs.map(a => ModifyAttribute(SavedTargetObject, a.attr, Plus(a.amount))))}}),
+        validatingSeq(attrs, "AttributeAmount") { MultipleActions(Seq(SaveTarget(t)) ++ attrs.map(a => ModifyAttribute(SavedTargetObject, a.attr, Plus(a.amount))))}}}),
       ((S/NP)/NP, λ {t: TargetObject => λ {ops: Seq[AttributeOperation] =>  // "... +X attack and +Y speed"
-        MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}),
+        validatingSeq(ops, "AttributeOperation") { MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}}),
       ((S/S)/NP, λ {t: TargetObject => λ {a: Ability => GiveAbility(t, a)}}),  // "... [ability]"
       ((S/S)/NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  // "... +X attack and [ability]"
         MultipleActions(Seq(SaveTarget(t), ModifyAttribute(SavedTargetObject, a._1.attr, a._1.op), GiveAbility(SavedTargetObject, a._2)))}})
@@ -378,7 +389,7 @@ object Lexicon {
     )) +
     (Seq("has", "have") -> Seq(
       (S/NP, λ {ac: AttributeComparison => ac}),
-      (S/NP, λ {cs: Seq[AttributeComparison] => cs}), // multiple conditions
+      (S/NP, λ {cs: Seq[AttributeComparison] => validatingSeq(cs, "AttributeComparison") { cs }}), // multiple conditions
       ((S\NP)/S, λ {a: Ability => λ {t: TargetObject => HasAbility(t, a)}}),
       ((S\NP)/N, λ {a: AttributeAmount => λ {t: TargetObject => AttributeAdjustment(t, a.attr, Constant(a.amount))}}),  // "... X attack"
       ((S/NP)\NP, λ {t: TargetObject => λ {op: AttributeOperation => AttributeAdjustment(t, op.attr, op.op)}}),  // "... +X attack"
@@ -434,7 +445,7 @@ object Lexicon {
       ((S/NP)\NP, λ {p: TargetPlayer => λ {e: Energy => ModifyEnergy(p, Minus(e.amount))}}),  // Y loses X energy.
       ((S\NP)/NP, λ {aa: AttributeAmount => λ {t: TargetObject => ModifyAttribute(t, aa.attr, Minus(aa.amount))}}),  // " ... X attack"
       ((S/N)\NP, λ {t: TargetObject => λ {attrs: Seq[AttributeAmount] =>  // "... X attack and Y speed"
-        MultipleActions(Seq(SaveTarget(t)) ++ attrs.map(a => ModifyAttribute(SavedTargetObject, a.attr, Minus(a.amount))))}}),
+        validatingSeq(attrs, "AttributeAmount") { MultipleActions(Seq(SaveTarget(t)) ++ attrs.map(a => ModifyAttribute(SavedTargetObject, a.attr, Minus(a.amount))))}}}),
       (((S\NP)/N)/Num, λ {num: Number => λ {a: Attribute => λ {t: TargetObject => ModifyAttribute(t, a, Minus(num))}}})  // Y loses X (attribute).
     )) +
     ("more" -> Seq(
@@ -476,7 +487,8 @@ object Lexicon {
     (("object".s :+ "objects '") -> (N, AllObjects: Sem)) +
     ("odd" -> (NP/N, λ {attr: Attribute => AttributeComparison(attr, IsOdd)})) +
     ("of" -> Seq(
-      ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject => MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}),
+      ((S/NP)\V, λ {ops: Seq[AttributeOperation] => λ {t: TargetObject =>
+        validatingSeq(ops, "AttributeOperation") { MultipleActions(Seq(SaveTarget(t)) ++ ops.map(op => ModifyAttribute(SavedTargetObject, op.attr, op.op)))}}}),
       ((NP/NP)\Num, λ {num: Number => λ {o: ObjectCollection => ChooseO(o, num)}})  // e.g. "X of your opponent's robots"
     )) +
     ("other" -> Seq(
@@ -517,7 +529,7 @@ object Lexicon {
     ("remove all abilities" -> (S/PP, λ {t: TargetObject => RemoveAllAbilities(t)})) +
     ("replace" -> Seq(
       ((S/PP)/NP, λ {r: TextReplacement => λ {t: TargetCard => RewriteText(t, Map(r.from.text -> r.to.text))}}),
-      ((S/PP)/NP, λ {rs: Seq[TextReplacement] => λ {t: TargetCard => RewriteText(t, rs.map(r => (r.from.text -> r.to.text)).toMap)}})
+      ((S/PP)/NP, λ {rs: Seq[TextReplacement] => λ {t: TargetCard => validatingSeq(rs, "TextReplacement") { RewriteText(t, rs.map(r => (r.from.text -> r.to.text)).toMap)}}})
     )) +
     ("restore" -> Seq(
       ((S/PP)/N, λ {a: Attribute => λ {t: TargetObjectOrPlayer => RestoreAttribute(t, a, None)}}),  // e.g. "Restore health to X"
@@ -541,7 +553,7 @@ object Lexicon {
       (NP/PP, λ {d: DiscardPile => CardsInDiscardPile(d.player, Robot)}),
       ((NP/PP)/Adj, λ {condition: CardCondition => λ {hand: Hand => CardsInHand(hand.player, Robot, Seq(condition))}}),
       ((NP/PP)/Adj, λ {condition: CardCondition => λ {d: DiscardPile => CardsInDiscardPile(d.player, Robot, Seq(condition))}}),
-      (NP\Adj, λ {attrs: Seq[AttributeAmount] => GeneratedCard(Robot, attrs)})  // e.g. "a 3/1/2 robot"
+      (NP\Adj, λ {attrs: Seq[AttributeAmount] => validatingSeq(attrs, "AttributeAmount") { GeneratedCard(Robot, attrs)}})  // e.g. "a 3/1/2 robot"
     )) +
     ("robot on the board" -> (N, Robot: Sem)) +  // e.g. "If you control a robot on the board with 3 or more health, ..."
     ("rounded down" -> (Adv, RoundedDown: Sem)) +
@@ -651,11 +663,11 @@ object Lexicon {
     (("win".s ++ Seq("win the game", "wins the game")) -> ((S\NP, λ {p: TargetPlayer => WinGame(p)}))) +
     ("with" -> Seq(  // "with" = "that" + "has"
       (Adj/NP, identity),
-      (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),
+      (ReverseConj, λ {a: ParseNode => λ {b: ParseNode => Seq(a, b)}}),  // i.e. "[Swap the positions of] a robot WITH your kernel"
       ((NP\N)/NP, λ {s: AttributeComparison => λ {o: ObjectType => ObjectsMatchingConditions(o, Seq(s))}}),
-      ((NP\N)/NP, λ {s: Seq[AttributeComparison] => λ {o: ObjectType => ObjectsMatchingConditions(o, s)}}),
+      ((NP\N)/NP, λ {cs: Seq[AttributeComparison] => λ {o: ObjectType => validatingSeq(cs, "AttributeComparison") { ObjectsMatchingConditions(o, cs) }}}),
       ((NP\N)/N, λ {attr: AttributeAmount => λ { o: ObjectType => GeneratedCard(o, Seq(attr))}}),  // (generated card with 1 attribute, useful only for structures)
-      ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => GeneratedCard(o, attrs)}}),
+      ((NP\N)/N, λ {attrs: Seq[AttributeAmount] => λ {o: ObjectType => validatingSeq(attrs, "AttributeAmount") { GeneratedCard(o, attrs)}}}),
       ((NP\S)/S, λ {toText: Text => λ {fromText: Text => TextReplacement(fromText, toText)}})  // i.e. "Replace \"<from>\" with \"<to>\" on ..."
     )) +
     ("within" -> Seq(
