@@ -9,6 +9,7 @@ resolvers += Resolver.sonatypeRepo("releases")
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 libraryDependencies ++= Seq(
+  // "ch.qos.logback" % "logback-classic" % "1.1.3" % Runtime,  // to enable slf4j debug logging for the server
   "com.danielasfregola" %% "random-data-generator" % "2.3",
   "com.outr" %% "hasher" % "1.2.1",
   "io.circe" %% "circe-generic" % circeVersion,
