@@ -620,6 +620,10 @@ class ParserSpec extends FlatSpec with Matchers {
         )
       )
     parse("At the start of each player's turn, that player discards all cards") shouldEqual parse("At the start of each player's turn, that player discards their hand")
+    parse("At the start of each player's turn, shuffle 3 random cards from that player's discard pile to that player's deck.") shouldEqual
+      TriggeredAbility(BeginningOfTurn(AllPlayers), ShuffleCardsIntoDeck(RandomC(Scalar(3), CardsInDiscardPile(ItP)), ItP))
+    parse("At the start of your turn, if this robot's health is less than 3, draw a card") shouldEqual
+      TriggeredAbility(BeginningOfTurn(Self), If(TargetMeetsCondition(ThisObject, AttributeComparison(Health, LessThan(Scalar(3)))), Draw(Self, Scalar(1))))
   }
 
   it should "understand that terms like 'a robot' suggest choosing a target in action text but NOT in trigger text" in {
@@ -688,13 +692,13 @@ class ParserSpec extends FlatSpec with Matchers {
         ObjectsMatchingConditions(Robot, Seq(ControlledBy(Opponent))),
         CannotMoveTo(TilesMatchingConditions(Seq(AdjacentTo(ThisObject))))
       )
+
+    // beta v0.20.4:
     parse("Adjacent robots have +2 attack and +1 speed") shouldEqual
       MultipleAbilities(List(
         AttributeAdjustment(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject))), Attack, Plus(Scalar(2))),
         AttributeAdjustment(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject))), Speed, Plus(Scalar(1))))
       )
-    parse("At the start of each player's turn, shuffle 3 random cards from that player's discard pile to that player's deck.") shouldEqual
-      TriggeredAbility(BeginningOfTurn(AllPlayers), ShuffleCardsIntoDeck(RandomC(Scalar(3), CardsInDiscardPile(ItP)), ItP))
   }
 
   it should "parse passively triggered actions for robots" in {

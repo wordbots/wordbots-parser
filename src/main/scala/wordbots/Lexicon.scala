@@ -424,7 +424,13 @@ object Lexicon {
     ("in combat" -> (S\S, λ {t: AfterDestroyed => AfterDestroyed(t.target, Combat)})) +
     (Seq("in play", "on the board") -> (NP\N, λ {o: ObjectType => ObjectsInPlay(o)})) +
     (Seq("is", "are") -> (X|X, identity)) +
-    ("is" -> ((S\NP)/PP, λ {c: ObjectCondition => λ {o: TargetObject => TargetMeetsCondition(o, c)}})) +
+    ("is" -> Seq(
+      ((S\NP)/PP, λ {c: ObjectCondition => λ {o: TargetObject => TargetMeetsCondition(o, c)}}),
+      ((S\NP)/Num, λ {amount: Number => λ {a: TargetAttribute =>  // i.e. "this robot's health is 3"
+        if (a.target.isInstanceOf[TargetObject]) TargetMeetsCondition(a.target.asInstanceOf[TargetObject], AttributeComparison(a.attr, EqualTo(amount))) else Fail("AttributeComparison requires an Object, not a Player")}}),
+      ((S\NP)/Adj, λ {c: Comparison => λ {a: TargetAttribute =>  // i.e. "this robot's health is less than 3"
+        if (a.target.isInstanceOf[TargetObject]) TargetMeetsCondition(a.target.asInstanceOf[TargetObject], AttributeComparison(a.attr, c)) else Fail("AttributeComparison requires an Object, not a Player")}})
+    )) +
     ("it" -> (NP, ItO: Sem)) +
     ("its" -> Seq(
       (Num/N, λ {a: SingleAttribute => AttributeValue(ItO, a)}),
