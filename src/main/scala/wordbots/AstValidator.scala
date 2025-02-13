@@ -14,6 +14,7 @@ case object ValidateUnknownCard extends ValidationMode
 
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val baseRules: Seq[AstRule] = Seq(
+    MustBeActionOrAbility,
     NoUnimplementedRules,
     NoChooseOrRewriteInTriggeredAction,
     NoPayEnergyInTriggeredAction,
@@ -160,6 +161,16 @@ object OnlyThisObjectPlayed extends AstRule {
       case AfterPlayed(ItO) => Success()
       case AfterPlayed(_) => Failure(ValidationError("AfterPlayed can only refer to ThisObject or ItO."))
       case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+object MustBeActionOrAbility extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case _: Action => Success()
+      case _: Ability => Success()
+      case _ => Failure(ValidationError("Tried to parse something odd that doesn't look like a valid action OR ability."))
     }
   }
 }

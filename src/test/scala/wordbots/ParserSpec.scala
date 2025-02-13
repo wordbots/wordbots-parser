@@ -753,6 +753,11 @@ class ParserSpec extends FlatSpec with Matchers {
     }
   }
 
+  it should "require parses to be either an Action or Ability, not any other kind of sentence" in {
+    parse("You control an enemy robot.") shouldEqual
+      Failure(ValidationError("Tried to parse something odd that doesn't look like a valid action OR ability."))
+  }
+
   it should "disallow choosing targets inside a triggered action, *except* for AfterPlayed triggers" in {
     parse("When this robot is destroyed, destroy a robot.") shouldEqual
       Failure(ValidationError("Choosing targets not allowed for triggered actions."))
