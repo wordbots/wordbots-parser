@@ -700,6 +700,7 @@ object Lexicon {
       (Adj, Opponent: Sem)
     )) +
     (Seq("'", "'s") -> Seq(
+      (Adj\NP, λ {p: TargetPlayer => p}),  // used in, i.e. "that player's discard pile"
       ((NP\NP)/N, λ {a: Attribute => λ {t: TargetObjectOrPlayer => TargetAttribute(t, a)}}),
       ((NP\NP)/N, λ {a: SingleAttribute => λ {t: TargetObject => AttributeValue(t, a)}})
     )) +

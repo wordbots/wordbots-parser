@@ -692,6 +692,8 @@ class ParserSpec extends FlatSpec with Matchers {
         AttributeAdjustment(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject))), Attack, Plus(Scalar(2))),
         AttributeAdjustment(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject))), Speed, Plus(Scalar(1))))
       )
+    parse("At the start of each player's turn, shuffle 3 random cards from that player's discard pile to that player's deck.") shouldEqual
+      TriggeredAbility(BeginningOfTurn(AllPlayers), ShuffleCardsIntoDeck(RandomC(Scalar(3), CardsInDiscardPile(ItP)), ItP))
   }
 
   it should "parse passively triggered actions for robots" in {
