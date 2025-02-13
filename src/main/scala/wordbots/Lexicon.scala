@@ -50,7 +50,7 @@ object Lexicon {
    * The .getClass().toString() approach requires an exact class name match, so this will only work for case classes, not traits.
    * TODO(AN): Come up with a more general approach that would work for inherited traits as well? */
   def validatingSeq[T, U](seq: Seq[T], expectedClassName: String)(out: U): U = {
-    if (!seq.forall(_.getClass().toString() == "class wordbots.Semantics$" + expectedClassName)) {
+    if (!seq.forall(_.getClass.getName == s"wordbots.Semantics$$$expectedClassName")) {
       Fail(s"Seq parameter failed type check")
     }
     out
