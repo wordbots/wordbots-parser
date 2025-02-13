@@ -687,6 +687,11 @@ class ParserSpec extends FlatSpec with Matchers {
         ObjectsMatchingConditions(Robot, Seq(ControlledBy(Opponent))),
         CannotMoveTo(TilesMatchingConditions(Seq(AdjacentTo(ThisObject))))
       )
+    parse("Adjacent robots have +2 attack and +1 speed") shouldEqual
+      MultipleAbilities(List(
+        AttributeAdjustment(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject))), Attack, Plus(Scalar(2))),
+        AttributeAdjustment(ObjectsMatchingConditions(Robot, List(AdjacentTo(ThisObject))), Speed, Plus(Scalar(1))))
+      )
   }
 
   it should "parse passively triggered actions for robots" in {

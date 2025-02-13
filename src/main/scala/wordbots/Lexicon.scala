@@ -393,6 +393,8 @@ object Lexicon {
       ((S\NP)/S, λ {a: Ability => λ {t: TargetObject => HasAbility(t, a)}}),
       ((S\NP)/N, λ {a: AttributeAmount => λ {t: TargetObject => AttributeAdjustment(t, a.attr, Constant(a.amount))}}),  // "... X attack"
       ((S/NP)\NP, λ {t: TargetObject => λ {op: AttributeOperation => AttributeAdjustment(t, op.attr, op.op)}}),  // "... +X attack"
+      ((S/NP)\NP, λ {t: TargetObject => λ {ops: Seq[AttributeOperation] =>  // "... +X attack and +Y speed"
+        validatingSeq(ops, "AttributeOperation") { MultipleAbilities(ops.map(op => AttributeAdjustment(t, op.attr, op.op)))}}}),
       ((S\NP)/NP, λ {comp: CardComparison => λ {coll: CardCollection => CollectionCountComparison(coll, comp.comp)}}),  // "... +X attack"
       ((S/S)\NP, λ {t: TargetObject => λ {a: (AttributeOperation, Ability) =>  // "... +X attack and [ability]"
         MultipleAbilities(Seq(AttributeAdjustment(t, a._1.attr, a._1.op), HasAbility(t, a._2)))}}),
