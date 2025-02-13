@@ -60,6 +60,7 @@ object Lexicon {
     (Seq("a", "an") -> Seq(
       (N/N, identity),
       (NP/N, λ {o: ObjectType => ChooseO(ObjectsInPlay(o))}),  // e.g. "a robot"
+      ((NP/PP)/N, λ {o: ObjectType => λ {c: ObjectCondition => ChooseO(ObjectsMatchingConditions(o, Seq(c)))}}),  // e.g. "a robot up to 2 tiles away"
       (NP/NP, λ {c: GeneratedCard => c}),  // e.g. "a 1/1/1 robot"
       (NP/NP, λ {c: ObjectCollection => ChooseO(c)}),  // e.g. "a robot you control"
       (NP/NP, λ {c: CardCollection => ChooseC(c)}),  // e.g. "(discard) a card"

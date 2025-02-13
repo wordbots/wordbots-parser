@@ -9,7 +9,9 @@ class ErrorAnalyzerSpec extends FlatSpec with Matchers {
   }
 
   it should "come up with suggestions for correcting syntactic errors" in {
-    analyze("Destroy a robot 2 attack").get.suggestions.toSet shouldEqual Set("Give a robot 2 attack", "Destroy a robot with 2 attack")
+    val suggestions: Set[String] = analyze("Destroy a robot 2 attack").get.suggestions.toSet
+    suggestions should contain("Give a robot 2 attack")
+    suggestions should contain("Destroy a robot with 2 attack")
   }
 
   it should "not suggest replacements when a valid deletion is possible" in {

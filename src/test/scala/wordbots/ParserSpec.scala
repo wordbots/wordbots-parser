@@ -314,6 +314,7 @@ class ParserSpec extends FlatSpec with Matchers {
       ))
     parse("Choose a tile") shouldEqual SaveTarget(ChooseT(AllTiles, Scalar(1)))
     parse("Lose life equal to the number of objects destroyed this turn") shouldEqual DealDamage(Self, NumberOfObjectsDestroyedThisTurn)
+    parse("Choose a robot up to 2 tiles away") shouldEqual SaveTarget(ChooseO(ObjectsMatchingConditions(Robot, List(WithinDistanceOf(Scalar(2), ItO))), Scalar(1)))
   }
 
   it should "treat 'with' as 'that has'" in {
