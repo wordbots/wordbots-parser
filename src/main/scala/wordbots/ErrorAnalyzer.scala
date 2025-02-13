@@ -142,7 +142,6 @@ object ErrorAnalyzer {
       val validEdits = findValidEdits(words)
       val error: Option[String] = validEdits.edits.headOption.map(_.description(words))
       val suggestions: Suggestions = getSyntacticSuggestions(input, Some(validEdits))
-
       ParserError(s"Parse failed (${error.getOrElse("syntax error")})", suggestions.suggestions, suggestions.stats)
     }
   }
@@ -309,6 +308,8 @@ object ErrorAnalyzer {
         for {
           i <- words.indices.toStream
           term <- Lexicon.mapOfTermsToUsages.filter(_._2 >= 10).keys.filter((t) => t.split(" ").length == 1).toStream
+          candidate = words.slice(0, i).mkString(" ") + s" $term " + words.slice(i + 1, words.length).mkString(" ")
+          if checkIfSyntacticallyValidAndUpdateStats(candidate)
         } yield ExactReplace(i, term)
       }
     }
