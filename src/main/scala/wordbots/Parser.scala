@@ -1,7 +1,7 @@
 package wordbots
 
 import com.workday.montague.ccg._
-import com.workday.montague.parser.{ParserDict, SemanticParseResult, SemanticParser}
+import com.workday.montague.parser.{ParserDict, SemanticParseNode, SemanticParseResult, SemanticParser}
 import com.workday.montague.semantics._
 
 import scala.language.postfixOps
@@ -18,8 +18,11 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     val input = args.mkString(" ")
     val result: SemanticParseResult[CcgCat] = parse(input)
 
-    val output: String = result.bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
-    val code: Try[String] = Try { result.bestParse.get.semantic }.flatMap {
+    val bestParse: Option[SemanticParseNode[CcgCat]] = ErrorAnalyzer.bestValidParse(result)
+    val allSemanticallyCompleteParses: List[String] = result.semanticCompleteParses.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]")
+
+    val output: String = bestParse.map(p => s"${p.semantic.toString} [${p.syntactic.toString}]").getOrElse("(failed to parse)")
+    val code: Try[String] = Try { bestParse.get.semantic }.flatMap {
       case Form(v: Semantics.AstNode) => CodeGenerator.generateJS(v)
       case _ => Failure(new RuntimeException("Parser did not produce a valid expression"))
     }
@@ -28,12 +31,13 @@ object Parser extends SemanticParser[CcgCat](Lexicon.lexicon) {
     println(s"Input: $input")
     println(s"Tokens: ${tokenizer(input).mkString("[\"", "\", \"", "\"]")}")
     println(s"Parse result: $output")
-    println(s"Error diagnosis: ${ErrorAnalyzer.diagnoseError(input, result.bestParse)}")
+    println(s"All semantically complete parse results:${allSemanticallyCompleteParses.mkString("\n  ", "\n  ", "")}")
+    println(s"Error diagnosis: ${ErrorAnalyzer.diagnoseError(input, bestParse)}")
     println(s"Generated JS code: ${code.getOrElse(code.failed.get)}")
     // scalastyle:on regex
 
     // For debug purposes, output the best parse tree (if one exists) to SVG.
-    //result.bestParse.foreach(result => new java.io.PrintWriter("test.svg") { write(result.toSvg); close() })
+    //bestParse.foreach(result => new java.io.PrintWriter("test.svg") { write(result.toSvg); close() })
   }
 
   /** Parses the input. */

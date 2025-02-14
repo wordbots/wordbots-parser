@@ -2,7 +2,7 @@ package wordbots
 
 import com.roundeights.hasher.Implicits._
 import com.workday.montague.ccg.CcgCat
-import com.workday.montague.parser.SemanticParseNode
+import com.workday.montague.parser.{SemanticParseNode, SemanticParseResult}
 import com.workday.montague.semantics.{Form, SemanticState}
 import org.http4s.{Response => H4sResponse, _}
 import org.http4s.circe._
@@ -51,25 +51,26 @@ object MemoParser {
       case _ => ValidateUnknownCard
     }
 
-    val result = Parser.parse(input).bestParse
-    val parsedTokens = {
-      result.toSeq
+    val parseResult: SemanticParseResult[CcgCat] = Parser.parse(input)
+    val bestParse: Option[SemanticParseNode[CcgCat]] = ErrorAnalyzer.bestValidParse(parseResult)
+    val parsedTokens: Seq[String] = {
+      bestParse.toSeq
         .flatMap(_.terminals)
         .flatMap(_.parseTokens)
         .map(_.tokenString)
         .filter(token => Lexicon.listOfTerms.contains(token) && token != "\"")
     }
-    val unrecognizedTokens = ErrorAnalyzer.findUnrecognizedTokens(input)
+    val unrecognizedTokens: Seq[String] = ErrorAnalyzer.findUnrecognizedTokens(input)
 
-    ErrorAnalyzer.diagnoseError(input, result, fastErrorAnalysisMode) match {
+    ErrorAnalyzer.diagnoseError(input, bestParse, fastErrorAnalysisMode) match {
       case Some(error) =>
         print("  [F]")
         FailedParse(error, unrecognizedTokens)
       case None =>
-        result.map(_.semantic) match {
+        bestParse.map(_.semantic) match {
           case Some(Form(ast: AstNode)) =>
             print("  [S]")
-            SuccessfulParse(result.get, ast, parsedTokens)
+            SuccessfulParse(bestParse.get, ast, parsedTokens)
           case _ =>
             print("  [F]")
             FailedParse(ParserError("Unspecified parser error"), unrecognizedTokens)

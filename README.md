@@ -1,5 +1,4 @@
 # wordbots-parser
-[![CircleCI](https://circleci.com/gh/wordbots/wordbots-parser.svg?style=svg)](https://circleci.com/gh/wordbots/wordbots-parser)
 
 A game-semantics CCG parser for [Wordbots](http://wordbots.io). (See also the [`wordbots-core` repo](https://github.com/wordbots/wordbots-core) that contains the core game code.)
 

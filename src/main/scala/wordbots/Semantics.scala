@@ -164,6 +164,7 @@ object Semantics {
       case class ChooseT(collection: TileCollection, numChosen: Number = Scalar(1)) extends TargetTile
       case class AllT(collection: TileCollection) extends TargetTile
       case class RandomT(num: Number, collection: TileCollection) extends TargetTile
+      case object SavedTargetTile extends TargetTile
     sealed trait TargetPlayer extends Target with TargetObjectOrPlayer
       case object Self extends TargetPlayer
       case object Opponent extends TargetPlayer
@@ -222,6 +223,7 @@ object Semantics {
     case class EnergyAmount(player: TargetPlayer) extends Number
     case class Half(num: Number, rounding: Rounding) extends Number
     case class MaximumEnergyAmount(player: TargetPlayer) extends Number
+    case object NumberOfObjectsDestroyedThisTurn extends Number
     case object ThatMuch extends Number  // salient amount
     case class Times(num1: Number, num2: Number) extends Number
 

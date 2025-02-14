@@ -19,6 +19,12 @@ case class Delete(idx: Int) extends Edit {
   def description(words: Seq[String]): String = s"syntax error - unexpected word '${words(idx)}'"
 }
 
+case class DeleteChunk(fromIdx: Int, toIdx: Int) extends Edit {
+  def apply(words: Seq[String]): Seq[String] = Seq(words.patch(fromIdx, Nil, toIdx - fromIdx + 1).mkString(" "))
+
+  def description(words: Seq[String]): String = s"syntax error - unexpected phrase '${words.slice(fromIdx, toIdx).mkString(" ")}'"
+}
+
 case class Replace(idx: Int, pos: CcgCat) extends Edit {
   def apply(words: Seq[String]): Seq[String] = Lexicon.termsInCategory(pos).map(term => words.patch(idx, Seq(term), 1).mkString(" ").capitalize)
 

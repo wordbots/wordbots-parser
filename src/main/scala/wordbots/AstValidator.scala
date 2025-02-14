@@ -14,6 +14,7 @@ case object ValidateUnknownCard extends ValidationMode
 
 case class AstValidator(mode: ValidationMode = ValidateUnknownCard) {
   val baseRules: Seq[AstRule] = Seq(
+    MustBeActionOrAbility,
     NoUnimplementedRules,
     NoChooseOrRewriteInTriggeredAction,
     NoPayEnergyInTriggeredAction,
@@ -80,7 +81,7 @@ object NoUnimplementedRules extends AstRule {
 }
 
 /**
- * Disallow the following behaviors within a triggered ability (excepted AfterPlayed, which can be treated more like an action):
+ * Disallow the following behaviors within a triggered ability or conditional action (except AfterPlayed trigger, which can be treated more like an action):
  *    * choosing targets (because there's no UI support for having a player choose targets during event execution)
  *    * rewriting card text (because calling the parser is expensive and should only happen from direct player interaction)
  */
@@ -101,13 +102,14 @@ object NoChooseOrRewriteInTriggeredAction extends AstRule {
     node match {
       case TriggeredAbility(AfterPlayed(_), _) => Success()  // Choosing targets and rewriting text *is* allowed for AfterPlayed triggers.
       case TriggeredAbility(_, _) => validateChildren(NoChooseTargetOrRewrite, node)  // (but not for any other trigger).
+      case ConditionalAction(_, _) => validateChildren(NoChooseTargetOrRewrite, node)
       case n: AstNode => validateChildren(this, n)
     }
   }
 }
 
 /**
- * Disallow paying energy within triggered abilities,
+ * Disallow paying energy within triggered abilities or conditional actions,
  * because there's no gameplay support for "rolling back" the action triggered if there's not enough energy to pay.
  */
 object NoPayEnergyInTriggeredAction extends AstRule {
@@ -123,6 +125,7 @@ object NoPayEnergyInTriggeredAction extends AstRule {
   override def validate(node: AstNode): Try[Unit] = {
     node match {
       case TriggeredAbility(_, _) => validateChildren(NoPayEnergy, node)
+      case ConditionalAction(_, _) => validateChildren(NoPayEnergy, node)
       case n: AstNode => validateChildren(this, n)
     }
   }
@@ -158,6 +161,16 @@ object OnlyThisObjectPlayed extends AstRule {
       case AfterPlayed(ItO) => Success()
       case AfterPlayed(_) => Failure(ValidationError("AfterPlayed can only refer to ThisObject or ItO."))
       case n: AstNode => validateChildren(this, n)
+    }
+  }
+}
+
+object MustBeActionOrAbility extends AstRule {
+  override def validate(node: AstNode): Try[Unit] = {
+    node match {
+      case _: Action => Success()
+      case _: Ability => Success()
+      case _ => Failure(ValidationError("Tried to parse something odd that doesn't look like a valid action OR ability."))
     }
   }
 }
